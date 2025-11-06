@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Upload, Download, Loader2, CreditCard } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function RemoveBG() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
