@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Download, Loader2, CreditCard } from 'lucide-react';
+import { Upload, Download, Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,28 +14,24 @@ export default function RemoveBG() {
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
+    setPreview(URL.createObjectURL(file));
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'remove-bg');
 
     try {
-      const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
-        { method: 'POST', body: formData }
-      );
-      const { secure_url } = await uploadRes.json();
-
       const res = await fetch('/api/remove-bg', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: secure_url }),
+        body: formData,
       });
-      const { output } = await res.json();
-      setResult(output[0]);
-      setPreview(URL.createObjectURL(file));
+
+      if (!res.ok) throw new Error('Processing failed');
+
+      const { result } = await res.json();
+      setResult(result);
     } catch (error) {
       alert('Error — check console or ask Grok');
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -66,9 +62,16 @@ export default function RemoveBG() {
           <button
             onClick={handleUpload}
             disabled={loading}
-            className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-bold flex items-center mx-auto mb-10"
+            className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-bold flex items-center mx-auto mb-10 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-6 h-6 mr-2 animate-spin" /> : 'Remove Background'}
+            {loading ? (
+              <>
+                <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Remove Background'
+            )}
           </button>
         )}
 
@@ -76,17 +79,17 @@ export default function RemoveBG() {
           <div className="grid md:grid-cols-2 gap-8 mb-10">
             <div>
               <h3 className="font-bold mb-2">Original</h3>
-              <img src={preview} className="rounded-xl shadow-xl w-full" />
+              <img src={preview} alt="Original" className="rounded-xl shadow-xl w-full" />
             </div>
             <div>
               <h3 className="font-bold mb-2">No Background</h3>
-              <img src={result} className="rounded-xl shadow-xl w-full bg-gray-100 p-4" />
+              <img src={result} alt="Result" className="rounded-xl shadow-xl w-full bg-gray-100 p-4" />
               <a
-                href={result + '?w=800'}
+                href={result}
                 download
-                className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-lg"
+                className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-lg flex items-center justify-center"
               >
-                <Download className="inline w-5 h-5 mr-2" /> Download HD
+                <Download className="w-5 h-5 mr-2" /> Download HD
               </a>
             </div>
           </div>
