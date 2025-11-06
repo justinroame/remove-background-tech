@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     let result = prediction;
     while (result.status !== 'succeeded' && result.status !== 'failed') {
       await new Promise((r) => setTimeout(r, 1000));
- Wales
+
       const poll = await fetch(result.urls.get, {
         headers: { Authorization: `Token ${replicateToken}` },
       });
