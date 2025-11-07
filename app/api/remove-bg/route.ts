@@ -1,4 +1,3 @@
-// app/api/remove-bg/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -36,7 +35,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Call Replicate with correct input
+    // Resize if too large (remove.bg style: >50 MP)
+    let imageUrl = uploadData.secure_url;
+    const originalSize = req.body.originalSize;  // From client
+    const width = uploadData.width;
+    const height = uploadData.height;
+    const megapixels = (width * height) / 1000000;
+
+    if (megapixels > 50) {
+      imageUrl = uploadData.secure_url.replace('/upload/', '/upload/w_8688,h_5792,c_fill/');  // Resize to ~50 MP
+    }
+
+    // Call Replicate
     const replicateToken = process.env.REPLICATE_API_TOKEN;
     if (!replicateToken) {
       return NextResponse.json({ error: 'Replicate token missing' }, { status: 500 });
@@ -50,12 +60,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         version: 'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535',
-        input: {
-          image: uploadData.secure_url,
-          scale: 2,
-          face: true,
-          background: 'transparent',
-        },
+        input: { image: imageUrl },
       }),
     });
 
@@ -71,13 +76,9 @@ export async function POST(req: NextRequest) {
     // Poll for result
     let result = prediction;
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 30; // 30s timeout
 
-    while (
-      result.status !== 'succeeded' &&
-      result.status !== 'failed' &&
-      attempts < maxAttempts
-    ) {
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
       await new Promise((r) => setTimeout(r, 1000));
       attempts++;
       const poll = await fetch(result.urls.get, {
@@ -96,9 +97,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result: result.output });
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
