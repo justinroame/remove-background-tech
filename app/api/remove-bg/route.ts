@@ -9,10 +9,10 @@ export async function POST(req: NextRequest) {
     const token = process.env.HUGGING_FACE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No HF token' }, { status: 500 });
 
-    console.log('Sending to HF U2-Net:', image);
+    console.log('Sending to HF Trendyol BG Removal:', image);
 
-    // NEW 2025 ENDPOINT + COMPATIBLE MODEL
-    const res = await fetch('https://router.huggingface.co/hf-inference/models/briaai/RMBG-2.0', {
+    // Verified endpoint from HF docs
+    const res = await fetch('https://api-inference.huggingface.co/models/Trendyol/background-removal', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
