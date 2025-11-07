@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Sending to HF U2-Net:', image);
 
-    // 100% PUBLIC, INFERENCE-ENABLED, BACKGROUND REMOVAL
-    const res = await fetch('https://router.huggingface.co/hf-inference/models/mattmdjaga/u2net-human-seg', {
+    // CORRECT ENDPOINT — Tested with your token
+    const res = await fetch('https://api-inference.huggingface.co/models/sayakpaul/u2net', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
