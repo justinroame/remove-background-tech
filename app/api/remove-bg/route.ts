@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Sending to HF U2-Net:', image);
 
-    // CORRECT ENDPOINT — Tested with your token
-    const res = await fetch('https://api-inference.huggingface.co/models/sayakpaul/u2net', {
+    // NEW 2025 ENDPOINT + COMPATIBLE MODEL
+    const res = await fetch('https://router.huggingface.co/hf-inference/models/briaai/RMBG-2.0', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
