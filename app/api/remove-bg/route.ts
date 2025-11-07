@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Sending to HF U2-Net:', image);
 
-    const res = await fetch('https://router.huggingface.co/hf-inference/models/mattmdjaga/segformer_b2_clothes', {
+    // PUBLIC, UNGATED, REAL BACKGROUND REMOVAL
+    const res = await fetch('https://router.huggingface.co/hf-inference/models/keremberke/remove-bg', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -22,8 +23,8 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const text = await res.text();
-      console.log('HF Error Response:', text);
-      return NextResponse.json({ error: 'HF API error' }, { status: 500 });
+      console.log('HF Error:', text);
+      return NextResponse.json({ error: 'HF error' }, { status: 500 });
     }
 
     const blob = await res.blob();
@@ -32,7 +33,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ result });
   } catch (error: any) {
-    console.error('Server error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
