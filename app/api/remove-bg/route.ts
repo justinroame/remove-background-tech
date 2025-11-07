@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "851-labs/background-remover:a029dff3", // Public, free, verified version from Replicate docs
+        version: "7c9d0cf03f2f456e5b2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d",
         input: { image },
       }),
     });
@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Poll for result
     let result = data;
     let attempts = 0;
     const maxAttempts = 30;
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
         headers: { Authorization: `Token ${replicateToken}` },
       });
       result = await poll.json();
-      console.log('Poll result:', result);
     }
 
     if (result.status === 'failed' || attempts >= maxAttempts) {
