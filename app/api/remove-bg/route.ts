@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "851-labs/background-remover:851-labs/background-remover", // Public version for 2025
+        version: "lucataco/remove-bg:95fcc2a2", // Public, verified stable version
         input: { image },
       }),
     });
