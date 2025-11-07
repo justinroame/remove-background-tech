@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, Download, Loader2, CreditCard } from 'lucide-react';
+import { useState }  from 'react';
+import { Upload, Download, Loader2 } from 'lucide-react';
 
 export default function RemoveBG() {
   const [file, setFile] = useState<File | null>(null);
@@ -9,6 +9,7 @@ export default function RemoveBG() {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
+  // Compress large images before upload
   const compressImage = async (file: File): Promise<File> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -49,9 +50,9 @@ export default function RemoveBG() {
     setLoading(true);
 
     try {
-      // Check file size (remove.bg limit: 22MB)
+      // Max 22MB (like remove.bg)
       if (file.size > 22 * 1024 * 1024) {
-        alert('File too large (max 22MB). Try compressing it.');
+        alert('File too large (max 22MB). Try compressing it first.');
         setLoading(false);
         return;
       }
@@ -71,20 +72,30 @@ export default function RemoveBG() {
         { method: 'POST', body: formData }
       );
 
+      if (!uploadRes.ok) {
+        const error = await uploadRes.json();
+        throw new Error(error.error?.message || 'Upload failed');
+      }
+
       const { secure_url } = await uploadRes.json();
 
       const res = await fetch('/api/remove-bg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: secure_url, originalSize: file.size }),
+        body: JSON.stringify({ image: secure_url }),
       });
 
-      const { result } = await res.json();
-      setResult(result[0]);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'AI processing failed');
+      }
+
+      const { result } = await res.json(); // result is a string URL
+      setResult(result);
       setPreview(URL.createObjectURL(file));
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error — check console or ask Grok');
+    } catch (error: any) {
+      console.error('Upload Error:', error);
+      alert(error.message || 'Processing failed. Try a smaller image.');
     } finally {
       setLoading(false);
     }
@@ -114,10 +125,17 @@ export default function RemoveBG() {
         {file && (
           <button
             onClick={handleUpload}
-            disabled= {loading}
-            className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-bold flex items-center mx-auto mb-10"
+            disabled={loading}
+            className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-bold flex items-center mx-auto mb-10 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-6 h-6 mr-2 animate-spin" /> : 'Remove Background'}
+            {loading ? (
+              <>
+                <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Remove Background'
+            )}
           </button>
         )}
 
@@ -125,17 +143,18 @@ export default function RemoveBG() {
           <div className="grid md:grid-cols-2 gap-8 mb-10">
             <div>
               <h3 className="font-bold mb-2">Original</h3>
-              <img src={preview} className="rounded-xl shadow-xl w-full" />
+              <img src={preview} className="rounded-xl shadow-xl w-full max-h-96 object-contain" />
             </div>
             <div>
               <h3 className="font-bold mb-2">No Background</h3>
-              <img src={result} className="rounded-xl shadow-xl w-full bg-gray-100 p-4" />
+              <img src={result} className="rounded-xl shadow-xl w-full max-h-96 object-contain bg-gray-100 p-4" />
               <a
-                href={result + '?w=800'}
+                href={result}
                 download
-                className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-lg"
+                className="mt-4 inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center"
               >
-                <Download className="inline w-5 h-5 mr-2" /> Download HD
+                <Download className="w-5 h-5 mr-2" />
+                Download HD PNG
               </a>
             </div>
           </div>
