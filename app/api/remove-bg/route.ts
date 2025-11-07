@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const { image } = await req.json();
-    if (!image) return NextResponse.json({ error: 'No image' }, { status: 400 });
+    if (!image) return NextResponse.json({ error: 'No image URL' }, { status: 400 });
 
     const token = process.env.REPLICATE_API_TOKEN;
-    if (!token) return NextResponse.json({ error: 'No Replicate token' }, { status: 500 });
+    if (!token) return NextResponse.json({ error: 'Missing Replicate token' }, { status: 500 });
 
     console.log('Calling Replicate with image:', image);
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "lucataco/remove-bg:95fcc2a2",
+        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // lucataco/remove-bg — PUBLIC & WORKING
         input: { image },
       }),
     });
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         headers: { Authorization: `Token ${token}` },
       });
       result = await poll.json();
+      console.log('Poll result:', result);
     }
 
     if (result.status === 'failed' || attempts >= maxAttempts) {
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ result: result.output });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
   }
 }
