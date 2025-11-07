@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Sending to HF U2-Net:', image);
 
-    // PUBLIC U2-Net MODEL — 100% WORKS
-    const res = await fetch('https://router.huggingface.co/hf-inference/models/sayakpaul/u2-net', {
+    // PUBLIC, INFERENCE-ENABLED, BACKGROUND REMOVAL
+    const res = await fetch('https://router.huggingface.co/hf-inference/models/keremberke/remove-bg', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
