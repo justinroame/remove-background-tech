@@ -6,32 +6,52 @@ export async function POST(req: NextRequest) {
     const { image } = await req.json();
     if (!image) return NextResponse.json({ error: 'No image' }, { status: 400 });
 
-    const token = process.env.HUGGING_FACE_API_TOKEN;
-    if (!token) return NextResponse.json({ error: 'No HF token' }, { status: 500 });
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) return NextResponse.json({ error: 'No Replicate token' }, { status: 500 });
 
-    console.log('Sending to HF Trendyol BG Removal:', image);
+    console.log('Calling Replicate with image:', image);
 
-    // Verified endpoint from HF docs
-    const res = await fetch('https://api-inference.huggingface.co/models/Trendyol/background-removal', {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Token ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ inputs: image }),
+      body: JSON.stringify({
+        version: "lucataco/remove-bg:95fcc2a2",
+        input: { image },
+      }),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.log('HF Error:', text);
-      return NextResponse.json({ error: 'HF error' }, { status: 500 });
+    const data = await response.json();
+    console.log('Replicate response:', data);
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.detail || 'Replicate API error' },
+        { status: response.status }
+      );
     }
 
-    const blob = await res.blob();
-    const buffer = Buffer.from(await blob.arrayBuffer());
-    const result = `data:image/png;base64,${buffer.toString('base64')}`;
+    // Poll for result
+    let result = data;
+    let attempts = 0;
+    const maxAttempts = 30;
 
-    return NextResponse.json({ result });
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 1000));
+      attempts++;
+      const poll = await fetch(result.urls.get, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      result = await poll.json();
+    }
+
+    if (result.status === 'failed' || attempts >= maxAttempts) {
+      return NextResponse.json({ error: 'AI processing failed or timed out' }, { status: 500 });
+    }
+
+    return NextResponse.json({ result: result.output });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
