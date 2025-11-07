@@ -9,24 +9,21 @@ export async function POST(req: NextRequest) {
     const token = process.env.HUGGING_FACE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No HF token' }, { status: 500 });
 
-    console.log('Received image URL:', image);
-    console.log('Token length:', token.length);
+    console.log('Sending to HF U2-Net:', image);
 
-    const body = JSON.stringify({ inputs: image });
-    console.log('Request body:', body);
-
-    const res = await fetch('https://router.huggingface.co/hf-inference/models/keremberke/remove-bg', {
+    // 100% PUBLIC, INFERENCE-ENABLED, BACKGROUND REMOVAL
+    const res = await fetch('https://router.huggingface.co/hf-inference/models/mattmdjaga/u2net-human-seg', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body,
+      body: JSON.stringify({ inputs: image }),
     });
 
     if (!res.ok) {
       const text = await res.text();
-      console.log('HF Raw Response:', text);
+      console.log('HF Error:', text);
       return NextResponse.json({ error: 'HF error' }, { status: 500 });
     }
 
@@ -36,7 +33,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ result });
   } catch (error: any) {
-    console.error('Server Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
