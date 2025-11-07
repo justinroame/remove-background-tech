@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // Full hash from Replicate docs — works 100%
+        version: "851-labs/background-remover", // Official model from Replicate (public, reliable, PNG output)
         input: { image },
       }),
     });
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Poll for result
     let result = data;
     let attempts = 0;
     const maxAttempts = 30;
