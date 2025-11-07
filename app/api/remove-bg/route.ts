@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Call Replicate (updated model: BiRefNet - faster & more accurate)
+    // Call Replicate with correct input
     const replicateToken = process.env.REPLICATE_API_TOKEN;
     if (!replicateToken) {
       return NextResponse.json({ error: 'Replicate token missing' }, { status: 500 });
@@ -49,8 +49,13 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535",
-        input: { image: uploadData.secure_url },
+        version: 'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535',
+        input: {
+          image: uploadData.secure_url,
+          scale: 2,
+          face: true,
+          background: 'transparent',
+        },
       }),
     });
 
@@ -63,10 +68,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Poll for result with timeout
+    // Poll for result
     let result = prediction;
     let attempts = 0;
-    const maxAttempts = 30; // 30 seconds max
+    const maxAttempts = 30;
 
     while (
       result.status !== 'succeeded' &&
