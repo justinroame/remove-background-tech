@@ -6,14 +6,14 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Remove Background – Free AI Tool',
-  description: 'Remove background from any image in 2 seconds.',
+  description: 'Remove background from any image in 2 seconds. Free preview. HD for Pro.',
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>
