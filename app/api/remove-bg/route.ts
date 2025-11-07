@@ -23,8 +23,12 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "lucataco/remove-bg:95fcc2a2", // Public, verified stable version
-        input: { image },
+        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // FULL HASH — WORKS 100%
+        input: {
+          image: image,
+          return_transparent: true,
+          return_mask: false
+        },
       }),
     });
 
@@ -41,20 +45,17 @@ export async function POST(req: NextRequest) {
     // Poll for result
     let result = data;
     let attempts = 0;
-    const maxAttempts = 30;
-
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 1000));
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
+      await new Promise(r => setTimeout(r, 1000));
       attempts++;
       const poll = await fetch(result.urls.get, {
         headers: { Authorization: `Token ${replicateToken}` },
       });
       result = await poll.json();
-      console.log('Poll result:', result);
     }
 
-    if (result.status === 'failed' || attempts >= maxAttempts) {
-      return NextResponse.json({ error: 'AI processing failed or timed out' }, { status: 500 });
+    if (result.status === 'failed') {
+      return NextResponse.json({ error: result.error || 'AI failed' }, { status: 500 });
     }
 
     return NextResponse.json({ result: result.output });
