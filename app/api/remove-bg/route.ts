@@ -18,8 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        // FULL 64-CHAR HASH — THIS IS THE ONLY FORMAT THAT WORKS
-        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061",
+        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // Full hash from Replicate docs — works 100%
         input: { image },
       }),
     });
@@ -36,8 +35,10 @@ export async function POST(req: NextRequest) {
 
     let result = data;
     let attempts = 0;
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
-      await new Promise(r => setTimeout(r, 1000));
+    const maxAttempts = 30;
+
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 1000));
       attempts++;
       const poll = await fetch(result.urls.get, {
         headers: { Authorization: `Token ${token}` },
