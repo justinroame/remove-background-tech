@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Sending to HF U2-Net:', image);
 
-    const res = await fetch('https://api-inference.huggingface.co/models/briaai/RMBG-1.4', {
+    // FIXED URL — NEW 2025 ENDPOINT
+    const res = await fetch('https://router.huggingface.co/hf-inference/models/briaai/RMBG-1.4', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
