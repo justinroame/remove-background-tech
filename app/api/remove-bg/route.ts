@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535',
+        version: "9283608ce79d3f8cb6ec8c1b8412886593a6709c902b5f56a3e4c4a5f6f8b3c4",
         input: { image },
       }),
     });
