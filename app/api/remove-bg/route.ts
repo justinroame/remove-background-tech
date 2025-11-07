@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'birefnet-human-seg', // Updated model ID
+        version: "fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535",
         input: { image: uploadData.secure_url },
       }),
     });
