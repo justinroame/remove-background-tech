@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "lucataco/remove-bg", // OFFICIAL NAME — 2025 FORMAT
+        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // Full hash from lucataco/remove-bg page (web:7)
         input: { image },
       }),
     });
@@ -33,10 +33,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Poll for result
     let result = data;
     let attempts = 0;
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
-      await new Promise(r => setTimeout(r, 1000));
+    const maxAttempts = 30;
+
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 1000));
       attempts++;
       const poll = await fetch(result.urls.get, {
         headers: { Authorization: `Token ${token}` },
