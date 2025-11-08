@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "851-labs/background-remover:a029dff3", // Full hash from model page (web:5, web:6)
+        version: "851-labs/background-remover:a029dff3", // Full hash from search results (web:5, web:6, web:7)
         input: { image },
       }),
     });
