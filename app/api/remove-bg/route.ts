@@ -9,39 +9,44 @@ export async function POST(req: NextRequest) {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No token' }, { status: 500 });
 
-    const body = JSON.stringify({
-      version: "851-labs/background-remover",
-      input: { image }
-    });
+    console.log('Calling Replicate with image:', image);
 
-    console.log('Sending to Replicate:', body);
-
-    const res = await fetch('https://api.replicate.com/v1/predictions', {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
         'Content-Type': 'application/json',
       },
-      body
+      body: JSON.stringify({
+        version: "851-labs/background-remover:a029dff3", // Full hash from model page (web:5, web:6)
+        input: { image },
+      }),
     });
 
-    const data = await res.json();
+    const data = await response.json();
     console.log('Replicate response:', data);
 
-    if (!res.ok) {
-      return NextResponse.json({ error: data.detail || 'API error' }, { status: res.status });
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.detail || 'Replicate API error' },
+        { status: response.status }
+      );
     }
 
+    // Poll for result
     let result = data;
-    for (let i = 0; i < 30; i++) {
-      if (result.status === 'succeeded' || result.status === 'failed') break;
-      await new Promise(r => setTimeout(r, 1000));
-      const poll = await fetch(result.urls.get, { headers: { Authorization: `Token ${token}` } });
+    let attempts = 0;
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
+      await new Promise((r) => setTimeout(r, 1000));
+      attempts++;
+      const poll = await fetch(result.urls.get, {
+        headers: { Authorization: `Token ${token}` },
+      });
       result = await poll.json();
     }
 
     if (result.status !== 'succeeded') {
-      return NextResponse.json({ error: 'Failed to process' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 
     return NextResponse.json({ result: result.output });
