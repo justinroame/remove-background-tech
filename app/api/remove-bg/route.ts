@@ -18,8 +18,12 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "95fcc2a26a8d00949dc7607f7e5a0b2eb1b84d0a5d22d222d38f6e23f18f1061", // Full hash from lucataco/remove-bg page (web:7)
-        input: { image },
+        version: "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21bdea5fb65cfe1ba5",
+        input: { 
+          prompt: "remove background from the image, transparent background, high quality PNG",
+          image: image,
+          num_outputs: 1,
+        },
       }),
     });
 
@@ -33,12 +37,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Poll for result
     let result = data;
     let attempts = 0;
-    const maxAttempts = 30;
-
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
       await new Promise((r) => setTimeout(r, 1000));
       attempts++;
       const poll = await fetch(result.urls.get, {
