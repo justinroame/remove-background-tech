@@ -1,5 +1,5 @@
 // app/api/remove-bg/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+// FORCE FRESH BUILD — 2025-11-08 10:00import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
