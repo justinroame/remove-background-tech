@@ -9,6 +9,13 @@ export async function POST(req: NextRequest) {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No token' }, { status: 500 });
 
+    // PING TEST — ADD THIS TO SEE IF REPLICATE IS REACHABLE
+    const testPing = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'GET',
+      headers: { 'Authorization': `Token ${token}` },
+    });
+    console.log('Ping status:', testPing.status); // ← This will show 401 (OK) or error
+
     const body = JSON.stringify({
       version: "cjwbw/rembg:7c9d0cf03f2f456e5b2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d",
       input: { image }
