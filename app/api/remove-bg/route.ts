@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "lucataco/remove-bg", // OFFICIAL NAME — WORKS WITH CREDITS
+        version: "lucataco/remove-bg", // OFFICIAL NAME — 2025 FORMAT
         input: { image },
       }),
     });
