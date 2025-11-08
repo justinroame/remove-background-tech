@@ -1,6 +1,3 @@
-// app/api/remove-bg/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-
 export async function POST(req: NextRequest) {
   try {
     const { image } = await req.json();
@@ -9,7 +6,7 @@ export async function POST(req: NextRequest) {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No token' }, { status: 500 });
 
-    console.log('Calling Replicate with image:', image);
+    console.log('Calling Replicate with base64 image:', image.substring(0, 50) + '...');
 
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -18,12 +15,8 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21bdea5fb65cfe1ba5",
-        input: { 
-          prompt: "remove background from the image, transparent background, high quality PNG",
-          image: image,
-          num_outputs: 1,
-        },
+        version: "fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535",
+        input: { image },
       }),
     });
 
@@ -31,10 +24,7 @@ export async function POST(req: NextRequest) {
     console.log('Replicate response:', data);
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: data.detail || 'Replicate API error' },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: data.detail || 'Replicate API error' }, { status: response.status });
     }
 
     let result = data;
