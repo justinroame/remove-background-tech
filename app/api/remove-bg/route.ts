@@ -1,8 +1,6 @@
 // app/api/remove-bg/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-// FORCE FRESH BUILD — 2025-11-08 10:00
-
 export async function POST(req: NextRequest) {
   try {
     const { image } = await req.json();
@@ -11,15 +9,8 @@ export async function POST(req: NextRequest) {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No token' }, { status: 500 });
 
-    // PING TEST
-    const testPing = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'GET',
-      headers: { 'Authorization': `Token ${token}` },
-    });
-    console.log('PING TEST STATUS:', testPing.status);
-
     const body = JSON.stringify({
-      version: "cjwbw/rembg:7c9d0cf03f2f456e5b2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d6e2d",
+      version: "851-labs/background-remover",
       input: { image }
     });
 
