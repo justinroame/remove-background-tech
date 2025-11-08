@@ -9,6 +9,8 @@ export async function POST(req: NextRequest) {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) return NextResponse.json({ error: 'No token' }, { status: 500 });
 
+    console.log('Calling Replicate with image:', image);
+
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -16,27 +18,28 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b9530386789a535",
-        input: { image }
+        version: "lucataco/remove-bg", // OFFICIAL NAME — WORKS WITH CREDITS
+        input: { image },
       }),
     });
 
-    const prediction = await response.json();
+    const data = await response.json();
+    console.log('Replicate response:', data);
 
     if (!response.ok) {
-      return NextResponse.json({ error: prediction.detail || 'API error' }, { status: response.status });
+      return NextResponse.json(
+        { error: data.detail || 'Replicate API error' },
+        { status: response.status }
+      );
     }
 
-    // ADD THIS CHECK
-    if (!prediction.urls || !prediction.urls.get) {
-      return NextResponse.json({ error: 'No poll URL returned' }, { status: 500 });
-    }
-
-    let result = prediction;
-    while (result.status !== 'succeeded' && result.status !== 'failed') {
+    let result = data;
+    let attempts = 0;
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
       await new Promise(r => setTimeout(r, 1000));
+      attempts++;
       const poll = await fetch(result.urls.get, {
-        headers: { Authorization: `Token ${token}` }
+        headers: { Authorization: `Token ${token}` },
       });
       result = await poll.json();
     }
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 
-    return NextResponse.json({ output: result.output });
+    return NextResponse.json({ result: result.output });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
