@@ -16,7 +16,6 @@ export default function Home() {
       return;
     }
 
-    // Show original preview
     setOriginal(URL.createObjectURL(file));
     setProcessed(null);
     setError(null);
@@ -47,7 +46,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -72,24 +71,4 @@ export default function Home() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            disabled={loading}
-          />
-
-          {loading ? (
-            <div className="flex flex-col items-center">
-              <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-3" />
-              <p className="text-lg font-medium text-gray-700">Removing background...</p>
-            </div>
-          ) : (
-            <>
-              <Upload className="w-14 h-14 mb-4 text-indigo-600" />
-              <p className="text-lg font-medium text-gray-700">Drop image here or click to upload</p>
-              <p className="text-sm text-gray-500 mt-1">JPG, PNG, WebP • Max 10MB</p>
-            </>
-          )}
-        </label>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3
+            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0
