@@ -1,56 +1,56 @@
 // app/remove/page.tsx
-'use client';               // <-- forces client-side rendering
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>('');
+  const [preview, setPreview] = useState<string>('') ;
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [aiReady, setAiReady] = useState(false);
 
-  // --------------------------------------------------------------
-  // 1. Load the AI library **only in the browser**
-  // --------------------------------------------------------------
   useEffect(() => {
-    if (typeof window === 'undefined') return; // safety for SSR
+    if (typeof window === 'undefined') return;
 
-    const script = document.createElement('script');
-    script.src =
-      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.0/dist/browser.js';
-    script.async = true;
+    const loadAI = async () => {
+      if (window.removeBackground) {
+        setAiReady(true);
+        return;
+      }
 
-    script.onload = () => setAiReady(true);
-    script.onerror = () => {
-      alert('Failed to load AI library. Please refresh.');
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js';
+      script.async = true;
+
+      script.onload = () => {
+        setAiReady(true);
+      };
+
+      script.onerror = () => {
+        alert('Failed to load AI. Please refresh the page or try a different browser.');
+      };
+
+      document.head.appendChild(script);
     };
 
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
+    loadAI();
   }, []);
 
-  // --------------------------------------------------------------
-  // 2. Process the image (runs only after AI is ready)
-  // --------------------------------------------------------------
   const handleUpload = async () => {
     if (!file || !aiReady) return;
-
     setLoading(true);
     setResult('');
     setPreview(URL.createObjectURL(file));
 
     try {
-      // @ts-ignore – the lib adds `removeBackground` to window
-      const blob: Blob = await (window as any).removeBackground(file);
-      setResult(URL.createObjectURL(blob));
+      const resultBlob = await window.removeBackground(file);
+      const resultUrl = URL.createObjectURL(resultBlob);
+      setResult(resultUrl);
     } catch (err: any) {
       console.error(err);
-      alert('Background removal failed – try another image.');
+      alert('Failed to remove background. Try a different image or refresh.');
     } finally {
       setLoading(false);
     }
@@ -61,10 +61,9 @@ export default function RemoveBGPage() {
       <div className="w-full max-w-4xl text-center">
         <h1 className="text-5xl font-bold mb-4">Remove Background</h1>
         <p className="text-xl text-gray-600 mb-8">
-          Free AI tool – HD for Pro ($9/mo)
+          Free AI tool - HD for Pro ($9/mo)
         </p>
 
-        {/* ---- Upload Zone ---- */}
         <div className="border-4 border-dashed border-blue-400 rounded-xl p-12 mb-8 hover:border-blue-600 transition">
           <input
             id="file-input"
@@ -85,7 +84,6 @@ export default function RemoveBGPage() {
           </label>
         </div>
 
-        {/* ---- Process Button ---- */}
         {file && (
           <button
             onClick={handleUpload}
@@ -103,7 +101,6 @@ export default function RemoveBGPage() {
           </button>
         )}
 
-        {/* ---- Results ---- */}
         {result && (
           <div className="grid md:grid-cols-2 gap-8">
             <div>
