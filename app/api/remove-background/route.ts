@@ -1,11 +1,9 @@
 // app/api/remove-background/route.ts
-//
-//
 import { NextRequest, NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary using environment variables
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -27,46 +25,37 @@ export const POST = async (req: NextRequest) => {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Step 1: Upload original image to Cloudinary
+    // Upload original to Cloudinary
     const original = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'remove-bg/original',
-          resource_type: 'image',
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'remove-bg/original', resource_type: 'image' },
+        (err, result) => (err ? reject(err) : resolve(result))
       );
-      uploadStream.end(buffer);
+      stream.end(buffer);
     });
 
     const imageUrl = original.secure_url;
 
-    // Step 2: Run Replicate background removal model
+    // Run Replicate — FIXED TYPE CAST
     const output = (await replicate.run(
       '851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc',
       { input: { image: imageUrl } }
-    )) as string;
+    )) as unknown as string;
 
-    // Step 3: Download result and upload to Cloudinary as PNG
-    const resultResponse = await fetch(output);
-    const resultBuffer = Buffer.from(await resultResponse.arrayBuffer());
+    // Download result and re-upload as PNG
+    const resp = await fetch(output);
+    const resultBuf = Buffer.from(await resp.arrayBuffer());
 
     const processed = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
+      const stream = cloudinary.uploader.upload_stream(
         {
           folder: 'remove-bg/processed',
           format: 'png',
           resource_type: 'image',
         },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
+        (err, result) => (err ? reject(err) : resolve(result))
       );
-      uploadStream.end(resultBuffer);
+      stream.end(resultBuf);
     });
 
     return NextResponse.json({
@@ -74,9 +63,9 @@ export const POST = async (req: NextRequest) => {
       processed: processed.secure_url,
     });
   } catch (error: any) {
-    console.error('Background removal failed:', error);
+    console.error('Error:', error);
     return NextResponse.json(
-      { error: 'Failed to remove background', details: error.message },
+      { error: 'Failed to process image', details: error.message },
       { status: 500 }
     );
   }
