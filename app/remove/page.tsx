@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// Fix: Add type for window.removeBackground
+// Fix: Type safety for window.removeBackground
 declare global {
   interface Window {
     removeBackground?: (file: File) => Promise<Blob>;
@@ -19,6 +19,7 @@ export default function RemoveBGPage() {
   const [aiReady, setAiReady] = useState(false);
 
   useEffect(() => {
+    // Prevent server-side execution
     if (typeof window === 'undefined') return;
 
     const loadAI = async () => {
@@ -28,12 +29,15 @@ export default function RemoveBGPage() {
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js';
+      script.src = 'https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js';
       script.async = true;
 
-      script.onload = () => setAiReady(true);
+      script.onload = () => {
+        setAiReady(true);
+      };
+
       script.onerror = () => {
-        alert('Failed to load AI. Please refresh.');
+        alert('AI library failed to load. Please refresh the page.');
       };
 
       document.head.appendChild(script);
@@ -44,6 +48,7 @@ export default function RemoveBGPage() {
 
   const handleUpload = async () => {
     if (!file || !aiReady || !window.removeBackground) return;
+
     setLoading(true);
     setResult('');
     setPreview(URL.createObjectURL(file));
@@ -51,8 +56,8 @@ export default function RemoveBGPage() {
     try {
       const resultBlob = await window.removeBackground(file);
       setResult(URL.createObjectURL(resultBlob));
-    } catch (err: any) {
-      alert('Failed to remove background.');
+    } catch {
+      alert('Failed to remove background. Try a different image.');
     } finally {
       setLoading(false);
     }
@@ -93,7 +98,7 @@ export default function RemoveBGPage() {
             {loading ? (
               <>
                 <Loader2 className="animate-spin mr-2" />
-                Processing…
+                Processing...
               </>
             ) : (
               'Remove Background'
