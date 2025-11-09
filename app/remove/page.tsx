@@ -4,13 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// Fix: Type safety for window.removeBackground
-declare global {
-  interface Window {
-    removeBackground?: (file: File) => Promise<Blob>;
-  }
-}
-
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -19,9 +12,10 @@ export default function RemoveBGPage() {
   const [aiReady, setAiReady] = useState(false);
 
   useEffect(() => {
-    // Prevent server-side execution
     if (typeof window === 'undefined') return;
 
+    let retryCount = 0;
+    const maxRetries = 3;
     const loadAI = async () => {
       if (window.removeBackground) {
         setAiReady(true);
@@ -30,6 +24,7 @@ export default function RemoveBGPage() {
 
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js';
+      script.integrity = 'sha384-...'; // Optional security hash
       script.async = true;
 
       script.onload = () => {
@@ -37,7 +32,12 @@ export default function RemoveBGPage() {
       };
 
       script.onerror = () => {
-        alert('AI library failed to load. Please refresh the page.');
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(loadAI, 1000 * retryCount); // Retry with backoff
+        } else {
+          alert('AI library failed to load. Please refresh the page.');
+        }
       };
 
       document.head.appendChild(script);
@@ -47,7 +47,10 @@ export default function RemoveBGPage() {
   }, []);
 
   const handleUpload = async () => {
-    if (!file || !aiReady || !window.removeBackground) return;
+    if (!file || !aiReady || !window.removeBackground) {
+      alert('AI is loading. Please wait a moment.');
+      return;
+    }
 
     setLoading(true);
     setResult('');
@@ -56,8 +59,8 @@ export default function RemoveBGPage() {
     try {
       const resultBlob = await window.removeBackground(file);
       setResult(URL.createObjectURL(resultBlob));
-    } catch {
-      alert('Failed to remove background. Try a different image.');
+    } catch (err: any) {
+      alert('Failed to remove background. Try a different image or refresh.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ export default function RemoveBGPage() {
             {loading ? (
               <>
                 <Loader2 className="animate-spin mr-2" />
-                Processing...
+                Processing…
               </>
             ) : (
               'Remove Background'
