@@ -4,97 +4,40 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// Declare the global window property (TypeScript-safe)
-declare global {
-  interface Window {
-    removeBackground?: (file: File) => Promise<Blob>;
-  }
-}
-
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [aiReady, setAiReady] = useState(false);
-  const [debug, setDebug] = useState<string>('');
-
-  // Log function (component scope - accessible everywhere)
-  const log = (msg: string) => {
-    console.log(`[BG-REMOVAL] ${msg}`);
-    setDebug(prev => prev + msg + '\n');
-  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let script: HTMLScriptElement | null = null;
-    let retryCount = 0;
-    const maxRetries = 3;
-    const cdns = [
-      'https://unpkg.com/@imgly/background-removal@1.5.8/dist/browser.js',
-      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.8/dist/browser.js',
-    ];
+    const script = document.createElement('script');
+    script.src = '/background-removal.js'; // Self-hosted, no CDN
+    script.async = true;
 
-    const loadAI = () => {
+    script.onload = () => {
       if (window.removeBackground) {
-        log('AI already loaded');
         setAiReady(true);
-        return;
-      }
-
-      const url = cdns[retryCount % cdns.length];
-      log(`Loading from: ${url} (attempt ${retryCount + 1})`);
-
-      script = document.createElement('script');
-      script.src = url;
-      script.async = true;
-
-      script.onload = () => {
-        log('AI loaded successfully');
-        setAiReady(true);
-      };
-
-      script.onerror = () => {
-        log('Script failed to load');
-        retryCount++;
-        if (retryCount < maxRetries) {
-          setTimeout(loadAI, 1000 * retryCount);
-        } else {
-          log('All retries failed');
-          alert('AI library failed to load. Check console for details.');
-        }
-      };
-
-      document.head.appendChild(script);
-    };
-
-    loadAI();
-
-    return () => {
-      if (script && document.head.contains(script)) {
-        document.head.removeChild(script);
       }
     };
+
+    document.head.appendChild(script);
   }, []);
 
   const handleUpload = async () => {
-    if (!file || !aiReady || !window.removeBackground) {
-      alert('AI is loading. Please wait a moment.');
-      return;
-    }
+    if (!file || !aiReady || !window.removeBackground) return;
 
     setLoading(true);
     setResult('');
     setPreview(URL.createObjectURL(file));
 
     try {
-      log('Starting processing');
       const resultBlob = await window.removeBackground(file);
-      log('Processing finished');
       setResult(URL.createObjectURL(resultBlob));
     } catch (err: any) {
-      log(`Processing failed: ${err.message}`);
       alert('Failed to remove background.');
     } finally {
       setLoading(false);
@@ -109,13 +52,6 @@ export default function RemoveBGPage() {
           Free AI tool - HD for Pro ($9/mo)
         </p>
 
-        {/* Debug Console */}
-        {debug && (
-          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-left text-xs overflow-auto max-h-40 mb-4">
-            {debug}
-          </pre>
-        )}
-
         <div className="border-4 border-dashed border-blue-400 rounded-xl p-12 mb-8 hover:border-blue-600 transition">
           <input
             id="file-input"
@@ -128,7 +64,7 @@ export default function RemoveBGPage() {
             htmlFor="file-input"
             className="cursor-pointer flex flex-col items-center"
           >
-            <Upload className="w-16 h-6 text-blue-600 mb-4" />
+            <Upload className="w-16 h-16 text-blue-600 mb-4" />
             <p className="text-2xl font-medium">Drop your image here</p>
             <p className="text-gray-500">or click to browse (any size, any type)</p>
           </label>
