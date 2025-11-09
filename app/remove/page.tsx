@@ -3,53 +3,13 @@
 
 import { useState } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
+import { removeBackground } from '@imgly/background-removal';
 
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
-
-  // Compression function (from your code)
-  const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d')!;
-          const maxSize = 1024;
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxSize) {
-              height = (height * maxSize) / width;
-              width = maxSize;
-            }
-          } else {
-            if (height > maxSize) {
-              width = (width * maxSize) / height;
-              height = maxSize;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
-                type: 'image/jpeg'
-              });
-              resolve(compressed);
-            }
-          }, 'image/jpeg', 0.8);
-        };
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -58,43 +18,12 @@ export default function RemoveBGPage() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      let uploadFile = file;
-      if (file.size > 1 * 1024 * 1024) {
-        console.log('Compressing large image…');
-        uploadFile = await compressImage(file);
-        console.log('Compressed to', uploadFile.size / 1024 / 1024, 'MB');
-      }
-
-      // Upload to Cloudinary
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      formData.append('upload_preset', 'remove-bg');
-
-      const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/dzlfcmuuf/upload`,
-        { method: 'POST', body: formData }
-      );
-
-      if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
-
-      const { secure_url } = await uploadRes.json();
-
-      // Call API for background removal
-      const apiRes = await fetch('/api/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: secure_url }),
-      });
-
-      if (!apiRes.ok) {
-        const err = await apiRes.json();
-        throw new Error(err.error || 'Background removal failed');
-      }
-
-      const { result } = await apiRes.json();
-      setResult(result);
+      // AI runs in browser — no API
+      const resultBlob = await removeBackground(file);
+      const resultUrl = URL.createObjectURL(resultBlob);
+      setResult(resultUrl);
     } catch (err: any) {
-      alert(err.message || 'Something went wrong');
+      alert(err.message || 'Failed to remove background');
     } finally {
       setLoading(false);
     }
@@ -147,20 +76,12 @@ export default function RemoveBGPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-semibold mb-2">Original</h3>
-              <img
-                src={preview}
-                alt="Original"
-                className="rounded-lg shadow-lg w-full"
-              />
+              <img src={preview} alt="Original" className="rounded-lg shadow-lg w-full" />
             </div>
             <div>
               <h3 className="font-semibold mb-2">No Background</h3>
               <div className="bg-gray-200 p-4 rounded-lg">
-                <img
-                  src={result}
-                  alt="Result"
-                  className="rounded-lg shadow-lg w-full bg-transparent"
-                />
+                <img src={result} alt="Result" className="rounded-lg shadow-lg w-full bg-transparent" />
               </div>
               <a
                 href={result}
