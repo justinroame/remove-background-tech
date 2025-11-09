@@ -1,4 +1,5 @@
 // app/api/remove-background/route.ts
+//
 import { NextRequest, NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { v2 as cloudinary } from 'cloudinary';
