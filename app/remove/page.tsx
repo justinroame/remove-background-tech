@@ -19,6 +19,12 @@ export default function RemoveBGPage() {
   const [aiReady, setAiReady] = useState(false);
   const [debug, setDebug] = useState<string>('');
 
+  // Log function (component scope - accessible everywhere)
+  const log = (msg: string) => {
+    console.log(`[BG-REMOVAL] ${msg}`);
+    setDebug(prev => prev + msg + '\n');
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -29,11 +35,6 @@ export default function RemoveBGPage() {
       'https://unpkg.com/@imgly/background-removal@1.5.8/dist/browser.js',
       'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.8/dist/browser.js',
     ];
-
-    const log = (msg: string) => {
-      console.log(`[BG-REMOVAL] ${msg}`);
-      setDebug(prev => prev + msg + '\n');
-    };
 
     const loadAI = () => {
       if (window.removeBackground) {
@@ -50,13 +51,8 @@ export default function RemoveBGPage() {
       script.async = true;
 
       script.onload = () => {
-        log('Script loaded');
-        if (window.removeBackground) {
-          log('AI function found');
-          setAiReady(true);
-        } else {
-          log('Script loaded but no function found');
-        }
+        log('AI loaded successfully');
+        setAiReady(true);
       };
 
       script.onerror = () => {
