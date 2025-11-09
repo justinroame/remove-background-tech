@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Env setup (Vercel handles these)
+// Configure Cloudinary using environment variables
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
@@ -14,47 +14,34 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-export async function POST(req: NextRequest) {
+export const POST = async (req: NextRequest) => {
   try {
-    const formData = await req.formData();
-    const file = formData.get('image') as File;
-    if (!file) return NextResponse.json({ error: 'No image uploaded' }, { status: 400 });
+    const form = await req.formData();
+    const file = form.get('image') as File | null;
 
-    // Step 1: Upload original to Cloudinary
-    const originalBuffer = Buffer.from(await file.arrayBuffer());
-    const originalUpload = await new Promise((resolve, reject) => {
+    if (!file) {
+      return NextResponse.json({ error: 'No image uploaded' }, { status: 400 });
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Step 1: Upload original image to Cloudinary
+    const original = await new Promise<any>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { resource_type: 'image', folder: 'originals' },
-        (error, result) => (error ? reject(error) : resolve(result))
+        {
+          folder: 'remove-bg/original',
+          resource_type: 'image',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
       );
-      uploadStream.end(originalBuffer);
-    }) as any;
-    const inputUrl = originalUpload.secure_url;
+      uploadStream.end(buffer);
+    });
 
-    // Step 2: Call Replicate
-    const output = await replicate.run(
-      '851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc', // Latest version
-      { input: { image: inputUrl } }
-    ) as string; // Returns processed image URL
+    const imageUrl = original.secure_url;
 
-    // Step 3: Upload result to Cloudinary
-    const response = await fetch(output);
-    const resultBuffer = Buffer.from(await response.arrayBuffer());
-    const resultUpload = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { resource_type: 'image', folder: 'processed', format: 'png' }, // Force PNG for transparency
-        (error, result) => (error ? reject(error) : resolve(result))
-      );
-      uploadStream.end(resultBuffer);
-    }) as any;
-    const processedUrl = resultUpload.secure_url;
-
-    // Optional: Cleanup original if not needed
-    // await cloudinary.uploader.destroy(originalUpload.public_id);
-
-    return NextResponse.json({ processedUrl });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
-  }
-}
+    // Step 2: Run Replicate background removal model
+    const output = (await replicate.run(
+      '851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055
