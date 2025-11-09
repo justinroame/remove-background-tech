@@ -14,8 +14,6 @@ export default function RemoveBGPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let retryCount = 0;
-    const maxRetries = 3;
     const loadAI = async () => {
       if (window.removeBackground) {
         setAiReady(true);
@@ -24,20 +22,11 @@ export default function RemoveBGPage() {
 
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js';
-      script.integrity = 'sha384-...'; // Optional security hash
       script.async = true;
 
-      script.onload = () => {
-        setAiReady(true);
-      };
-
+      script.onload = () => setAiReady(true);
       script.onerror = () => {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(loadAI, 1000 * retryCount); // Retry with backoff
-        } else {
-          alert('AI library failed to load. Please refresh the page.');
-        }
+        alert('AI library failed to load. Please refresh the page.');
       };
 
       document.head.appendChild(script);
