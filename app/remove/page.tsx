@@ -4,14 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// ---- Type safety for the CDN-loaded function ----
-declare global {
-  interface Window {
-    removeBackground?: (file: File) => Promise<Blob>;
-  }
-}
-
-// -------------------------------------------------
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -19,12 +11,10 @@ export default function RemoveBGPage() {
   const [loading, setLoading] = useState(false);
   const [aiReady, setAiReady] = useState(false);
 
-  // -------------------------------------------------
-  // Load the AI library (fallback + retries)
-  // -------------------------------------------------
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    let script: HTMLScriptElement | null = null;
     let retryCount = 0;
     const maxRetries = 3;
     const cdns = [
@@ -38,7 +28,7 @@ export default function RemoveBGPage() {
         return;
       }
 
-      const script = document.createElement('script');
+      script = document.createElement('script');
       script.src = cdns[retryCount % cdns.length];
       script.async = true;
 
@@ -46,60 +36,49 @@ export default function RemoveBGPage() {
       script.onerror = () => {
         retryCount++;
         if (retryCount < maxRetries) {
-          setTimeout(loadAI, 1000 * retryCount); // exponential back-off
+          setTimeout(loadAI, 1000 * retryCount);
         } else {
           alert('AI library failed to load after retries. Please refresh.');
         }
       };
 
       document.head.appendChild(script);
-
-      // cleanup on unmount
-      return () => {
-        if (document.head.contains(): boolean {
-          document.head.removeChild(script);
-        }
-      };
     };
 
     loadAI();
+
+    return () => {
+      if (script && document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
   }, []);
 
-  // -------------------------------------------------
-  // Process the image
-  // -------------------------------------------------
   const handleUpload = async () => {
-    if (!file || !aiReady || !window.removeBackground) {
-      alert('AI is still loading – please wait a moment.');
-      return;
-    }
+    if (!file || !aiReady || !window.removeBackground) return;
 
     setLoading(true);
     setResult('');
     setPreview(URL.createObjectURL(file));
 
     try {
-      const blob = await window.removeBackground(file);
-      setResult(URL.createObjectURL(blob));
+      const resultBlob = await window.removeBackground(file);
+      setResult(URL.createObjectURL(resultBlob));
     } catch {
-      alert('Failed to remove background. Try another image.');
+      alert('Failed to remove background.');
     } finally {
       setLoading(false);
     }
   };
 
-  // -------------------------------------------------
-  // UI
-  // -------------------------------------------------
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-4xl text-center">
         <h1 className="text-5xl font-bold mb-4">Remove Background</h1>
         <p className="text-xl text-gray-600 mb-8">
-          Free AI tool – HD for Pro ($9/mo)
+          Free AI tool - HD for Pro ($9/mo)
         </p>
 
-        {/* Upload zone */}
         <div className="border-4 border-dashed border-blue-400 rounded-xl p-12 mb-8 hover:border-blue-600 transition">
           <input
             id="file-input"
@@ -114,13 +93,10 @@ export default function RemoveBGPage() {
           >
             <Upload className="w-16 h-6 text-blue-600 mb-4" />
             <p className="text-2xl font-medium">Drop your image here</p>
-            <p className="text-gray-500">
-              or click to browse (any size, any type)
-            </p>
+            <p className="text-gray-500">or click to browse (any size, any type)</p>
           </label>
         </div>
 
-        {/* Process button */}
         {file && (
           <button
             onClick={handleUpload}
@@ -138,7 +114,6 @@ export default function RemoveBGPage() {
           </button>
         )}
 
-        {/* Results */}
         {result && (
           <div className="grid md:grid-cols-2 gap-8">
             <div>
