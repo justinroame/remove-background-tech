@@ -4,20 +4,12 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// Fix: Tell TypeScript about the CDN-loaded function
-declare global {
-  interface Window {
-    removeBackground?: (file: File) => Promise<Blob>;
-  }
-}
-
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [aiReady, setAiReady] = useState(false);
-  const [debug, setDebug] = useState<string>('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -26,41 +18,35 @@ export default function RemoveBGPage() {
     let retryCount = 0;
     const maxRetries = 3;
     const cdns = [
-      'https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js',
-      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js',
+      'https://unpkg.com/@imgly/background-removal@1.7.0/dist/background-removal.min.js',
+      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/background-removal.min.js',
     ];
-
-    const log = (msg: string) => {
-      console.log(`[BG-REMOVAL] ${msg}`);
-      setDebug(prev => prev + msg + '\n');
-    };
 
     const loadAI = () => {
       if (window.removeBackground) {
-        log('AI already loaded');
         setAiReady(true);
         return;
       }
 
       const url = cdns[retryCount % cdns.length];
-      log(`Loading from: ${url} (attempt ${retryCount + 1})`);
+      console.log(`[BG-REMOVAL] Loading from: ${url} (attempt ${retryCount + 1})`);
 
       script = document.createElement('script');
       script.src = url;
       script.async = true;
 
       script.onload = () => {
-        log('AI loaded successfully');
+        console.log('[BG-REMOVAL] AI loaded successfully');
         setAiReady(true);
       };
 
       script.onerror = () => {
-        log('Script failed to load');
+        console.log('[BG-REMOVAL] Script failed to load');
         retryCount++;
         if (retryCount < maxRetries) {
           setTimeout(loadAI, 1000 * retryCount);
         } else {
-          log('All retries failed');
+          console.log('[BG-REMOVAL] All retries failed');
           alert('AI library failed to load. Check console for details.');
         }
       };
@@ -78,7 +64,10 @@ export default function RemoveBGPage() {
   }, []);
 
   const handleUpload = async () => {
-    if (!file || !aiReady || !window.removeBackground) return;
+    if (!file || !aiReady || !window.removeBackground) {
+      alert('AI is loading. Please wait a moment.');
+      return;
+    }
 
     setLoading(true);
     setResult('');
@@ -87,9 +76,9 @@ export default function RemoveBGPage() {
     try {
       const resultBlob = await window.removeBackground(file);
       setResult(URL.createObjectURL(resultBlob));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Processing error:', err);
-      alert('Failed to remove background.');
+      alert('Failed to remove background. Try a different image or refresh.');
     } finally {
       setLoading(false);
     }
@@ -102,13 +91,6 @@ export default function RemoveBGPage() {
         <p className="text-xl text-gray-600 mb-8">
           Free AI tool - HD for Pro ($9/mo)
         </p>
-
-        {/* Debug Console */}
-        {debug && (
-          <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-left text-xs overflow-auto max-h-40 mb-4">
-            {debug}
-          </pre>
-        )}
 
         <div className="border-4 border-dashed border-blue-400 rounded-xl p-12 mb-8 hover:border-blue-600 transition">
           <input
