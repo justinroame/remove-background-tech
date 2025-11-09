@@ -47,9 +47,8 @@ export default function RemoveBGPage() {
         setAiReady(true);
       };
 
-      script.onerror = (ev) => {
-        const error = ev as Event & { message?: string };
-        log(`Failed to load: ${error.message || 'Network error'}`);
+      script.onerror = () => {
+        log('Script failed to load');
         retryCount++;
         if (retryCount < maxRetries) {
           setTimeout(loadAI, 1000 * retryCount);
@@ -81,7 +80,7 @@ export default function RemoveBGPage() {
     try {
       const resultBlob = await window.removeBackground(file);
       setResult(URL.createObjectURL(resultBlob));
-    } catch (err: any) {
+    } catch (err) {
       console.error('Processing error:', err);
       alert('Failed to remove background.');
     } finally {
