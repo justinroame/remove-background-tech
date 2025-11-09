@@ -26,8 +26,8 @@ export default function RemoveBGPage() {
     let retryCount = 0;
     const maxRetries = 3;
     const cdns = [
-      'https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js',
-      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js',
+      'https://unpkg.com/@imgly/background-removal@1.5.8/dist/browser.js',
+      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.8/dist/browser.js',
     ];
 
     const log = (msg: string) => {
@@ -92,7 +92,7 @@ export default function RemoveBGPage() {
       setResult(URL.createObjectURL(resultBlob));
     } catch (err: any) {
       console.error('Processing error:', err);
-      alert('Failed to remove background.');
+      alert('Failed to remove background. Try a different image or refresh.');
     } finally {
       setLoading(false);
     }
