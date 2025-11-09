@@ -4,6 +4,13 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
+// Fix: Tell TypeScript about the CDN-loaded function
+declare global {
+  interface Window {
+    removeBackground?: (file: File) => Promise<Blob>;
+  }
+}
+
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
