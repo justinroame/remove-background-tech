@@ -50,8 +50,13 @@ export default function RemoveBGPage() {
       script.async = true;
 
       script.onload = () => {
-        log('AI loaded successfully');
-        setAiReady(true);
+        log('Script loaded');
+        if (window.removeBackground) {
+          log('AI function found');
+          setAiReady(true);
+        } else {
+          log('Script loaded but no function found');
+        }
       };
 
       script.onerror = () => {
@@ -88,11 +93,13 @@ export default function RemoveBGPage() {
     setPreview(URL.createObjectURL(file));
 
     try {
+      log('Starting processing');
       const resultBlob = await window.removeBackground(file);
+      log('Processing finished');
       setResult(URL.createObjectURL(resultBlob));
     } catch (err: any) {
-      console.error('Processing error:', err);
-      alert('Failed to remove background. Try a different image or refresh.');
+      log(`Processing failed: ${err.message}`);
+      alert('Failed to remove background.');
     } finally {
       setLoading(false);
     }
