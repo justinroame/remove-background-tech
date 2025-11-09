@@ -4,27 +4,11 @@
 import { useState } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
-// Load AI from CDN (no npm, no build issues)
-declare global {
-  interface Window {
-    removeBackground: (file: File) => Promise<Blob>;
-  }
-}
-
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>('');
+  const [preview, setFilePreview] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
-
-  // Load AI on first use
-  const loadAI = async () => {
-    if (window.removeBackground) return;
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.0/dist/browser.js';
-    document.body.appendChild(script);
-    await new Promise((resolve) => { script.onload = resolve; });
-  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -33,12 +17,29 @@ export default function RemoveBGPage() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      await loadAI();
+      // Load AI from CDN (no npm, no build issues)
+      if (!window.removeBackground) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.0/dist/browser.js';
+        document.body.appendChild(script);
+        await new Promise((resolve) => {
+          script.onload = () => {
+            resolve(null);
+          };
+          script.onerror = () => {
+            alert('Failed to load AI library. Try refreshing the page.');
+            setLoading(false);
+          };
+        });
+      }
+
+      // Remove background in browser (U2-Net AI)
       const resultBlob = await window.removeBackground(file);
       const resultUrl = URL.createObjectURL(resultBlob);
       setResult(resultUrl);
     } catch (err: any) {
-      alert(err.message || 'Failed');
+      console.error(err);
+      alert('Failed to remove background. Try a different image or refresh.');
     } finally {
       setLoading(false);
     }
