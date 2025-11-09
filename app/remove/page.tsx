@@ -6,7 +6,7 @@ import { Upload, Loader2, Download } from 'lucide-react';
 
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>('') ;
+  const [preview, setPreview] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [aiReady, setAiReady] = useState(false);
@@ -24,12 +24,9 @@ export default function RemoveBGPage() {
       script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js';
       script.async = true;
 
-      script.onload = () => {
-        setAiReady(true);
-      };
-
+      script.onload = () => setAiReady(true);
       script.onerror = () => {
-        alert('Failed to load AI. Please refresh the page or try a different browser.');
+        alert('Failed to load AI. Please refresh.');
       };
 
       document.head.appendChild(script);
@@ -45,12 +42,10 @@ export default function RemoveBGPage() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      const resultBlob = await window.removeBackground(file);
-      const resultUrl = URL.createObjectURL(resultBlob);
-      setResult(resultUrl);
+      const resultBlob = await (window as any).removeBackground(file);
+      setResult(URL.createObjectURL(resultBlob));
     } catch (err: any) {
-      console.error(err);
-      alert('Failed to remove background. Try a different image or refresh.');
+      alert('Failed to remove background.');
     } finally {
       setLoading(false);
     }
@@ -78,9 +73,7 @@ export default function RemoveBGPage() {
           >
             <Upload className="w-16 h-16 text-blue-600 mb-4" />
             <p className="text-2xl font-medium">Drop your image here</p>
-            <p className="text-gray-500">
-              or click to browse (any size, any type)
-            </p>
+            <p className="text-gray-500">or click to browse (any size, any type)</p>
           </label>
         </div>
 
@@ -105,20 +98,12 @@ export default function RemoveBGPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-semibold mb-2">Original</h3>
-              <img
-                src={preview}
-                alt="Original"
-                className="rounded-lg shadow-lg w-full"
-              />
+              <img src={preview} alt="Original" className="rounded-lg shadow-lg w-full" />
             </div>
             <div>
               <h3 className="font-semibold mb-2">No Background</h3>
               <div className="bg-gray-200 p-4 rounded-lg">
-                <img
-                  src={result}
-                  alt="Result"
-                  className="rounded-lg shadow-lg w-full bg-transparent"
-                />
+                <img src={result} alt="Result" className="rounded-lg shadow-lg w-full bg-transparent" />
               </div>
               <a
                 href={result}
