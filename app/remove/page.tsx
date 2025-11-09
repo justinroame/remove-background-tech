@@ -4,6 +4,13 @@
 import { useState, useEffect } from 'react';
 import { Upload, Loader2, Download } from 'lucide-react';
 
+// Fix: Add type for window.removeBackground
+declare global {
+  interface Window {
+    removeBackground?: (file: File) => Promise<Blob>;
+  }
+}
+
 export default function RemoveBGPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -36,13 +43,13 @@ export default function RemoveBGPage() {
   }, []);
 
   const handleUpload = async () => {
-    if (!file || !aiReady) return;
+    if (!file || !aiReady || !window.removeBackground) return;
     setLoading(true);
     setResult('');
     setPreview(URL.createObjectURL(file));
 
     try {
-      const resultBlob = await (window as any).removeBackground(file);
+      const resultBlob = await window.removeBackground(file);
       setResult(URL.createObjectURL(resultBlob));
     } catch (err: any) {
       alert('Failed to remove background.');
