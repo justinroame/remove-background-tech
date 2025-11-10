@@ -1,9 +1,9 @@
 // app/page.tsx
-// FULL FILE REBUILD: 2025-11-09-1600
 'use client';
 
 import { useState } from 'react';
 import { Upload, Download, Loader2, AlertCircle } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 export default function Home() {
   const [original, setOriginal] = useState<string | null>(null);
@@ -12,37 +12,62 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
-      return;
+    console.log(`Original: ${file.name} | ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    let compressed = file;
+
+    if (file.size > 5 * 1024 * 1024) {
+      try {
+        const options = {
+          maxSizeMB: 4,
+          maxWidthOrHeight: 1024,
+          useWebWorker: true,
+          initialQuality: 0.7,
+        };
+        compressed = await imageCompression(file, options);
+        console.log(`Compressed: ${(compressed.size / 1024 / 1024).toFixed(2)} MB`);
+      } catch (err) {
+        setError('Compression failed.');
+        return;
+      }
     }
 
-    setOriginal(URL.createObjectURL(file));
+    setOriginal(URL.createObjectURL(compressed));
     setProcessed(null);
     setError(null);
     setLoading(true);
 
     const form = new FormData();
-    form.append('image', file);
+    form.append('image', compressed);
 
     try {
       const res = await fetch('/api/remove-background', {
         method: 'POST',
         body: form,
       });
-
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || data.details || 'Processing failed');
-      }
+      if (!res.ok) throw new Error(data.error || 'Processing failed');
 
       setProcessed(data.processed);
     } catch (err: any) {
       setError(err.message);
-      console.error('Upload error:', err);
+      console.error('API Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownload = async (url: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'removed-background.png';
+      a.click();
+    } catch {
+      setError('Download failed. Right-click image → Save as.');
     }
   };
 
@@ -83,7 +108,7 @@ export default function Home() {
             <>
               <Upload className="w-14 h-14 mb-4 text-indigo-600" />
               <p className="text-lg font-medium text-gray-700">Drop image here or click to upload</p>
-              <p className="text-sm text-gray-500 mt-1">JPG, PNG, WebP • Max 10MB</p>
+              <p className="text-sm text-gray-500 mt-1">JPG, PNG, WebP • Any size (auto-compressed)</p>
             </>
           )}
         </label>
@@ -110,14 +135,13 @@ export default function Home() {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-xl font-semibold text-gray-800">Result</h2>
-                  <a
-                    href={processed}
-                    download="removed-background.png"
+                  <button
+                    onClick={() => handleDownload(processed)}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
                   >
                     <Download className="w-4 h-4" />
                     Download PNG
-                  </a>
+                  </button>
                 </div>
                 <div
                   className="relative aspect-video rounded-lg overflow-hidden"
@@ -126,7 +150,7 @@ export default function Home() {
                     backgroundSize: '30px 30px',
                   }}
                 >
-                  <img src={processed} alt="Background removed" className="w-full h-full object-contain" />
+                  <img src={processed} alt="No background" className="w-full h-full object-contain" />
                 </div>
               </div>
             )}
