@@ -44,7 +44,7 @@ export default function Home() {
 
       setProcessed(data.processed);
     } catch (err: any) {
-      setError(error.message);
+      setError(err.message); // FIXED: was 'error.message'
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Sample images below like remove.bg */}
         <div className="grid grid-cols-4 gap-4 mt-16">
           <img src="/sample1.jpg" alt="Sample 1" className="rounded-md" />
           <img src="/sample2.jpg" alt="Sample 2" className="rounded-md" />
