@@ -2,18 +2,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Download, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, Download, Loader2 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
-  const [original, setOriginal] = useState<string | null>(null);
   const [processed, setProcessed] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
-    console.log(`Original: ${file.name} | ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-
     let compressed = file;
     if (file.size > 5 * 1024 * 1024) {
       try {
@@ -24,15 +21,12 @@ export default function Home() {
           initialQuality: 0.7,
         };
         compressed = await imageCompression(file, options);
-        console.log(`Compressed: ${(compressed.size / 1024 / 1024).toFixed(2)} MB`);
-      } catch (err) {
-        setError('Compression failed. Try smaller image.');
+      } catch {
+        setError('Compression failed.');
         return;
       }
     }
 
-    setOriginal(URL.createObjectURL(compressed));
-    setProcessed(null);
     setError(null);
     setLoading(true);
 
@@ -50,112 +44,79 @@ export default function Home() {
 
       setProcessed(data.processed);
     } catch (err: any) {
-      setError(err.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = async (url: string) => {
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'removed-background.png';
-      a.click();
-    } catch {
-      setError('Download failed.');
-    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'removed-background.png';
+    a.click();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-3">
-            Remove Background
-          </h1>
-          <p className="text-lg text-gray-600">Upload any image → Get transparent PNG instantly</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Remove Background</h1>
+        <p className="text-gray-600 mb-8">Upload an image to remove the background</p>
 
-        <label
-          htmlFor="dropzone-file"
-          className={`
-            relative flex flex-col items-center justify-center w-full h-64 
-            border-4 border-dashed rounded-2xl cursor-pointer
-            bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all
-            ${loading ? 'opacity-70 cursor-not-allowed' : ''}
-          `}
-        >
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-8 hover:border-blue-400 transition">
           <input
-            id="dropzone-file"
             type="file"
             accept="image/*"
-            className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-            disabled={loading}
+            className="hidden"
+            id="image-upload"
           />
-
-          {loading ? (
-            <div className="flex flex-col items-center">
-              <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-3" />
-              <p className="text-lg font-medium text-gray-700">Removing background...</p>
-            </div>
-          ) : (
-            <>
-              <Upload className="w-14 h-14 mb-4 text-indigo-600" />
-              <p className="text-lg font-medium text-gray-700">Drop image here or click to upload</p>
-              <p className="text-sm text-gray-500 mt-1">JPG, PNG, WebP • Any size (auto-compressed)</p>
-            </>
-          )}
-        </label>
+          <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
+            {loading ? (
+              <div className="flex flex-col items-center">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-3" />
+                <p className="text-lg font-medium text-gray-700">Processing...</p>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-12 h-12 text-gray-400 mb-3" />
+                <p className="text-lg font-medium text-gray-700">Drop your image here</p>
+                <p className="text-sm text-gray-500">or click to browse</p>
+              </>
+            )}
+          </label>
+        </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-            <p className="text-red-700 font-medium">{error}</p>
+          <p className="text-red-600 mb-4">{error}</p>
+        )}
+
+        {processed && (
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
+            <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4">
+              <img
+                src={processed}
+                alt="Result"
+                className="w-full h-auto max-h-64 object-contain"
+              />
+            </div>
+            <button
+              onClick={() => handleDownload(processed)}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+            >
+              Download PNG
+            </button>
           </div>
         )}
 
-        {(original || processed) && (
-          <div className="mt-12 grid md:grid-cols-2 gap-8">
-            {original && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-3">Original</h2>
-                <div className="relative rounded-lg overflow-hidden max-h-80">
-                  <img
-                    src={original}
-                    alt="Original"
-                    className="w-full h-auto max-h-80 object-contain"
-                  />
-                </div>
-              </div>
-            )}
-
-            {processed && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xl font-semibold text-gray-800">Result</h2>
-                  <button
-                    onClick={() => handleDownload(processed)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download PNG
-                  </button>
-                </div>
-                <div className="relative rounded-lg overflow-hidden max-h-80">
-                  <img
-                    src={processed}
-                    alt="Background removed"
-                    className="w-full h-auto max-h-80 object-contain"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Sample images below like remove.bg */}
+        <div className="grid grid-cols-4 gap-4 mt-16">
+          <img src="/sample1.jpg" alt="Sample 1" className="rounded-md" />
+          <img src="/sample2.jpg" alt="Sample 2" className="rounded-md" />
+          <img src="/sample3.jpg" alt="Sample 3" className="rounded-md" />
+          <img src="/sample4.jpg" alt="Sample 4" className="rounded-md" />
+        </div>
       </div>
     </div>
   );
