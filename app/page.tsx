@@ -2,7 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Sparkles, Loader2 } from "lucide-react";
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
@@ -11,41 +12,30 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
-    setLoading(true);
-    setError(null);
-    setProcessed(null);
-
-    // Optional: Compress large files
-    let uploadFile = file;
+    let compressed = file;
     if (file.size > 5 * 1024 * 1024) {
       try {
         const options = { maxSizeMB: 4, maxWidthOrHeight: 1024, useWebWorker: true };
-        uploadFile = await imageCompression(file, options);
+        compressed = await imageCompression(file, options);
       } catch {
         setError('Compression failed.');
-        setLoading(false);
         return;
       }
     }
 
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData();
+    form.append('image', compressed);
+
     try {
-      const formData = new FormData();
-      formData.append('image', uploadFile); // Must match route.ts
-
-      const res = await fetch('/api/remove-background', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Processing failed');
-      }
-
-      const blob = await res.blob();
-      setProcessed(URL.createObjectURL(blob));
+      const res = await fetch('/api/remove-background', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setProcessed(data.processed);
     } catch (err: any) {
-      setError(err.message || 'Failed to process image.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -56,97 +46,124 @@ export default function Home() {
     if (file) handleFile(file);
   };
 
+  const handleDownload = (url: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'removed-background.png';
+    a.click();
+  };
+
   return (
-    <main className="bg-gradient-to-b from-gray-50 to-white text-gray-900 font-sans min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#F4F5F6]">
       {/* Header */}
-      <header className="flex justify-between items-center px-8 py-4 bg-white/70 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-50">
-        <h1 className="text-lg font-semibold text-gray-800 tracking-tight">Remove Background Tech</h1>
-        <nav className="flex gap-6 text-gray-500 text-sm">
-          <a href="#" className="hover:text-gray-700 transition-colors">Pricing</a>
-          <a href="#" className="hover:text-gray-700 transition-colors">Login</a>
-          <a href="#" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">Sign Up</a>
-        </nav>
+      <header className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2.5">
+              <div className="relative size-9">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 opacity-30" />
+                <div className="absolute inset-1 rounded-md bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-white">
+                    <rect x="3" y="3" width="10" height="10" stroke="currentColor" strokeWidth="1.5" rx="1" />
+                    <rect x="7" y="7" width="10" height="10" fill="currentColor" rx="1" />
+                  </svg>
+                </div>
+              </div>
+              <span className="text-lg font-semibold">
+                <span className="text-gray-800">remove-background</span>
+                <span className="text-blue-600">.tech</span>
+              </span>
+            </div>
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Pricing</a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Log in</a>
+            <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Sign up</a>
+          </div>
+        </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center flex-1 text-center px-6 py-24 animate-fadeIn">
-        <div className="max-w-2xl">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 leading-tight">
-            Remove Image Background Instantly
-          </h2>
-          <p className="text-gray-500 text-lg sm:text-xl mb-10">
-            Upload your images and get transparent backgrounds in seconds.
+      {/* Main Content */}
+      <main className="mx-auto max-w-4xl px-6 py-20">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-8 flex justify-end w-full">
+            <Sparkles className="size-10 text-yellow-500" />
+          </div>
+
+          <h1 className="mb-8 text-4xl font-bold text-gray-800 md:text-5xl">
+            Upload an image to
+            <br />
+            remove the background
+          </h1>
+
+          {/* Upload Button */}
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              id="file-upload"
+            />
+            <Button
+              className="mb-6 rounded-full bg-blue-600 px-12 py-6 text-lg font-medium text-white hover:bg-blue-700"
+              size="lg"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Upload Image"
+              )}
+            </Button>
+          </div>
+
+          <p className="mb-2 text-base font-medium text-gray-700">or drop a file,</p>
+          <p className="mb-16 text-sm text-gray-600">
+            paste image or <span className="underline">URL</span>
+          </p>
+
+          {/* Result */}
+          {processed && (
+            <div className="mt-12 text-center w-full">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
+              <div className="max-w-md mx-auto mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <img src={processed} alt="Result" className="w-full h-auto" />
+              </div>
+              <button
+                onClick={() => handleDownload(processed)}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Download PNG
+              </button>
+            </div>
+          )}
+
+          {error && <p className="text-red-600 mt-6">{error}</p>}
+
+          {/* Sample Images */}
+          <div className="space-y-4 mt-16">
+            <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
+            <div className="flex gap-3 justify-center">
+              <img src="/woman-in-pink-dress.jpg" alt="Sample 1" className="size-20 rounded-xl object-cover" />
+              <img src="/lion-portrait.jpg" alt="Sample 2" className="size-20 rounded-xl object-cover" />
+              <img src="/silver-car.png" alt="Sample 3" className="size-20 rounded-xl object-cover" />
+              <img src="/watch-closeup.jpg" alt="Sample 4" className="size-20 rounded-xl object-cover" />
+            </div>
+          </div>
+
+          <p className="mt-12 max-w-2xl text-xs text-gray-600">
+            By uploading an image or URL you agree to our{" "}
+            <a href="#" className="underline">Terms of Service</a>. To learn more about how remove-background.tech handles your personal data, check our{" "}
+            <a href="#" className="underline">Privacy Policy</a>.
           </p>
         </div>
-
-        {/* Upload Card */}
-        <div className="max-w-lg w-full bg-white/90 backdrop-blur-md p-12 border-2 border-dashed border-gray-300 rounded-2xl shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex flex-col items-center justify-center">
-          {loading ? (
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-              <p className="text-gray-500">Processing your image...</p>
-            </div>
-          ) : processed ? (
-            <div className="flex flex-col items-center gap-4">
-              <img src={processed} alt="Processed" className="max-w-full rounded-lg shadow-md" />
-              <a
-                href={processed}
-                download="background-removed.png"
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition transform hover:scale-105 duration-200"
-              >
-                Download Image
-              </a>
-            </div>
-          ) : (
-            <>
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center text-gray-500"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-12 h-12 text-gray-400 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v6m0-6l-4 4m4-4l4 4M12 4v4" />
-                </svg>
-                <p className="mb-4">Drag & Drop your image here or click to upload</p>
-                <input id="file-upload" type="file" accept="image/*" onChange={onFileChange} className="hidden" />
-                <span className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition transform hover:scale-105 duration-200">
-                  Upload Image
-                </span>
-              </label>
-            </>
-          )}
-          {error && <p className="text-red-500 mt-4">{error}</p>}
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="bg-white py-20 w-full animate-fadeInSlow">
-        <div className="max-w-6xl mx-auto px-6 grid gap-10 md:grid-cols-3 text-center">
-          <div>
-            <h3 className="text-xl font-bold mb-2 text-gray-900">Fast & Reliable</h3>
-            <p className="text-gray-500">Remove backgrounds in seconds with a fully automated tool.</p>
-          </div>
-          <div>
-            <h3 className="text-xl font-bold mb-2 text-gray-900">High Quality</h3>
-            <p className="text-gray-500">Preserve edges and details for professional results every time.</p>
-          </div>
-          <div>
-            <h3 className="text-xl font-bold mb-2 text-gray-900">Free & Easy</h3>
-            <p className="text-gray-500">Upload, process, and download your image with one click.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-50 py-8 text-center text-gray-400 text-sm border-t border-gray-100">
-        &copy; {new Date().getFullYear()} Remove Background Tech. All rights reserved.
-      </footer>
-    </main>
+      </main>
+    </div>
   );
 }
