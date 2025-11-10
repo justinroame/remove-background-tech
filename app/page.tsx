@@ -32,6 +32,7 @@ export default function Home() {
       const res = await fetch('/api/remove-background', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
+...');
       setProcessed(data.processed);
     } catch (err: any) {
       setError(err.message);
@@ -48,14 +49,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center py-12">
-      <div className="text-center max-w-2xl">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Upload an image to remove the background
+    <main className="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col items-center justify-center">
+      {/* Hero Section */}
+      <section className="flex flex-col items-center justify-center px-4 text-center py-20">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+          Remove Image Background Instantly
         </h1>
+        <p className="text-gray-600 text-lg sm:text-xl mb-8 max-w-xl">
+          Upload your images and get transparent backgrounds in seconds.
+        </p>
 
-        {/* Upload Zone – EXACT remove.bg */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors cursor-pointer">
+        {/* Upload / Drop Zone Card */}
+        <div className="w-full max-w-lg p-10 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 transition-shadow shadow-md hover:shadow-lg cursor-pointer">
           <input
             type="file"
             accept="image/*"
@@ -66,66 +71,74 @@ export default function Home() {
           <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
             {loading ? (
               <div className="flex flex-col items-center">
-                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-4" />
-                <p className="text-xl text-gray-700">Processing...</p>
+                <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+                <p className="text-gray-700 font-medium">Processing...</p>
               </div>
             ) : (
               <>
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Upload className="w-8 h-8 text-gray-400" />
-                </div>
-                <p className="text-2xl font-medium text-gray-700 mb-2">Drop your image here</p>
-                <p className="text-sm text-gray-500">or click to browse</p>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-gray-400 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v6m0-6l-4 4m4-4l4 4M12 4v4"
+                  />
+                </svg>
+                <p className="text-gray-500 mb-4">Drag & Drop your image here</p>
+                <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition transform hover:scale-105 duration-200">
+                  Upload Image
+                </button>
               </>
             )}
           </label>
         </div>
 
-        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
+        {error && <p className="text-red-600 mt-6">{error}</p>}
 
         {processed && (
-          <div className="text-center mb-8">
+          <div className="mt-12 text-center">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
-            <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4 border border-gray-200">
-              <img src={processed} alt="Result" className="w-full h-auto object-contain" />
+            <div className="max-w-md mx-auto mb-6 border border-gray-200 rounded-lg overflow-hidden">
+              <img src={processed} alt="Result" className="w-full h-auto" />
             </div>
             <button
               onClick={() => handleDownload(processed)}
-              className="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 font-medium"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
             >
               Download PNG
             </button>
           </div>
         )}
+      </section>
 
-        {/* Sample Images – EXACT remove.bg */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
-          <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample1.jpg" alt="Person" className="w-full h-32 object-cover" />
-            </div>
-            <p className="text-sm text-gray-600">Person</p>
+      {/* Features Section */}
+      <section className="bg-white py-20 w-full">
+        <div className="max-w-6xl mx-auto px-4 grid gap-10 md:grid-cols-3 text-center">
+          <div>
+            <h3 className="text-xl font-bold mb-2">Fast & Reliable</h3>
+            <p className="text-gray-600">Remove backgrounds in seconds with a fully automated tool.</p>
           </div>
-          <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample2.jpg" alt="Product" className="w-full h-32 object-cover" />
-            </div>
-            <p className="text-sm text-gray-600">Product</p>
+          <div>
+            <h3 className="text-xl font-bold mb-2">High Quality</h3>
+            <p className="text-gray-600">Preserve edges and details for professional results every time.</p>
           </div>
-          <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample3.jpg" alt="Animal" className="w-full h-32 object-cover" />
-            </div>
-            <p className="text-sm text-gray-600">Animal</p>
-          </div>
-          <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample4.jpg" alt="Object" className="w-full h-32 object-cover" />
-            </div>
-            <p className="text-sm text-gray-600">Object</p>
+          <div>
+            <h3 className="text-xl font-bold mb-2">Free & Easy</h3>
+            <p className="text-gray-600">Upload, process, and download your image with just one click.</p>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-100 py-6 text-center text-gray-500 text-sm w-full">
+        &copy; 2025 Remove Background Tech. All rights reserved.
+      </footer>
+    </main>
   );
 }
