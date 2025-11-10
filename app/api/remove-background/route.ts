@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import Replicate from 'replicate';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -25,7 +24,6 @@ export const POST = async (req: NextRequest) => {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload original to Cloudinary
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: 'remove-bg/original', resource_type: 'image' },
@@ -36,13 +34,11 @@ export const POST = async (req: NextRequest) => {
 
     const imageUrl = original.secure_url;
 
-    // Run Replicate — FIXED TYPE CAST
     const output = (await replicate.run(
       '851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc',
       { input: { image: imageUrl } }
     )) as unknown as string;
 
-    // Download result and re-upload as PNG
     const resp = await fetch(output);
     const resultBuf = Buffer.from(await resp.arrayBuffer());
 
@@ -52,6 +48,10 @@ export const POST = async (req: NextRequest) => {
           folder: 'remove-bg/processed',
           format: 'png',
           resource_type: 'image',
+          transformation: [
+            { width: 1024, crop: 'limit' },
+            { overlay: { font_family: 'Arial', font_size: 40, text: 'remove-background.tech', opacity: 50 }, gravity: 'center' }
+          ],
         },
         (err, result) => (err ? reject(err) : resolve(result))
       );
