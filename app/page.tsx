@@ -44,7 +44,7 @@ export default function Home() {
 
       setProcessed(data.processed);
     } catch (err: any) {
-      setError(err.message); // FIXED: was 'error.message'
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -58,12 +58,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="text-center max-w-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Remove Background</h1>
-        <p className="text-gray-600 mb-8">Upload an image to remove the background</p>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center py-12">
+      <div className="text-center max-w-4xl">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Remove Background</h1>
+        <p className="text-lg text-gray-600 mb-8">Upload an image to remove the background</p>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-8 hover:border-blue-400 transition">
+        {/* Upload Zone - Like remove.bg */}
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors cursor-pointer">
           <input
             type="file"
             accept="image/*"
@@ -74,13 +75,13 @@ export default function Home() {
           <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
             {loading ? (
               <div className="flex flex-col items-center">
-                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-3" />
-                <p className="text-lg font-medium text-gray-700">Processing...</p>
+                <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-4" />
+                <p className="text-xl font-medium text-gray-700">Processing...</p>
               </div>
             ) : (
               <>
-                <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                <p className="text-lg font-medium text-gray-700">Drop your image here</p>
+                <Upload className="w-16 h-16 text-gray-400 mb-4" />
+                <p className="text-2xl font-medium text-gray-700 mb-2">Drop your image here</p>
                 <p className="text-sm text-gray-500">or click to browse</p>
               </>
             )}
@@ -88,33 +89,54 @@ export default function Home() {
         </div>
 
         {error && (
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4 text-center">{error}</p>
         )}
 
         {processed && (
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
             <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4">
               <img
                 src={processed}
                 alt="Result"
-                className="w-full h-auto max-h-64 object-contain"
+                className="w-full h-auto max-h-96 object-contain"
               />
             </div>
             <button
               onClick={() => handleDownload(processed)}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 font-medium"
             >
               Download PNG
             </button>
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-4 mt-16">
-          <img src="/sample1.jpg" alt="Sample 1" className="rounded-md" />
-          <img src="/sample2.jpg" alt="Sample 2" className="rounded-md" />
-          <img src="/sample3.jpg" alt="Sample 3" className="rounded-md" />
-          <img src="/sample4.jpg" alt="Sample 4" className="rounded-md" />
+        {/* Sample Images - Like remove.bg */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
+          <div className="text-center">
+            <div className="rounded-md overflow-hidden mb-2">
+              <img src="/sample1.jpg" alt="Sample 1" className="w-full h-24 object-cover" />
+            </div>
+            <p className="text-sm text-gray-600">Person</p>
+          </div>
+          <div className="text-center">
+            <div className="rounded-md overflow-hidden mb-2">
+              <img src="/sample2.jpg" alt="Sample 2" className="w-full h-24 object-cover" />
+            </div>
+            <p className="text-sm text-gray-600">Product</p>
+          </div>
+          <div className="text-center">
+            <div className="rounded-md overflow-hidden mb-2">
+              <img src="/sample3.jpg" alt="Sample 3" className="w-full h-24 object-cover" />
+            </div>
+            <p className="text-sm text-gray-600">Animal</p>
+          </div>
+          <div className="text-center">
+            <div className="rounded-md overflow-hidden mb-2">
+              <img src="/sample4.jpg" alt="Sample 4" className="w-full h-24 object-cover" />
+            </div>
+            <p className="text-sm text-gray-600">Object</p>
+          </div>
         </div>
       </div>
     </div>
