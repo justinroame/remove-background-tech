@@ -14,12 +14,7 @@ export default function Home() {
     let compressed = file;
     if (file.size > 5 * 1024 * 1024) {
       try {
-        const options = {
-          maxSizeMB: 4,
-          maxWidthOrHeight: 1024,
-          useWebWorker: true,
-          initialQuality: 0.7,
-        };
+        const options = { maxSizeMB: 4, maxWidthOrHeight: 1024, useWebWorker: true };
         compressed = await imageCompression(file, options);
       } catch {
         setError('Compression failed.');
@@ -34,14 +29,9 @@ export default function Home() {
     form.append('image', compressed);
 
     try {
-      const res = await fetch('/api/remove-background', {
-        method: 'POST',
-        body: form,
-      });
+      const res = await fetch('/api/remove-background', { method: 'POST', body: form });
       const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Processing failed');
-
+      if (!res.ok) throw new Error(data.error || 'Failed');
       setProcessed(data.processed);
     } catch (err: any) {
       setError(err.message);
@@ -50,7 +40,7 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (url: string) => {
+  const handleDownload = (url: string) => {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'removed-background.png';
@@ -60,9 +50,12 @@ export default function Home() {
   return (
     <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center py-12">
       <div className="text-center max-w-2xl">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Upload an image to remove the background</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          Upload an image to remove the background
+        </h1>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors">
+        {/* Upload Zone – EXACT remove.bg */}
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors cursor-pointer">
           <input
             type="file"
             accept="image/*"
@@ -88,19 +81,13 @@ export default function Home() {
           </label>
         </div>
 
-        {error && (
-          <p className="text-red-600 mb-4 text-center">{error}</p>
-        )}
+        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
 
         {processed && (
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
             <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4 border border-gray-200">
-              <img
-                src={processed}
-                alt="Result"
-                className="w-full h-auto object-contain"
-              />
+              <img src={processed} alt="Result" className="w-full h-auto object-contain" />
             </div>
             <button
               onClick={() => handleDownload(processed)}
@@ -111,28 +98,29 @@ export default function Home() {
           </div>
         )}
 
+        {/* Sample Images – EXACT remove.bg */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
           <div className="text-center">
             <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample1.jpg" alt="Sample 1" className="w-full h-32 object-cover" />
+              <img src="/sample1.jpg" alt="Person" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Person</p>
           </div>
           <div className="text-center">
             <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample2.jpg" alt="Sample 2" className="w-full h-32 object-cover" />
+              <img src="/sample2.jpg" alt="Product" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Product</p>
           </div>
           <div className="text-center">
             <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample3.jpg" alt="Sample 3" className="w-full h-32 object-cover" />
+              <img src="/sample3.jpg" alt="Animal" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Animal</p>
           </div>
           <div className="text-center">
             <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
-              <img src="/sample4.jpg" alt="Sample 4" className="w-full h-32 object-cover" />
+              <img src="/sample4.jpg" alt="Object" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Object</p>
           </div>
