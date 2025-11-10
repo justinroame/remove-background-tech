@@ -32,7 +32,6 @@ export default function Home() {
       const res = await fetch('/api/remove-background', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-...');
       setProcessed(data.processed);
     } catch (err: any) {
       setError(err.message);
