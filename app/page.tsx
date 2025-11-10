@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Download, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 export default function Home() {
@@ -58,13 +58,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center py-12">
-      <div className="text-center max-w-4xl">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Remove Background</h1>
-        <p className="text-lg text-gray-600 mb-8">Upload an image to remove the background</p>
+    <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center py-12">
+      <div className="text-center max-w-2xl">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Upload an image to remove the background</h1>
 
-        {/* Upload Zone - Like remove.bg */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors cursor-pointer">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 mb-8 hover:border-blue-400 transition-colors">
           <input
             type="file"
             accept="image/*"
@@ -76,11 +74,13 @@ export default function Home() {
             {loading ? (
               <div className="flex flex-col items-center">
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-4" />
-                <p className="text-xl font-medium text-gray-700">Processing...</p>
+                <p className="text-xl text-gray-700">Processing...</p>
               </div>
             ) : (
               <>
-                <Upload className="w-16 h-16 text-gray-400 mb-4" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Upload className="w-8 h-8 text-gray-400" />
+                </div>
                 <p className="text-2xl font-medium text-gray-700 mb-2">Drop your image here</p>
                 <p className="text-sm text-gray-500">or click to browse</p>
               </>
@@ -95,11 +95,11 @@ export default function Home() {
         {processed && (
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Your image is ready!</h2>
-            <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4">
+            <div className="relative rounded-lg overflow-hidden max-w-md mx-auto mb-4 border border-gray-200">
               <img
                 src={processed}
                 alt="Result"
-                className="w-full h-auto max-h-96 object-contain"
+                className="w-full h-auto object-contain"
               />
             </div>
             <button
@@ -111,29 +111,28 @@ export default function Home() {
           </div>
         )}
 
-        {/* Sample Images - Like remove.bg */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
           <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2">
-              <img src="/sample1.jpg" alt="Sample 1" className="w-full h-24 object-cover" />
+            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
+              <img src="/sample1.jpg" alt="Sample 1" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Person</p>
           </div>
           <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2">
-              <img src="/sample2.jpg" alt="Sample 2" className="w-full h-24 object-cover" />
+            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
+              <img src="/sample2.jpg" alt="Sample 2" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Product</p>
           </div>
           <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2">
-              <img src="/sample3.jpg" alt="Sample 3" className="w-full h-24 object-cover" />
+            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
+              <img src="/sample3.jpg" alt="Sample 3" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Animal</p>
           </div>
           <div className="text-center">
-            <div className="rounded-md overflow-hidden mb-2">
-              <img src="/sample4.jpg" alt="Sample 4" className="w-full h-24 object-cover" />
+            <div className="rounded-md overflow-hidden mb-2 border border-gray-200">
+              <img src="/sample4.jpg" alt="Sample 4" className="w-full h-32 object-cover" />
             </div>
             <p className="text-sm text-gray-600">Object</p>
           </div>
