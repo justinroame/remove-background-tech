@@ -145,13 +145,7 @@ export default function Home() {
                     Download PNG
                   </button>
                 </div>
-                <div
-                  className="relative rounded-lg overflow-hidden max-h-80"
-                  style={{
-                    backgroundImage: 'repeating-conic-gradient(#f0f0f0 0% 25%, white 0% 50%)',
-                    backgroundSize: '30px 30px',
-                  }}
-                >
+                <div className="relative rounded-lg overflow-hidden max-h-80">
                   <img
                     src={processed}
                     alt="Background removed"
