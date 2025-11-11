@@ -8,9 +8,12 @@ const config: Config = {
   theme: {
     extend: {},
   },
-  plugins: [
-    require("tailwindcss-animate"),
-  ],
+  import tailwindcssAnimate from "tailwindcss-animate";
+
+plugins: [
+  tailwindcssAnimate,
+],
+
 };
 
 export default config;
