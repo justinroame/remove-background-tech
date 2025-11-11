@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 /* Shadcn + Tailwind animate plugin */
-@plugin "tailwindcss-animate";
 
 /* Light theme variables */
 :root {
