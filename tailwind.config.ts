@@ -1,15 +1,19 @@
-// tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ["class"],
+
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.{ts,tsx,js,jsx}",
+    "./components/**/*.{ts,tsx,js,jsx}",
+    "./lib/**/*.{ts,tsx,js,jsx}",
   ],
+
   theme: {
     extend: {},
   },
-  plugins: [],
+
+  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;
