@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Remove backgrounds from images automatically with AI.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
       { url: "/android-chrome-192x192.png", type: "image/png", sizes: "192x192" },
       { url: "/android-chrome-512x512.png", type: "image/png", sizes: "512x512" },
     ],
@@ -27,6 +27,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* ✅ Fallback favicon links for better browser support */}
+        <link rel="icon" href="/favicon.ico?v=2" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="192x192"
+          href="/android-chrome-192x192.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="512x512"
+          href="/android-chrome-512x512.png"
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
         {children}
         <Analytics />
