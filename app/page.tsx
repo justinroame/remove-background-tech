@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import imageCompression from 'browser-image-compression';
@@ -46,7 +47,6 @@ export default function Home() {
     if (file) handleFile(file);
   }
 
-  // ✅ Clicking on a sample image loads & sends it to API
   async function handleSampleClick(imagePath: string) {
     try {
       const response = await fetch(imagePath);
@@ -58,7 +58,6 @@ export default function Home() {
     }
   }
 
-  // ✅ Drag and drop support
   function onDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
@@ -91,12 +90,12 @@ export default function Home() {
               </span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
-              <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Pricing</a>
+              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">Pricing</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Log in</a>
-            <a href="#" className="text-sm text-gray-700 hover:text-gray-900">Sign up</a>
+            <Link href="/login" className="text-sm text-gray-700 hover:text-gray-900">Log in</Link>
+            <Link href="/signup" className="text-sm text-gray-700 hover:text-gray-900">Sign up</Link>
           </div>
         </div>
       </header>
@@ -173,7 +172,7 @@ export default function Home() {
 
           {error && <p className="text-red-600 mt-6">{error}</p>}
 
-          {/* ✅ Sample Images (Clickable + Draggable) */}
+          {/* ✅ Sample Images */}
           <div className="space-y-4 mt-16">
             <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
 
@@ -184,21 +183,18 @@ export default function Home() {
                 draggable
                 onClick={() => handleSampleClick('/woman-in-pink-dress.jpg')}
               />
-
               <img
                 src="/iphone-product.jpg"
                 className="size-20 rounded-xl object-cover cursor-pointer"
                 draggable
                 onClick={() => handleSampleClick('/iphone-product.jpg')}
               />
-
               <img
                 src="/silver-sports-car.jpg"
                 className="size-20 rounded-xl object-cover cursor-pointer"
                 draggable
                 onClick={() => handleSampleClick('/silver-sports-car.jpg')}
               />
-
               <img
                 src="/watch-closeup.jpg"
                 className="size-20 rounded-xl object-cover cursor-pointer"
