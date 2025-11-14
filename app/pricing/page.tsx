@@ -49,7 +49,7 @@ export default function PricingPage() {
               <Button
                 className="w-full bg-blue-600 text-white"
                 onClick={() =>
-                  redirectToCheckout(PAYG_PRICES[paygAmount], "payment")
+                 redirectToCheckout(PAYG_PRICES[paygAmount as keyof typeof PAYG_PRICES], "payment")
                 }
               >
                 Buy now
@@ -93,7 +93,7 @@ export default function PricingPage() {
               <Button
                 className="w-full bg-blue-600 text-white"
                 onClick={() =>
-                  redirectToCheckout(SUB_PRICES[subAmount], "subscription")
+                redirectToCheckout(SUB_PRICES[subAmount as keyof typeof SUB_PRICES], "subscription")
                 }
               >
                 Subscribe
