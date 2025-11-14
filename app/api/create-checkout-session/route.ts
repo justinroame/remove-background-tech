@@ -7,8 +7,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // priceId (string): Stripe price
-    // mode: "payment" (one-time) OR "subscription"
     const { priceId, mode } = body;
 
     if (!priceId) {
@@ -25,6 +23,22 @@ export async function POST(req: Request) {
       );
     }
 
+    // --- BASE URL FIX ---
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || "").trim();
+
+    if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
+      console.error("ERROR — Invalid NEXT_PUBLIC_BASE_URL:", baseUrl);
+      return NextResponse.json(
+        { error: "Server URL misconfigured" },
+        { status: 500 }
+      );
+    }
+
+    const successUrl = `${baseUrl}/pricing?success=true`;
+    const cancelUrl = `${baseUrl}/pricing?canceled=true`;
+
+    console.log("Using URLs for Stripe:", { successUrl, cancelUrl });
+
     const session = await stripe.checkout.sessions.create({
       mode,
       line_items: [
@@ -33,16 +47,13 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing?canceled=true`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
     console.error("Stripe checkout error:", err);
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
