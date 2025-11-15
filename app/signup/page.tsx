@@ -7,8 +7,8 @@ export default function SignupPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen space-y-8">
 
-      {/* Logo */}
-      <div className="flex flex-col items-center">
+      {/* Logo (clickable → homepage) */}
+      <Link href="https://remove-background.tech" className="flex flex-col items-center">
         <Image
           src="/background_image_remover.png"
           alt="Remove Background Tech Logo"
@@ -16,7 +16,7 @@ export default function SignupPage() {
           height={300}
           priority
         />
-      </div>
+      </Link>
 
       {/* Signup Card */}
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
