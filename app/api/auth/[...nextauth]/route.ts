@@ -1,88 +1,89 @@
 import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
-
-import bcrypt from "bcryptjs"; // ✔ bcryptjs works on Vercel!
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
-const handler = NextAuth({
-  session: { strategy: "jwt" },
-
+const authOptions = {
   providers: [
-    // ------------ GOOGLE LOGIN --------------
-    Google({
+    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
-    // ------------ EMAIL + PASSWORD LOGIN --------------
-    Credentials({
+    CredentialsProvider({
       name: "Credentials",
-
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
 
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+      async authorize(credentials: any) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Missing email or password");
+        }
 
-        // Find user by email
-        const existing = await db
+        // Find user in Postgres via Drizzle
+        const result = await db
           .select()
           .from(users)
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        const user = existing[0];
+        const user = result[0];
 
         if (!user) {
-          console.log("No user found");
-          return null;
+          throw new Error("User not found");
         }
 
-        // Validate password using bcryptjs
+        // IMPORTANT: your schema stores password in `password`, not `passwordHash`
+        if (!user.password) {
+          throw new Error("No password set for this account");
+        }
+
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.passwordHash
+          user.password
         );
 
         if (!isValid) {
-          console.log("Invalid password");
-          return null;
+          throw new Error("Invalid password");
         }
 
         return {
-          id: user.id.toString(),
+          id: String(user.id),
           email: user.email,
-          name: user.name,
         };
       },
     }),
   ],
 
+  pages: {
+    signIn: "/login",
+  },
+
+  session: {
+    strategy: "jwt",
+  },
+
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
 
-    async session({ session, token }) {
-      if (token) {
+    async session({ session, token }: any) {
+      if (token?.id) {
         session.user.id = token.id;
       }
       return session;
-    },
-  },
-
-  pages: {
-    signIn: "/login",
+    }
   }
-});
+};
 
-export const GET = handler;
-export const POST = handler;
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
