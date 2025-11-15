@@ -1,27 +1,20 @@
 "use client";
 
-export const dynamic = "force-dynamic"; // ✅ Fix build error for useSearchParams()
-
-import { useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import Link from "next/link";
 
-export default function EditorPage() {
+function EditorContent() {
   const params = useSearchParams();
-  const imageUrl = params.get("img");
+  const img = params.get("img");
 
-  const [selectedBackground, setSelectedBackground] =
-    useState<"transparent" | "white" | "black">("transparent");
+  const [selectedBackground, setSelectedBackground] = useState<
+    "transparent" | "white" | "black"
+  >("transparent");
 
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (imageUrl) {
-      setUploadedImage(imageUrl);
-    }
-  }, [imageUrl]);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(img);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,7 +30,7 @@ export default function EditorPage() {
   };
 
   const handleDeleteImage = () => {
-    setUploadedImage("");
+    setUploadedImage(null);
   };
 
   return (
@@ -47,27 +40,40 @@ export default function EditorPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-3">
+              <div className="relative flex size-11 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-white"
+                >
+                  <rect
+                    x="2"
+                    y="2"
+                    width="12"
+                    height="12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    rx="2"
+                    opacity="0.4"
+                  />
+                  <rect
+                    x="10"
+                    y="10"
+                    width="12"
+                    height="12"
+                    fill="currentColor"
+                    rx="2"
+                  />
+                </svg>
+              </div>
               <span className="text-xl font-semibold tracking-tight">
                 <span className="text-gray-700">remove-background</span>
                 <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
                   .tech
                 </span>
               </span>
-            </Link>
-
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">
-                Pricing
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="#" className="text-sm text-gray-700 hover:text-gray-900">
-              Log in
-            </Link>
-            <Link href="#" className="text-sm text-gray-700 hover:text-gray-900">
-              Sign up
             </Link>
           </div>
         </div>
@@ -104,7 +110,8 @@ export default function EditorPage() {
                 selectedBackground === "transparent"
                   ? "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)"
                   : "none",
-              backgroundSize: selectedBackground === "transparent" ? "20px 20px" : "auto",
+              backgroundSize:
+                selectedBackground === "transparent" ? "20px 20px" : "auto",
               backgroundPosition:
                 selectedBackground === "transparent"
                   ? "0 0, 0 10px, 10px -10px, -10px 0px"
@@ -114,53 +121,59 @@ export default function EditorPage() {
             {uploadedImage && (
               <img
                 src={uploadedImage}
-                alt="Processed"
-                className="max-h-full max-w-full object-contain rounded"
+                className="max-h-full max-w-full rounded object-contain"
               />
             )}
           </div>
 
-          {/* Upload / Replace */}
           <div className="mt-6 flex items-center gap-3">
+            {/* Upload */}
             <label htmlFor="image-upload">
-              <div className="flex size-12 cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 bg-white text-gray-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600">
-                +
+              <div className="flex size-12 cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                <svg
+                  width="24"
+                  height="24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </div>
             </label>
+
             <input
               id="image-upload"
               type="file"
               accept="image/*"
-              onChange={handleImageUpload}
               className="hidden"
+              onChange={handleImageUpload}
             />
 
+            {/* Delete */}
             {uploadedImage && (
               <button
                 onClick={handleDeleteImage}
-                className="flex size-12 items-center justify-center rounded-lg border-2 border-gray-300 bg-white text-gray-600 hover:border-red-500 hover:bg-red-50 hover:text-red-600"
+                className="flex size-12 items-center justify-center rounded-lg border-2 border-gray-300 hover:border-red-500 hover:bg-red-50"
               >
-                -
+                <svg width="24" height="24" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </button>
-            )}
-
-            {uploadedImage && (
-              <div className="size-12 overflow-hidden rounded-lg border-2 border-blue-600 shadow-sm">
-                <img src={uploadedImage} alt="Current" className="h-full w-full object-cover" />
-              </div>
             )}
           </div>
         </div>
 
-        {/* Right Sidebar */}
+        {/* Sidebar */}
         <div className="w-80 border-l border-gray-200 bg-white p-8">
-          <h3 className="mb-6 text-center text-sm font-semibold text-gray-600">Color</h3>
+          <h3 className="mb-6 text-center text-sm font-semibold text-gray-600">
+            Color
+          </h3>
 
           <div className="flex justify-center gap-4">
-            {/* Transparent */}
             <button
               onClick={() => setSelectedBackground("transparent")}
-              className={`flex size-20 rounded-xl border-4 transition-all hover:scale-105 ${
+              className={`flex size-20 items-center justify-center rounded-xl border-4 ${
                 selectedBackground === "transparent"
                   ? "border-blue-600"
                   : "border-gray-300"
@@ -173,24 +186,34 @@ export default function EditorPage() {
               }}
             />
 
-            {/* White */}
             <button
               onClick={() => setSelectedBackground("white")}
-              className={`size-20 rounded-xl border-4 bg-white transition-all hover:scale-105 ${
-                selectedBackground === "white" ? "border-blue-600" : "border-gray-300"
+              className={`size-20 rounded-xl border-4 bg-white ${
+                selectedBackground === "white"
+                  ? "border-blue-600"
+                  : "border-gray-300"
               }`}
             />
 
-            {/* Black */}
             <button
               onClick={() => setSelectedBackground("black")}
-              className={`size-20 rounded-xl border-4 bg-black transition-all hover:scale-105 ${
-                selectedBackground === "black" ? "border-blue-600" : "border-gray-300"
+              className={`size-20 rounded-xl border-4 bg-black ${
+                selectedBackground === "black"
+                  ? "border-blue-600"
+                  : "border-gray-300"
               }`}
             />
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Loading editor…</div>}>
+      <EditorContent />
+    </Suspense>
   );
 }
