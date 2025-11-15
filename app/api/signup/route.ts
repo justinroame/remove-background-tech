@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs"; // ✔ use bcryptjs
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email and password required" },
         { status: 400 }
       );
     }
 
-    // Check if email already exists
+    // Check if email is already registered
     const existing = await db
       .select()
       .from(users)
@@ -24,27 +24,25 @@ export async function POST(req: NextRequest) {
 
     if (existing.length > 0) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "Email already exists" },
         { status: 400 }
       );
     }
 
-    // Hash password using bcryptjs
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(password, salt);
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Insert new user
     await db.insert(users).values({
-      name: name || "",
       email,
-      passwordHash: hashed,
+      password: hashed, // 🔥 Drizzle column is literally "password"
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    console.error("SIGNUP ERROR:", err);
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
-      { error: "Failed to create user" },
+      { error: "Server error" },
       { status: 500 }
     );
   }
