@@ -1,78 +1,88 @@
 import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+
+import bcrypt from "bcryptjs"; // ✔ bcryptjs works on Vercel!
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
 
 const handler = NextAuth({
+  session: { strategy: "jwt" },
+
   providers: [
-    GoogleProvider({
+    // ------------ GOOGLE LOGIN --------------
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
-    CredentialsProvider({
-      name: "credentials",
+    // ------------ EMAIL + PASSWORD LOGIN --------------
+    Credentials({
+      name: "Credentials",
+
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
 
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const [user] = await db
+        // Find user by email
+        const existing = await db
           .select()
           .from(users)
           .where(eq(users.email, credentials.email))
           .limit(1);
 
-        if (!user || !user.password) return null;
+        const user = existing[0];
 
-        const match = await bcrypt.compare(credentials.password, user.password);
-        if (!match) return null;
+        if (!user) {
+          console.log("No user found");
+          return null;
+        }
+
+        // Validate password using bcryptjs
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        );
+
+        if (!isValid) {
+          console.log("Invalid password");
+          return null;
+        }
 
         return {
-          id: user.id,
+          id: user.id.toString(),
           email: user.email,
+          name: user.name,
         };
       },
     }),
   ],
 
-  session: { strategy: "jwt" },
-
   callbacks: {
-    async signIn({ user, account }) {
-      // If signing in with Google, create user if missing
-      if (account?.provider === "google") {
-        const existing = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, user.email!))
-          .limit(1);
-
-        if (existing.length === 0) {
-          await db.insert(users).values({
-            email: user.email!,
-            password: null,
-          });
-        }
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
       }
-      return true;
-    },
-
-    async jwt({ token }) {
       return token;
     },
 
     async session({ session, token }) {
-      if (token?.email) session.user.email = token.email as string;
+      if (token) {
+        session.user.id = token.id;
+      }
       return session;
     },
   },
+
+  pages: {
+    signIn: "/login",
+  }
 });
 
-export { handler as GET, handler as POST };
+export const GET = handler;
+export const POST = handler;
