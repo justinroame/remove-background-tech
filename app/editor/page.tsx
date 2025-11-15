@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic"; // ✅ Fix build error for useSearchParams()
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -47,7 +49,9 @@ export default function EditorPage() {
             <Link href="/" className="flex items-center gap-3">
               <span className="text-xl font-semibold tracking-tight">
                 <span className="text-gray-700">remove-background</span>
-                <span className="text-blue-700 font-bold">.tech</span>
+                <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
+                  .tech
+                </span>
               </span>
             </Link>
 
@@ -153,7 +157,6 @@ export default function EditorPage() {
           <h3 className="mb-6 text-center text-sm font-semibold text-gray-600">Color</h3>
 
           <div className="flex justify-center gap-4">
-
             {/* Transparent */}
             <button
               onClick={() => setSelectedBackground("transparent")}
