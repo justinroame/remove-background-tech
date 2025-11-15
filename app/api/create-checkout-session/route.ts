@@ -1,13 +1,10 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 export async function POST(req: Request) {
   try {
-    // Read JSON instead of formData
     const { priceId, mode } = await req.json();
 
     if (!priceId) {
@@ -34,7 +31,7 @@ export async function POST(req: Request) {
     const successUrl = `${baseUrl}/pricing?success=true`;
     const cancelUrl = `${baseUrl}/pricing?canceled=true`;
 
-    const params: Stripe.Checkout.SessionCreateParams = {
+    const session = await stripe.checkout.sessions.create({
       mode,
       line_items: [
         {
@@ -44,11 +41,9 @@ export async function POST(req: Request) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-    };
+    });
 
-    const session = await stripe.checkout.sessions.create(params);
-
-    return NextResponse.json({ url: session.url }, { status: 200 });
+    return NextResponse.json({ url: session.url });
   } catch (err: any) {
     console.error("Stripe checkout error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
