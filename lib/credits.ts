@@ -1,10 +1,10 @@
+// lib/credits.ts
 import { db } from "@/lib/db";
 import { credits, users } from "@/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
 
 /**
- * Get all active credit batches for a user,
- * ordered by soonest expiration.
+ * Active credit batches for a user, soonest expiring first.
  */
 export async function getUserCreditBatches(userId: number) {
   const now = new Date();
@@ -25,8 +25,7 @@ export async function getUserCreditBatches(userId: number) {
 }
 
 /**
- * Recalculate and persist user's totalCredits
- * based on non-expired credit batches.
+ * Sync users.totalCredits = sum of non-expired credits.
  */
 export async function syncUserTotalCredits(userId: number) {
   const now = new Date();
@@ -49,27 +48,18 @@ export async function syncUserTotalCredits(userId: number) {
 }
 
 /**
- * Get a summary of user credits:
- * - total remaining
- * - breakdown of batches
+ * Summary for UI.
  */
 export async function getUserCreditSummary(userId: number) {
   const batches = await getUserCreditBatches(userId);
   const total = batches.reduce((sum, b) => sum + b.amount, 0);
 
-  return {
-    total,
-    batches,
-  };
+  return { total, batches };
 }
 
 /**
  * Add a new batch of credits.
- * type/source example:
- *  - "PAYG"
- *  - "SUBSCRIPTION:pro_monthly"
- *
- * daysValid: typically 30 for your system.
+ * source example: "PAYG", "SUBSCRIPTION:pro_monthly"
  */
 export async function addCredits(options: {
   userId: number;
@@ -91,29 +81,21 @@ export async function addCredits(options: {
     expiresAt,
   });
 
-  // Re-sync user totalCredits
   const total = await syncUserTotalCredits(userId);
 
   return { success: true, total };
 }
 
 /**
- * Consume N credits for a user.
- * Uses FIFO: batches that expire soonest are consumed first.
- *
- * Throws an error if not enough credits.
+ * Consume N credits FIFO by soonest expiration.
  */
 export async function consumeCredits(userId: number, count: number) {
-  if (count <= 0) {
-    throw new Error("Count must be > 0");
-  }
+  if (count <= 0) throw new Error("Count must be > 0");
 
   const batches = await getUserCreditBatches(userId);
   const available = batches.reduce((sum, b) => sum + b.amount, 0);
 
-  if (available < count) {
-    throw new Error("Not enough credits");
-  }
+  if (available < count) throw new Error("Not enough credits");
 
   let remainingToUse = count;
 
@@ -131,7 +113,6 @@ export async function consumeCredits(userId: number, count: number) {
     remainingToUse -= useFromThisBatch;
   }
 
-  // Re-sync user totalCredits after consumption
   const total = await syncUserTotalCredits(userId);
 
   return { success: true, total };

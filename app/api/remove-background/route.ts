@@ -24,6 +24,7 @@ export const POST = async (req: NextRequest) => {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    // 1) Upload original to Cloudinary
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: 'remove-bg/original', resource_type: 'image' },
@@ -34,11 +35,13 @@ export const POST = async (req: NextRequest) => {
 
     const imageUrl = original.secure_url;
 
+    // 2) Run background remover on Replicate
     const output = (await replicate.run(
       '851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc',
       { input: { image: imageUrl } }
     )) as unknown as string;
 
+    // 3) Download result from Replicate and upload WATERMARKED version to Cloudinary
     const resp = await fetch(output);
     const resultBuf = Buffer.from(await resp.arrayBuffer());
 
@@ -50,7 +53,15 @@ export const POST = async (req: NextRequest) => {
           resource_type: 'image',
           transformation: [
             { width: 1024, crop: 'limit' },
-            { overlay: { font_family: 'Arial', font_size: 40, text: 'remove-background.tech', opacity: 50 }, gravity: 'center' }
+            {
+              overlay: {
+                font_family: 'Arial',
+                font_size: 40,
+                text: 'remove-background.tech',
+                opacity: 50,
+              },
+              gravity: 'center',
+            },
           ],
         },
         (err, result) => (err ? reject(err) : resolve(result))
@@ -58,9 +69,13 @@ export const POST = async (req: NextRequest) => {
       stream.end(resultBuf);
     });
 
+    // processed.secure_url = watermarked
+    // output = clean transparent PNG from Replicate
+
     return NextResponse.json({
       original: imageUrl,
-      processed: processed.secure_url,
+      processed: processed.secure_url, // watermarked
+      clean: output,                    // no watermark
     });
   } catch (error: any) {
     console.error('Error:', error);

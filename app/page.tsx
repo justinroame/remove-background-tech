@@ -37,10 +37,13 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
 
-      // 🔥 Redirect to editor page
-      router.push(`/editor?img=${encodeURIComponent(data.processed)}`);
+      // Redirect to editor with both watermarked (img) and clean URL (clean)
+      router.push(
+        `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
+          data.clean
+        )}`
+      );
       return;
-
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -87,12 +90,18 @@ export default function Home() {
               </span>
             </div>
             <nav className="hidden md:flex items-center gap-6">
-              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">Pricing</Link>
+              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">
+                Pricing
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-gray-700 hover:text-gray-900">Log in</Link>
-            <Link href="/signup" className="text-sm text-gray-700 hover:text-gray-900">Sign up</Link>
+            <Link href="/login" className="text-sm text-gray-700 hover:text-gray-900">
+              Log in
+            </Link>
+            <Link href="/signup" className="text-sm text-gray-700 hover:text-gray-900">
+              Sign up
+            </Link>
           </div>
         </div>
       </header>
@@ -172,7 +181,7 @@ export default function Home() {
           </div>
 
           <p className="mt-12 max-w-2xl text-xs text-gray-600">
-            By uploading an image you agree to our Terms & Privacy.
+            By uploading an image you agree to our Terms &amp; Privacy.
           </p>
         </div>
       </main>
