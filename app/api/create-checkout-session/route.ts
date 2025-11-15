@@ -5,9 +5,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    // Read form POST, not JSON
+    const form = await req.formData();
 
-    const { priceId, mode } = body;
+    const priceId = form.get("priceId")?.toString();
+    const mode = form.get("mode")?.toString();
 
     if (!priceId) {
       return NextResponse.json(
@@ -16,14 +18,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!["payment", "subscription"].includes(mode)) {
+    if (!["payment", "subscription"].includes(mode || "")) {
       return NextResponse.json(
         { error: "Invalid mode (payment | subscription)" },
         { status: 400 }
       );
     }
 
-    // --- BASE URL FIX ---
+    // Validate base URL
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || "").trim();
 
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
@@ -37,8 +39,9 @@ export async function POST(req: Request) {
     const successUrl = `${baseUrl}/pricing?success=true`;
     const cancelUrl = `${baseUrl}/pricing?canceled=true`;
 
-    console.log("Using URLs for Stripe:", { successUrl, cancelUrl });
+    console.log("Stripe redirect URLs:", { successUrl, cancelUrl });
 
+    // Create session
     const session = await stripe.checkout.sessions.create({
       mode,
       line_items: [
@@ -54,6 +57,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
     console.error("Stripe checkout error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
