@@ -1,17 +1,14 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2024-06-20",
+});
 
 export async function POST(req: Request) {
   try {
-    const form = await req.formData();
-
-    const priceId = form.get("priceId")?.toString();
-    let mode = form.get("mode")?.toString() as
-      | "payment"
-      | "subscription"
-      | undefined;
+    // Read JSON instead of formData
+    const { priceId, mode } = await req.json();
 
     if (!priceId) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
@@ -24,7 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || "").trim();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "";
 
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
       console.error("Invalid NEXT_PUBLIC_BASE_URL:", baseUrl);
@@ -51,7 +48,7 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create(params);
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: any) {
     console.error("Stripe checkout error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
