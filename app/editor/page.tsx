@@ -17,10 +17,51 @@ function EditorContent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(img);
   const [loadingNewImage, setLoadingNewImage] = useState(false);
 
-  // ---------------------------------------------------------
-  // 1️⃣ RE-RUN BACKGROUND REMOVAL WHEN NEW IMAGE IS UPLOADED
-  // ---------------------------------------------------------
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // -------------------------------
+  // 🔵 FIXED — Working Download
+  // -------------------------------
+  const handleDownload = async () => {
+    if (!uploadedImage) return;
+
+    const normalizedSrc = uploadedImage.startsWith("data:")
+      ? uploadedImage
+      : `data:image/png;base64,${uploadedImage}`;
+
+    const imgElement = new Image();
+    imgElement.src = normalizedSrc;
+
+    imgElement.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = imgElement.width;
+      canvas.height = imgElement.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Background Color
+      if (selectedBackground === "white") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else if (selectedBackground === "black") {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(imgElement, 0, 0);
+
+      const link = document.createElement("a");
+      link.download = "removed-background.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+  };
+
+  // -------------------------------
+  // 🔵 FIXED — Upload new image & re-run AI remover
+  // -------------------------------
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -35,68 +76,43 @@ function EditorContent() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Error processing image");
+      if (!res.ok) throw new Error("Image processing failed");
 
       const data = await res.json();
+      console.log("API RESPONSE:", data);
 
-      // Set the NEW processed image
-      setUploadedImage(data.output[1].image_base64);
+      // Try all possible Replicate formats
+      let base64 =
+        data.output?.[1]?.image_base64 ||
+        data.output?.[0]?.image_base64 ||
+        data.output?.image_base64 ||
+        null;
+
+      if (!base64) throw new Error("No usable image returned");
+
+      const normalized = base64.startsWith("data:")
+        ? base64
+        : `data:image/png;base64,${base64}`;
+
+      setUploadedImage(normalized);
     } catch (err) {
-      console.error("Upload processing failed:", err);
+      console.error("Upload failed:", err);
     }
 
     setLoadingNewImage(false);
-  };
-
-  // ---------------------------------------
-  // 2️⃣ DOWNLOAD FINAL IMAGE WITH BACKGROUND
-  // ---------------------------------------
-  const handleDownload = async () => {
-    if (!uploadedImage) return;
-
-    const imgElement = new Image();
-    imgElement.src = uploadedImage;
-
-    imgElement.onload = () => {
-      const canvas = document.createElement("canvas");
-
-      // Large export resolution – keeps quality
-      canvas.width = imgElement.width;
-      canvas.height = imgElement.height;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Draw background color
-      if (selectedBackground === "white") {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      } else if (selectedBackground === "black") {
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      // Transparent = no fill
-
-      // Draw main image
-      ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
-
-      const link = document.createElement("a");
-      link.download = "removed-background.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    };
   };
 
   const handleDeleteImage = () => {
     setUploadedImage(null);
   };
 
+  // -------------------------------
+  // UI RENDER
+  // -------------------------------
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F5F6]">
-
-      {/* ------------------------------------------------- */}
-      {/* HEADER (FULL MATCH TO HOMEPAGE)                  */}
-      {/* ------------------------------------------------- */}
+      {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
@@ -137,22 +153,24 @@ function EditorContent() {
               </span>
             </Link>
 
-            {/* PRICING LINK */}
             <Link
               href="/pricing"
-              className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+              className="text-sm text-gray-700 hover:text-gray-900"
             >
               Pricing
             </Link>
           </div>
 
-          <div className="flex items-center gap-6">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-sm text-gray-700 hover:text-gray-900"
+            >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="text-sm text-gray-700 hover:text-gray-900"
             >
               Sign up
             </Link>
@@ -177,7 +195,7 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex flex-1">
         {/* Canvas */}
         <div className="flex flex-1 flex-col items-center justify-center p-8">
@@ -196,28 +214,40 @@ function EditorContent() {
                   : "none",
               backgroundSize:
                 selectedBackground === "transparent" ? "20px 20px" : "auto",
+              backgroundPosition:
+                selectedBackground === "transparent"
+                  ? "0 0, 0 10px, 10px -10px, -10px 0px"
+                  : "0 0",
             }}
           >
-            {uploadedImage ? (
+            {!uploadedImage && !loadingNewImage && (
+              <p className="text-gray-500">No image</p>
+            )}
+
+            {loadingNewImage && (
+              <p className="absolute text-gray-700 text-lg font-medium">
+                Processing image…
+              </p>
+            )}
+
+            {uploadedImage && !loadingNewImage && (
               <img
-                src={uploadedImage}
+                src={
+                  uploadedImage.startsWith("data:")
+                    ? uploadedImage
+                    : `data:image/png;base64,${uploadedImage}`
+                }
                 className="max-h-full max-w-full rounded object-contain"
               />
-            ) : (
-              <p className="text-gray-500 text-sm">No image uploaded</p>
             )}
           </div>
 
+          {/* Upload + Delete Buttons */}
           <div className="mt-6 flex items-center gap-3">
             {/* Upload */}
             <label htmlFor="image-upload">
               <div className="flex size-12 cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                <svg
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                <svg width="24" height="24" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
@@ -232,7 +262,7 @@ function EditorContent() {
               onChange={handleImageUpload}
             />
 
-            {/* Delete Button */}
+            {/* Delete */}
             {uploadedImage && (
               <button
                 onClick={handleDeleteImage}
@@ -244,10 +274,6 @@ function EditorContent() {
               </button>
             )}
           </div>
-
-          {loadingNewImage && (
-            <p className="mt-4 text-sm text-gray-600">Processing new image…</p>
-          )}
         </div>
 
         {/* Sidebar */}
@@ -268,6 +294,7 @@ function EditorContent() {
                 backgroundImage:
                   "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
                 backgroundSize: "10px 10px",
+                backgroundPosition: "0 0, 0 5px, 5px -5px, -5px 0px",
               }}
             />
 
