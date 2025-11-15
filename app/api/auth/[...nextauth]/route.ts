@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/db";
@@ -6,7 +6,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-const authOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -17,7 +17,7 @@ const authOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
 
       async authorize(credentials: any) {
@@ -25,7 +25,7 @@ const authOptions = {
           throw new Error("Missing email or password");
         }
 
-        // Find user in Postgres via Drizzle
+        // Query user from Postgres (Drizzle)
         const result = await db
           .select()
           .from(users)
@@ -38,11 +38,11 @@ const authOptions = {
           throw new Error("User not found");
         }
 
-        // IMPORTANT: your schema stores password in `password`, not `passwordHash`
         if (!user.password) {
-          throw new Error("No password set for this account");
+          throw new Error("No password on account");
         }
 
+        // Compare password
         const isValid = await bcrypt.compare(
           credentials.password,
           user.password
@@ -65,25 +65,26 @@ const authOptions = {
   },
 
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const, // 🔥 FIXED: literal type
   },
 
   callbacks: {
-    async jwt({ token, user }: any) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
 
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (token?.id) {
-        session.user.id = token.id;
+        (session.user as any).id = token.id;
       }
       return session;
-    }
-  }
+    },
+  },
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST };
