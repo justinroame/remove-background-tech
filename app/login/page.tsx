@@ -1,39 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/editor",
-    });
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    <div className="flex flex-col items-center justify-center min-h-screen space-y-8">
 
-      {/* LOGO */}
-      <div className="mb-10 flex flex-col items-center">
+      {/* Logo */}
+      <div className="flex flex-col items-center">
         <Image
           src="/background_image_remover.png"
           alt="Remove Background Tech Logo"
           width={300}
-          height={90}
+          height={300}
           priority
         />
       </div>
 
-      <div className="w-full max-w-md bg-white p-10 rounded-xl shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Log in</h1>
+      {/* Login Card */}
+      <div className="bg-white p-8 rounded-lg shadow-md w-96">
+        <h1 className="text-center text-2xl font-semibold mb-6">Log in</h1>
 
         <button
           onClick={() => signIn("google")}
@@ -42,33 +30,27 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="border p-3 rounded-md"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border p-2 rounded mb-3"
+        />
 
-          <input
-            type="password"
-            placeholder="Password"
-            className="border p-3 rounded-md"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full border p-2 rounded mb-4"
+        />
 
-          <button className="w-full bg-blue-600 text-white py-2 rounded-md mt-2">
-            Log in
-          </button>
-        </form>
+        <button className="w-full bg-blue-600 text-white py-2 rounded-md">
+          Log in
+        </button>
 
-        <p className="text-center mt-4 text-sm">
+        <p className="text-center text-sm mt-3">
           Don’t have an account?{" "}
-          <Link href="/signup" className="text-blue-600">Sign up</Link>
+          <Link href="/signup" className="text-blue-600">
+            Sign up
+          </Link>
         </p>
       </div>
     </div>
