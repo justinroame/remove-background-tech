@@ -6,20 +6,15 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-export const authOptions: NextAuthOptions = {
+const options: NextAuthOptions = {
   providers: [
-    // -----------------------------
-    // GOOGLE PROVIDER
-    // Auto-creates user in DB
-    // -----------------------------
+    // GOOGLE PROVIDER — auto-create DB user
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
-    // -----------------------------
-    // EMAIL + PASSWORD LOGIN
-    // -----------------------------
+    // CREDENTIALS PROVIDER
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -61,9 +56,7 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    // ---------------------------------------------------
-    // GOOGLE SIGN-IN: Auto-create user in Postgres
-    // ---------------------------------------------------
+    // When signing in via Google, auto-create Postgres user
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         const email = user.email;
@@ -75,10 +68,9 @@ export const authOptions: NextAuthOptions = {
           .limit(1);
 
         if (existing.length === 0) {
-          // Create DB user for Google accounts
           await db.insert(users).values({
             email: email!,
-            password: null,        // Google accounts have no password
+            password: null,
             pro: false,
             totalCredits: 0,
             stripeCustomerId: null,
@@ -88,21 +80,13 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    // ---------------------------------------------------
-    // JWT CALLBACK — store user.id + credits
-    // ---------------------------------------------------
     async jwt({ token, user }) {
-      // First login
       if (user) {
         token.id = user.id;
       }
-
       return token;
     },
 
-    // ---------------------------------------------------
-    // SESSION CALLBACK — expose id to frontend
-    // ---------------------------------------------------
     async session({ session, token }) {
       if (token?.id) {
         (session.user as any).id = token.id;
@@ -112,5 +96,7 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-const handler = NextAuth(authOptions);
+const handler = NextAuth(options);
+
+// ONLY EXPORT GET + POST — required by Next.js
 export { handler as GET, handler as POST };
