@@ -1,26 +1,34 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
+import { auth } from "@/auth"; // ✅ new App Router auth system
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16",
+});
 
-// Your Stripe recurring price ID for Pro plan
-const PRO_PRICE_ID = "price_XXXX"; // replace with your price ID
+// Your Stripe recurring price ID (update this)
+const PRO_PRICE_ID = "price_XXXX"; // ← replace this
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    // ✅ authenticate the user
+    const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
-    const userId = session.user.id.toString();
+    const userId = String(session.user.id);
 
+    // 💳 Create a Stripe Subscription Checkout Session
     const checkout = await stripe.checkout.sessions.create({
       mode: "subscription",
+
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=subscription`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?canceled=1`,
+
       line_items: [
         {
           price: PRO_PRICE_ID,
@@ -28,21 +36,28 @@ export async function POST() {
         },
       ],
 
+      // ✔ metadata provided to the subscription object
       subscription_data: {
         metadata: {
           userId,
-          subscriptionCredits: "200", // Number of monthly credits
+          subscriptionCredits: "200", // monthly credits tier
+          source: "SUBSCRIPTION",
         },
       },
 
+      // ✔ metadata on checkout session for webhook convenience
       metadata: {
         userId,
+        source: "SUBSCRIPTION",
       },
     });
 
     return NextResponse.json({ url: checkout.url });
   } catch (err) {
     console.error("Subscription error:", err);
-    return NextResponse.json({ error: "Stripe error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Stripe error" },
+      { status: 500 }
+    );
   }
 }
