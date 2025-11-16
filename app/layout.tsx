@@ -6,10 +6,10 @@ import dynamic from "next/dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// NodeNext requires EXTENSION for relative imports
+// NodeNext requires an extension, AND it cannot be .ts or .tsx
 const ClientProviders = dynamic(
   () =>
-    import("../components/ClientProviders.tsx").then(
+    import("../components/ClientProviders.js").then(
       (mod) => mod.default
     ),
   { ssr: false }
