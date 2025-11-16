@@ -9,9 +9,8 @@ import { useSearchParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 
 /* ---------------------------------------------------
-   PRICE IDS (RESTORED SO BUILD DOES NOT BREAK)
+   PRICE IDS
 ----------------------------------------------------*/
-
 const PAYG_PRICE_IDS: Record<string, string> = {
   "5": "price_1SSrc4C7SdJDqSQL9Zl6ZSPz",
   "15": "price_1ST76xC7SdJDqSQLwGjqxRmt",
@@ -33,7 +32,6 @@ const PRO_PRICE_IDS: Record<string, string> = {
 /* ---------------------------------------------------
    CHECKOUT HANDLER
 ----------------------------------------------------*/
-
 async function startCheckout(priceId: string, mode: "payment" | "subscription") {
   const res = await fetch("/api/create-checkout-session", {
     method: "POST",
@@ -42,21 +40,20 @@ async function startCheckout(priceId: string, mode: "payment" | "subscription") 
   });
 
   const data = await res.json();
-
-  if (data?.url) {
-    window.location.href = data.url;
-  }
+  if (data?.url) window.location.href = data.url;
 }
 
 /* ---------------------------------------------------
    MAIN PRICING COMPONENT
 ----------------------------------------------------*/
-
 export default function PricingInner() {
   const params = useSearchParams();
   const success = params.get("success");
 
-  const { data: session } = useSession();
+  // FIXED — DO NOT DESTRUCTURE!
+  const session = useSession();
+
+  const isLoggedIn = session.status === "authenticated";
 
   useEffect(() => {
     if (success) window.location.reload();
@@ -67,7 +64,7 @@ export default function PricingInner() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      {/* ---------------- HEADER ---------------- */}
+      {/* HEADER */}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
@@ -76,16 +73,10 @@ export default function PricingInner() {
             </Link>
 
             <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/"
-                className="text-sm font-bold text-gray-700 hover:text-gray-900"
-              >
+              <Link href="/" className="text-sm font-bold text-gray-700 hover:text-gray-900">
                 Home
               </Link>
-              <Link
-                href="/pricing"
-                className="text-sm font-bold text-blue-600"
-              >
+              <Link href="/pricing" className="text-sm font-bold text-blue-600">
                 Pricing
               </Link>
             </nav>
@@ -93,26 +84,17 @@ export default function PricingInner() {
 
           {/* AUTH BUTTONS */}
           <div className="flex items-center gap-4">
-            {!session ? (
+            {!isLoggedIn ? (
               <>
-                <Link
-                  href="/login"
-                  className="text-sm font-bold text-gray-700 hover:text-gray-900"
-                >
+                <Link href="/login" className="text-sm font-bold text-gray-700 hover:text-gray-900">
                   Log in
                 </Link>
-                <Link
-                  href="/signup"
-                  className="text-sm font-bold text-gray-700 hover:text-gray-900"
-                >
+                <Link href="/signup" className="text-sm font-bold text-gray-700 hover:text-gray-900">
                   Sign up
                 </Link>
               </>
             ) : (
-              <Link
-                href="/dashboard"
-                className="text-sm font-bold text-gray-700 hover:text-gray-900"
-              >
+              <Link href="/dashboard" className="text-sm font-bold text-gray-700 hover:text-gray-900">
                 Dashboard
               </Link>
             )}
@@ -120,32 +102,30 @@ export default function PricingInner() {
         </div>
       </header>
 
-      {/* MAIN PAGE BODY */}
+      {/* BODY */}
       <main className="mx-auto max-w-7xl px-6 py-16">
 
-        {/* ---------- BUY NOW FIX ---------- */}
+        {/* BUY NOW BUTTON */}
         <Button
           className="mb-6 rounded-full bg-blue-600 py-6 text-base font-medium text-white hover:bg-blue-700"
           onClick={() => {
-            if (!session) return signIn();
+            if (!isLoggedIn) return signIn();
             startCheckout(PAYG_PRICE_IDS[payAsYouGoOption], "payment");
           }}
         >
           Buy now
         </Button>
 
-        {/* ---------- SUBSCRIBE FIX ---------- */}
+        {/* SUBSCRIBE BUTTON */}
         <Button
           className="mb-6 rounded-full bg-blue-600 py-6 text-base font-medium text-white hover:bg-blue-700"
           onClick={() => {
-            if (!session) return signIn();
+            if (!isLoggedIn) return signIn();
             startCheckout(PRO_PRICE_IDS[proOption], "subscription");
           }}
         >
           Subscribe
         </Button>
-
-        {/* Optional: keep your other pricing UI here */}
 
       </main>
     </div>
