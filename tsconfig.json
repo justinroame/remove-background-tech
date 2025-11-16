@@ -16,20 +16,20 @@
     "plugins": [
       { "name": "next" }
     ],
-
-    // ---- PATH ALIAS ----
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     },
-
-    // ---- REQUIRED FOR NEXT AUTH TYPES ----
     "types": ["next-auth"]
   },
-
-  // ---- THIS FIXES YOUR VERCEL ERROR ----
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "components/**/*.ts"***
+    ".next/types/**/*.ts",
+    "types/**/*.d.ts",
+    "components/**/*.ts",
+    "components/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}
