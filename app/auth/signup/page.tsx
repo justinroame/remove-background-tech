@@ -9,21 +9,27 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    setMessage("");
 
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setMessage(data.error || "Failed to sign up");
-      return;
+      if (!res.ok) {
+        setMessage(data.error || "Failed to sign up");
+        return;
+      }
+
+      // Redirect to login
+      window.location.href = "/auth/login";
+    } catch (err) {
+      setMessage("Something went wrong. Try again.");
     }
-
-    window.location.href = "/auth/login";
   }
 
   return (
