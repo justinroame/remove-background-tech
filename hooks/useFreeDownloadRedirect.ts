@@ -1,4 +1,3 @@
-// hooks/useFreeDownloadRedirect.ts
 "use client";
 
 import { useEffect } from "react";
@@ -12,10 +11,8 @@ export default function useFreeDownloadRedirect() {
     try {
       const count = Number(localStorage.getItem("free_download_count") || 0);
 
-      // Already on pricing → don't redirect again
       if (pathname === "/pricing") return;
 
-      // Limit: 5 free watermarked downloads
       if (count >= 5) {
         router.push("/pricing");
       }

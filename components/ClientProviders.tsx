@@ -1,16 +1,10 @@
-// components/ClientProviders.tsx
 "use client";
 
 import { SessionProvider } from "next-auth/react";
 import CreditsPill from "./CreditsPill";
 import useFreeDownloadRedirect from "@/hooks/useFreeDownloadRedirect";
 
-export default function ClientProviders({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Auto redirect after 5 free downloads
+export default function ClientProviders({ children }: { children: React.ReactNode }) {
   useFreeDownloadRedirect();
 
   return (
