@@ -28,9 +28,11 @@ function EditorContent() {
   // Fetch credits for logged-in user
   useEffect(() => {
     const fetchCredits = async () => {
-      if (!session?.user?.id) return;
+      // SAFELY extract userId (NextAuth does not type it)
+      const userId = Number((session?.user as any)?.id);
+      if (!userId) return;
+
       try {
-        const userId = Number((session.user as any).id);
         const res = await fetch(`/api/credits/summary?userId=${userId}`);
         if (!res.ok) return;
         const data = await res.json();
@@ -39,6 +41,7 @@ function EditorContent() {
         console.error("Failed to fetch credits", e);
       }
     };
+
     fetchCredits();
   }, [session]);
 
@@ -46,7 +49,6 @@ function EditorContent() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reuse the same flow as homepage: send to /api/remove-background
     const form = new FormData();
     form.append("image", file);
 
@@ -61,7 +63,6 @@ function EditorContent() {
       setWatermarkedImage(data.processed);
       setCleanImage(data.clean);
 
-      // Update URL params so refresh keeps current image
       const newUrl = `/editor?img=${encodeURIComponent(
         data.processed
       )}&clean=${encodeURIComponent(data.clean)}`;
@@ -90,12 +91,10 @@ function EditorContent() {
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
 
-    // Guest: limit to 5 free watermarked downloads
     if (!session?.user) {
       const key = "freeWatermarkedDownloads";
       const current = Number(localStorage.getItem(key) || "0");
       if (current >= 5) {
-        // send to pricing after free limit
         router.push("/pricing");
         return;
       }
@@ -110,16 +109,14 @@ function EditorContent() {
     }
   };
 
-  // Download WITHOUT watermark (uses 1 credit)
+  // Download WITHOUT watermark
   const handleDownloadClean = async () => {
     if (!cleanImage) {
       alert("Clean image not available.");
       return;
     }
 
-    // Must be logged in for clean download
     if (!session?.user) {
-      // Redirect to signup, then back to editor
       const next = `/editor?img=${encodeURIComponent(
         watermarkedImage || ""
       )}&clean=${encodeURIComponent(cleanImage)}`;
@@ -129,7 +126,6 @@ function EditorContent() {
 
     const userId = Number((session.user as any).id);
 
-    // Must have credits
     if (credits !== null && credits <= 0) {
       router.push("/pricing");
       return;
@@ -208,7 +204,6 @@ function EditorContent() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            {/* Simple credit badge if logged in */}
             {session?.user && (
               <span className="text-sm text-gray-700">
                 Credits: {credits ?? "…"}
@@ -232,7 +227,6 @@ function EditorContent() {
           </span>
 
           <div className="flex gap-3">
-            {/* Download with watermark */}
             <Button
               variant="outline"
               className="rounded-full px-6 py-2 text-sm font-medium"
@@ -243,7 +237,6 @@ function EditorContent() {
               {loadingWatermarked ? "Downloading…" : "With watermark"}
             </Button>
 
-            {/* Download without watermark */}
             <Button
               className="rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
               onClick={handleDownloadClean}
@@ -291,7 +284,6 @@ function EditorContent() {
           </div>
 
           <div className="mt-6 flex items-center gap-3">
-            {/* Upload */}
             <label htmlFor="image-upload">
               <div className="flex size-12 cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50">
                 <svg
@@ -314,7 +306,6 @@ function EditorContent() {
               onChange={handleImageUpload}
             />
 
-            {/* Delete */}
             {watermarkedImage && (
               <button
                 onClick={handleDeleteImage}
