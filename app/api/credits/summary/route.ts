@@ -1,26 +1,27 @@
-// app/api/credits/summary/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { getUserCreditSummary } from "@/lib/credits";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
+import { db } from "@/lib/db";
+import { credits } from "@/db/schema";
+import { desc, eq, gt } from "drizzle-orm";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const userIdParam = searchParams.get("userId");
+export async function GET() {
+  const session = await getServerSession(authOptions);
 
-  if (!userIdParam) {
-    return NextResponse.json(
-      { error: "Missing userId query param" },
-      { status: 400 }
-    );
+  if (!session?.user?.id) {
+    return NextResponse.json({ total: 0 }); // guest = 0 credits
   }
 
-  const userId = Number(userIdParam);
-  if (Number.isNaN(userId)) {
-    return NextResponse.json(
-      { error: "Invalid userId" },
-      { status: 400 }
-    );
-  }
+  const now = new Date();
 
-  const summary = await getUserCreditSummary(userId);
-  return NextResponse.json(summary);
+  const rows = await db
+    .select()
+    .from(credits)
+    .where(eq(credits.userId, Number(session.user.id)))
+    .where(gt(credits.expiresAt, now));
+
+  let sum = 0;
+  rows.forEach(r => sum += r.amount);
+
+  return NextResponse.json({ total: sum });
 }

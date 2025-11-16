@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Zap } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+
 
 /* ---------------- PRICE IDS ---------------- */
 
@@ -40,6 +43,17 @@ async function startCheckout(priceId: string, mode: "payment" | "subscription") 
 }
 
 export default function PricingPage() {
+    const params = useSearchParams();
+  const success = params.get("success");
+
+  useEffect(() => {
+    if (success) {
+      // Refresh header CreditsPill after purchase
+      window.location.reload();
+    }
+  }, [success]);
+
+
   const [payAsYouGoOption, setPayAsYouGoOption] = useState("5");
   const [proOption, setProOption] = useState("50");
 
@@ -104,6 +118,25 @@ export default function PricingPage() {
       </header>
 
       {/* ---------------- MAIN CONTENT ---------------- */}
+{success === "1" && (
+  <div className="bg-green-600 text-white p-3 rounded mb-4">
+    Purchase successful! Credits added to your account.
+  </div>
+)}
+{success === "subscription" && (
+  <div className="bg-green-600 text-white p-3 rounded mb-4">
+    Subscription active! Monthly credits added.
+  </div>
+)}
+{success === "canceled" && (
+  <div className="bg-yellow-500 text-white p-3 rounded mb-4">
+    Checkout canceled.
+  </div>
+)}
+
+
+
+
       <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-800 md:text-5xl">Choose Your Plan</h1>

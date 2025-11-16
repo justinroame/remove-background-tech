@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import type { Metadata } from "next";
+import CreditsPill from "@/components/CreditsPill";   // <-- ADD THIS
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,13 +29,31 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* ✅ Fallback favicon links for full browser support */}
+        {/* Fallback favicon links for full browser support */}
         <link rel="icon" href="/favicon.ico?v=3" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="192x192"
+          href="/android-chrome-192x192.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="512x512"
+          href="/android-chrome-512x512.png"
+        />
       </head>
+
       <body className={`${inter.className} antialiased`}>
+        {/* -------------------------------------------- */}
+        {/* 🔥 GLOBAL HEADER WITH CREDITS DISPLAY       */}
+        {/* -------------------------------------------- */}
+        <header className="w-full flex justify-end p-4">
+          <CreditsPill />
+        </header>
+
         {children}
         <Analytics />
       </body>
