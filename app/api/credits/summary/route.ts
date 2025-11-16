@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
@@ -18,8 +18,7 @@ export async function GET() {
       and(eq(credits.userId, Number(userId)), gt(credits.expiresAt, new Date()))
     );
 
-  let sum = 0;
-  rows.forEach((r) => (sum += r.amount));
+  const total = rows.reduce((acc, r) => acc + r.amount, 0);
 
-  return NextResponse.json({ total: sum });
+  return NextResponse.json({ total });
 }
