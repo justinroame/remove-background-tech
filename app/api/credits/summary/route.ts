@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
+import { auth } from "@/auth";        // ✅ NEW AUTH
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  // ✅ Use new NextAuth App Router auth handler
+  const session = await auth();
 
-  // Fix TypeScript by casting user object
-  const userId = (session?.user as any)?.id;
+  // User ID safely extracted
+  const userId = session?.user?.id;
 
+  // If no session → return 0 credits (NOT 500)
   if (!userId) {
     return NextResponse.json({ total: 0 });
   }
 
   const now = new Date();
 
-  // FIX: Combine multiple conditions using `and()`
+  // DB query
   const rows = await db
     .select()
     .from(credits)
@@ -28,8 +29,7 @@ export async function GET() {
       )
     );
 
-  let sum = 0;
-  rows.forEach((r) => (sum += r.amount));
+  const total = rows.reduce((sum, r) => sum + r.amount, 0);
 
-  return NextResponse.json({ total: sum });
+  return NextResponse.json({ total });
 }
