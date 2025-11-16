@@ -6,9 +6,12 @@ import dynamic from "next/dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// FIXED: Add .tsx to dynamic import so Vercel can resolve it
+// USE RELATIVE PATH (because your project has no @ alias)
 const ClientProviders = dynamic(
-  () => import("@/components/ClientProviders.tsx"),
+  () =>
+    import("../components/ClientProviders").then(
+      (mod) => mod.default
+    ),
   { ssr: false }
 );
 
