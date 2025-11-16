@@ -1,4 +1,3 @@
-// app/layout.tsx
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -6,14 +5,10 @@ import dynamic from "next/dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// NodeNext requires an extension, AND it cannot be .ts or .tsx
-const ClientProviders = dynamic(
-  () =>
-    import("../components/ClientProviders.js").then(
-      (mod) => mod.default
-    ),
-  { ssr: false }
-);
+// Correct dynamic import — TSX EXTENSION **NOT INCLUDED**
+const ClientProviders = dynamic(() => import("../components/ClientProviders"), {
+  ssr: false,
+});
 
 export const metadata = {
   title: "remove-background.tech - AI Background Removal",
@@ -27,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={inter.className}>
         <ClientProviders>{children}</ClientProviders>
         <Analytics />
       </body>
