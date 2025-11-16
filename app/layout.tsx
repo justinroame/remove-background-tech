@@ -6,9 +6,9 @@ import dynamic from "next/dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// 1. Wrap SessionProvider + CreditsPill in a CLIENT-ONLY component
+// FIXED: Add .tsx to dynamic import so Vercel can resolve it
 const ClientProviders = dynamic(
-  () => import("@/components/ClientProviders"), // we'll create this in 10 seconds
+  () => import("@/components/ClientProviders.tsx"),
   { ssr: false }
 );
 
