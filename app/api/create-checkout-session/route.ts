@@ -1,58 +1,52 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/auth"; // ✅ NEW — pulls from root auth.ts
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
 
+// ⭐ Keep YOUR apiVersion exactly as you already set it
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
 });
 
 export async function POST(req: Request) {
   try {
-    // ✅ Auth using the App Router NextAuth system
-    const session = await auth();
+    // ⭐ Correct NextAuth session check for App Router
+    const session = await getServerSession(authOptions);
 
-    if (!session || !session.user?.id) {
+    if (!session || !session.user?.email) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
 
-    const { credits } = await req.json();
+    // ⭐ Match your pricing page's request body
+    const { priceId, mode } = await req.json();
 
-    if (!credits || credits < 1) {
+    if (!priceId || !mode) {
       return NextResponse.json(
-        { error: "Invalid credit amount" },
+        { error: "Missing priceId or mode" },
         { status: 400 }
       );
     }
 
-    // Your PAYG unit price (in dollars)
-    const unitPrice = 30; // Example = $0.30 per credit
-
+    // ⭐ Create checkout session using existing Price IDs
     const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?canceled=1`,
-
+      mode,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=${mode === "payment" ? "1" : "subscription"}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=canceled`,
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${credits} Image Credits`,
-            },
-            unit_amount: unitPrice * 100, // convert to cents
-          },
-          quantity: credits,
+          price: priceId,
+          quantity: 1,
         },
       ],
+      customer_email: session.user.email,
 
-      // Metadata → used in webhook to mint credits
+      // ⭐ Keep metadata format the same for your webhook
       metadata: {
-        userId: String(session.user.id),
-        credits: String(credits),
-        source: "PAYG",
+        userEmail: session.user.email,
+        source: mode === "payment" ? "PAYG" : "SUBSCRIPTION",
       },
     });
 
