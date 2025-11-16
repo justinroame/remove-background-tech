@@ -16,9 +16,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {},
-      async authorize(credentials: any) {
-        const { email, password } = credentials;
 
+      async authorize(credentials: any) {
+        const email = credentials?.email;
+        const password = credentials?.password;
+
+        // Ensure both exist
+        if (!email || !password) return null;
+
+        // Lookup user from DB
         const result = await db
           .select()
           .from(users)
@@ -28,10 +34,20 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const user = result[0];
         if (!user) return null;
 
-        const isValid = await bcrypt.compare(password, user.password);
+        // Ensure stored password exists and is a string
+        const hashedPassword = user.password ? String(user.password) : null;
+        if (!hashedPassword) return null;
+
+        // Cast plain password for TS — ensures both are strings
+        const plainPassword = String(password);
+
+        const isValid = await bcrypt.compare(plainPassword, hashedPassword);
         if (!isValid) return null;
 
-        return { id: String(user.id), email: user.email };
+        return {
+          id: String(user.id),
+          email: user.email,
+        };
       },
     }),
   ],
@@ -43,8 +59,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (user) token.id = user.id;
       return token;
     },
+
     session: async ({ session, token }) => {
-      if (token?.id) (session.user as any).id = token.id;
+      if (token?.id) {
+        (session.user as any).id = token.id;
+      }
       return session;
     },
   },
