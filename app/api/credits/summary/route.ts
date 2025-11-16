@@ -3,25 +3,30 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
-import { eq, gt } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  // ✅ Fix TypeScript not knowing user.id exists
+  // Fix TypeScript by casting user object
   const userId = (session?.user as any)?.id;
 
   if (!userId) {
-    return NextResponse.json({ total: 0 }); // guest = 0 credits
+    return NextResponse.json({ total: 0 });
   }
 
   const now = new Date();
 
+  // FIX: Combine multiple conditions using `and()`
   const rows = await db
     .select()
     .from(credits)
-    .where(eq(credits.userId, Number(userId)))
-    .where(gt(credits.expiresAt, now));
+    .where(
+      and(
+        eq(credits.userId, Number(userId)),
+        gt(credits.expiresAt, now)
+      )
+    );
 
   let sum = 0;
   rows.forEach((r) => (sum += r.amount));
