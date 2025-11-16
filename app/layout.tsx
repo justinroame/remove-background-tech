@@ -1,60 +1,32 @@
-// app/layout.tsx
+"use client";
+
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import type { Metadata } from "next";
-import CreditsPill from "@/components/CreditsPill";   // <-- ADD THIS
+import { SessionProvider } from "next-auth/react";   // ✅ FIX
+import CreditsPill from "@/components/CreditsPill";   // uses useSession()
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "remove-background.tech - AI Background Removal",
   description: "Remove backgrounds from images automatically with AI.",
-  icons: {
-    icon: [
-      { url: "/favicon.ico?v=3", sizes: "any" },
-      { url: "/android-chrome-192x192.png", type: "image/png", sizes: "192x192" },
-      { url: "/android-chrome-512x512.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
-  manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        {/* Fallback favicon links for full browser support */}
-        <link rel="icon" href="/favicon.ico?v=3" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="192x192"
-          href="/android-chrome-192x192.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="512x512"
-          href="/android-chrome-512x512.png"
-        />
-      </head>
-
       <body className={`${inter.className} antialiased`}>
-        {/* -------------------------------------------- */}
-        {/* 🔥 GLOBAL HEADER WITH CREDITS DISPLAY       */}
-        {/* -------------------------------------------- */}
-        <header className="w-full flex justify-end p-4">
-          <CreditsPill />
-        </header>
+        
+        {/* 🔥 MUST WRAP THE APP OR useSession() WILL BREAK */}
+        <SessionProvider>
+          <header className="w-full flex justify-end p-4">
+            <CreditsPill />
+          </header>
 
-        {children}
+          {children}
+        </SessionProvider>
+
         <Analytics />
       </body>
     </html>
