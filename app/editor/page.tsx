@@ -13,7 +13,9 @@ function EditorContent() {
   const img = params.get("img");
   const cleanParam = params.get("clean");
 
-  const { data: session } = useSession();
+  // 🚨 SAFEST WAY TO USE useSession() IN CLIENT COMPONENTS
+  // Avoid destructuring — this prevents SSR build crashes.
+  const session = useSession().data;
 
   const [selectedBackground, setSelectedBackground] = useState<
     "transparent" | "white" | "black"
@@ -86,7 +88,6 @@ function EditorContent() {
     a.remove();
   }
 
-  // Download WITH watermark
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
 
@@ -108,7 +109,6 @@ function EditorContent() {
     }
   };
 
-  // Download WITHOUT watermark
   const handleDownloadClean = async () => {
     if (!cleanImage) {
       alert("Clean image not available.");
