@@ -14,7 +14,7 @@ export default function SignupPage() {
     setError("");
 
     // Create user in DB through NextAuth-compatible API
-    const res = await fetch("/api/auth/signup", {
+    const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
