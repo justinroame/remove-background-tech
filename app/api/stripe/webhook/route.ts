@@ -22,9 +22,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // ⚡ Handle checkout completed
+  // ---------------------------
+  // Checkout one-time purchases
+  // ---------------------------
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+
     const userId = session.metadata?.userId;
     const creditsPurchased = session.metadata?.credits;
 
@@ -36,13 +39,16 @@ export async function POST(req: Request) {
         userId: Number(userId),
         amount: Number(creditsPurchased),
         expiresAt: expires,
+        source: "PAYG",            // ✅ REQUIRED
       });
 
-      console.log("💳 Added credits:", creditsPurchased);
+      console.log("💳 Added PAYG credits:", creditsPurchased);
     }
   }
 
-  // ⚡ Handle subscription renewals (optional)
+  // ---------------------------
+  // Subscription renewals
+  // ---------------------------
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object as Stripe.Invoice;
     const userId = invoice.metadata?.userId;
@@ -51,10 +57,12 @@ export async function POST(req: Request) {
       const expires = new Date();
       expires.setMonth(expires.getMonth() + 1);
 
+      // Example subscription: 150 credits/month
       await db.insert(credits).values({
         userId: Number(userId),
-        amount: 150, // Example monthly credits
+        amount: 150,
         expiresAt: expires,
+        source: "SUBSCRIPTION",    // ✅ REQUIRED
       });
 
       console.log("🔄 Subscription credits added");
