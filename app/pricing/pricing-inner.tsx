@@ -44,15 +44,14 @@ async function startCheckout(priceId: string, mode: "payment" | "subscription") 
 }
 
 /* ---------------------------------------------------
-   MAIN PRICING COMPONENT
+   COMPONENT
 ----------------------------------------------------*/
 export default function PricingInner() {
   const params = useSearchParams();
   const success = params.get("success");
 
-  // FIXED — DO NOT DESTRUCTURE!
+  // Critical fix — DO NOT destructure useSession()
   const session = useSession();
-
   const isLoggedIn = session.status === "authenticated";
 
   useEffect(() => {

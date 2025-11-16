@@ -28,7 +28,6 @@ function EditorContent() {
   // Fetch credits for logged-in user
   useEffect(() => {
     const fetchCredits = async () => {
-      // SAFELY extract userId (NextAuth does not type it)
       const userId = Number((session?.user as any)?.id);
       if (!userId) return;
 
@@ -163,31 +162,9 @@ function EditorContent() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-3">
               <div className="relative flex size-11 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-white"
-                >
-                  <rect
-                    x="2"
-                    y="2"
-                    width="12"
-                    height="12"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    rx="2"
-                    opacity="0.4"
-                  />
-                  <rect
-                    x="10"
-                    y="10"
-                    width="12"
-                    height="12"
-                    fill="currentColor"
-                    rx="2"
-                  />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+                  <rect x="2" y="2" width="12" height="12" stroke="currentColor" strokeWidth="2" rx="2" opacity="0.4" />
+                  <rect x="10" y="10" width="12" height="12" fill="currentColor" rx="2" />
                 </svg>
               </div>
               <span className="text-xl font-semibold tracking-tight">
@@ -286,12 +263,7 @@ function EditorContent() {
           <div className="mt-6 flex items-center gap-3">
             <label htmlFor="image-upload">
               <div className="flex size-12 cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50">
-                <svg
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                <svg width="24" height="24" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
