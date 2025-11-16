@@ -1,44 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    setMessage("");
+    setError("");
 
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    // Create user in DB through NextAuth-compatible API
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage(data.error || "Failed to sign up");
-        return;
-      }
-
-      // Redirect to login
-      window.location.href = "/auth/login";
-    } catch (err) {
-      setMessage("Something went wrong. Try again.");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Something went wrong.");
+      return;
     }
+
+    // Auto log in user
+    await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/pricing",
+    });
   }
 
   return (
     <div className="max-w-md mx-auto p-10">
-      <h1 className="text-2xl font-bold mb-6">Sign up</h1>
+      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
 
-      {message && <p className="text-red-600 mb-4">{message}</p>}
+      {error && <p className="text-red-600 mb-4">{error}</p>}
 
       <form onSubmit={handleSignup} className="space-y-4">
+        <input
+          type="text"
+          className="w-full border p-3 rounded"
+          placeholder="Your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
         <input
           type="email"
           className="w-full border p-3 rounded"
@@ -59,6 +69,11 @@ export default function SignupPage() {
           Sign Up
         </button>
       </form>
+
+      <p className="mt-4 text-center">
+        Already have an account?{" "}
+        <a href="/auth/login" className="text-blue-600 font-medium">Log in</a>
+      </p>
     </div>
   );
 }
