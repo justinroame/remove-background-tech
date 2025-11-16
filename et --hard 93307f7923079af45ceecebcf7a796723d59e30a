@@ -1,0 +1,1759 @@
+[33mcommit 58687599cd9f494fd55ff2575a3b0e1049e5d583[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 03:20:51 2025 +0000
+
+    Add Drizzle migrations (no env file)
+
+[33mcommit 930307f927309f4fa56eccebcf77a9726d59e30a[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 00:59:00 2025 +0000
+
+    Fix Stripe webhook & credit logic
+
+[33mcommit bdbdb66912d570680bc6eec6435c7693cb2a7990[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 00:56:40 2025 +0000
+
+    Fix subscription checkout to use new auth.ts system
+
+[33mcommit bdfb58c09336bb1c1bd1f03cf8d41c799852ffdf[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 00:54:27 2025 +0000
+
+    Fix create-checkout-session to use new auth.ts
+
+[33mcommit 4d770b37e175619a48828cb649761457d9d8c415[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 00:52:20 2025 +0000
+
+    Add NextAuth root config (auth.ts)
+
+[33mcommit b7c5f62b143b19e4f316c68259e555b91e5a95a3[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 16 00:18:24 2025 +0000
+
+    Added CreditsPill component and wired credit updates
+
+[33mcommit 266436823e95f4e667db542cbfdca23d4c05917a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 23:54:57 2025 +0000
+
+    Wire Stripe checkout + webhooks to addCredits
+
+[33mcommit c5fed76b4906c5453d28111b291d9796764e78bf[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 23:47:33 2025 +0000
+
+    Implement credit-aware downloads, free watermarked limit, and clean download with credits
+
+[33mcommit 05aad38eafae8d485084ac06fe46038b079cd083[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 23:17:49 2025 +0000
+
+    Add core credit system helpers (add, consume, summary)
+
+[33mcommit 0d985389e5b7c2fb74b0ba432b68fc78f886f9e9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 23:05:30 2025 +0000
+
+    Fix NextAuth route: removed invalid authOptions export
+
+[33mcommit 5a961fcb4bbf4638e7070fb89f8a2f10f173208d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 23:03:29 2025 +0000
+
+    Upgrade NextAuth: Google auto-create + JWT improvements + DB sync
+
+[33mcommit 415c6494ed69a9de8e1e671669359236c32a1294[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:42:39 2025 +0000
+
+    Make login logo clickable and link to homepage
+
+[33mcommit b328e83ea5d650ce7f6f7c962336d8d254c13d10[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:38:09 2025 +0000
+
+    Add logo to login and signup pages
+
+[33mcommit 5726eaa31d280be5592a6fe24932ea1b2f564142[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:32:54 2025 +0000
+
+    Add logo header to login and signup pages
+
+[33mcommit 53acd708f1a7bc590d2bc38a72cdd61515a17972[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:17:08 2025 +0000
+
+    Remove createUser import, switch to API-based signup
+
+[33mcommit b54e5864a0f6bc1a7c71156cd978de9c9d5f481a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:14:45 2025 +0000
+
+    Replace bcrypt with bcryptjs in auth.ts
+
+[33mcommit 756372432a0d523cf2a53de1060657b468f3daca[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:12:52 2025 +0000
+
+    Remove name field from signup insert
+
+[33mcommit 5d72e09c47ddb83078a80f27115e400bff972f37[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:10:58 2025 +0000
+
+    Fix NextAuth session type and full auth route
+
+[33mcommit 912431f5cdea532422481f29fcb8599fad13d626[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 22:08:47 2025 +0000
+
+    Fix NextAuth: use user.password instead of passwordHash
+
+[33mcommit 6c946e5b72e3454bc46478744934fd8e35dd8132[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:42:00 2025 +0000
+
+    Fix signup route: replace bcrypt with bcryptjs
+
+[33mcommit f189efce76b8b0881644042f87b4bb423ecdb8c0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:35:57 2025 +0000
+
+    Switch bcrypt → bcryptjs and fix NextAuth route
+
+[33mcommit b422bd411157ab491b2eee451ef69d82c81402d0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:33:02 2025 +0000
+
+    Add @types/bcrypt
+
+[33mcommit e142efff6083bdee5a0f213393b072df912e579f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:28:18 2025 +0000
+
+    Install postgres package for Drizzle
+
+[33mcommit e7819a7d1d6dcb9175a7d061e52e7d629064e632[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:26:29 2025 +0000
+
+    Install next-auth and bcrypt
+
+[33mcommit 134e7fda877c04b35afc0d60582f98e3a40a10f8[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:24:00 2025 +0000
+
+    Add signup API route
+
+[33mcommit e08889d7d6b2f02fca28e7bffbaf79f41db8e5f0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:22:18 2025 +0000
+
+    Add signup page
+
+[33mcommit c551aa9432cf6a6be5a414bc606bdeeabcc2b1f2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:20:24 2025 +0000
+
+    Add login page
+
+[33mcommit 56617eff26cf6a46d837e7186353b77b8b547249[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:18:20 2025 +0000
+
+    Add full NextAuth implementation (email/password + Google)
+
+[33mcommit 3e19adaed7a93c882ab31e3a2d85e8d64be0ecb0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:17:01 2025 +0000
+
+    Add auth helper functions
+
+[33mcommit a769c0fc27fc9fa03500e352228d7d287d71f206[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 21:14:58 2025 +0000
+
+    Add Drizzle DB connection helper
+
+[33mcommit 971bebd5582e18852807bcee7944a835308abf8e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 20:48:34 2025 +0000
+
+    Full editor rewrite: fixes image loading, download, re-upload, vertical color selector
+
+[33mcommit 80ec33566ad9302bc52e9f78d7f64c1b3a95b2df[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 20:36:42 2025 +0000
+
+    Full editor page fix: download, reprocess, display
+
+[33mcommit bf4a36e9f90165c23eaafa5e32c9708f33b18c30[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 20:17:06 2025 +0000
+
+    Full editor fixes: download, reprocess uploads, header, base64 handling
+
+[33mcommit 72a0b854c60368677c8b060941ba62f788b279aa[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 19:42:06 2025 +0000
+
+    Fix editor header, add background selection download, auto reprocess uploads
+
+[33mcommit 53aaae2b7ba85193bcc5e4c9b2822cb799ef3085[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 19:26:33 2025 +0000
+
+    Fix build error: wrap editor page in Suspense for useSearchParams
+
+[33mcommit b7c48348286c698bee3740fdd41ed6f971d7f25e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 19:22:59 2025 +0000
+
+    Fix Next.js build error by forcing dynamic rendering for /editor
+
+[33mcommit 37f54ffa824d7bae09f9d5b36ab559f007c0505b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 19:18:53 2025 +0000
+
+    Add redirect to editor page and wire editor to load processed image
+
+[33mcommit b6a730729b89d8c1a70072ee243b8804f0494c1b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 02:15:50 2025 +0000
+
+    Fix Stripe checkout route and remove apiVersion
+
+[33mcommit 25707b6d202ec8429e839507f148d2f9687aaad2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 02:11:47 2025 +0000
+
+    Fix Stripe checkout + update pricing page
+
+[33mcommit dc1daf9a46f7cd798794fd67f949f69018b2912e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 01:47:50 2025 +0000
+
+    Updated pricing page and Stripe checkout integration
+
+[33mcommit f324870ee0a05055baff7f967357db5d6d3a4aaf[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 01:37:55 2025 +0000
+
+    Fix Stripe checkout + remove apiVersion
+
+[33mcommit fdb0448ee36aa380e21b763bde5201f0d6b5238a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 01:30:32 2025 +0000
+
+    Fix checkout route to handle formData
+
+[33mcommit 5862d6a0d2adde026d6f75ab421b2420f3f82218[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 01:25:31 2025 +0000
+
+    Fix pricing page layout + Stripe checkout
+
+[33mcommit 96cef798916bce8d23035d01ef677039e4847f1a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 00:45:24 2025 +0000
+
+    Updated pricing page and UI fixes
+
+[33mcommit 745abcc3b59dea4e3ca3073072dc714cf48ee35e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 00:35:39 2025 +0000
+
+    update pricing page
+
+[33mcommit d3fd548660a007dfdd130469f01973787409f547[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 00:25:30 2025 +0000
+
+    Your message
+
+[33mcommit 3716d894945ef30f047d1b7b34e8e9f3104ef992[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 15 00:08:22 2025 +0000
+
+    Your message
+
+[33mcommit 16f4b45c5e3d8bcab60bd0e223b2be4a44c3db5e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 23:17:03 2025 +0000
+
+    Fix Stripe checkout URL + env updates
+
+[33mcommit 4f47ac8d8f6fa7ce6954fe854c1426dba9bcfc29[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:56:59 2025 +0000
+
+    Install @vercel/postgres
+
+[33mcommit 0dbaf6f84b6185f16fdb15b2923151c960502bf8[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:35:30 2025 +0000
+
+    Fix drizzle config for postgres
+
+[33mcommit 875bd91d6b3e9f42e8b236c2b594ae05e3f31b03[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:31:58 2025 +0000
+
+    Fix drizzle config to use non pooling URL
+
+[33mcommit 18f14c62376da96ae1d780a1a4b3f2a9ca29f751[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:27:46 2025 +0000
+
+    Add drizzle-kit
+
+[33mcommit 705c9849b41185c9c1528f61472990e78cd7965f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:23:45 2025 +0000
+
+    Clean install
+
+[33mcommit eac232f62150c0b6258b3f5bbf0b8550b2886e65[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 22:05:38 2025 +0000
+
+    Fix TypeScript PAYG_PRICES and SUB_PRICES indexing
+
+[33mcommit 737f710e463b24d965f88abf4dd987645846f528[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 21:35:25 2025 +0000
+
+    Remove Stripe apiVersion for compatibility
+
+[33mcommit 6d7dc4d7b30cdac0531f922c44e5bbaf1b4d283b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 21:16:56 2025 +0000
+
+    Add .env.local to gitignore and update config
+
+[33mcommit dbd2f99ca319867546162e37445f8df2f46e969e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 07:46:51 2025 +0000
+
+    Clean build files and update gitignore
+
+[33mcommit c0006161850b02449a9dd034dfe170ef22c002a2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 07:13:51 2025 +0000
+
+    Remove env file from repo
+
+[33mcommit 9e1e5535a902cf41bebf670e4f08fb2e48a6b780[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 14 07:00:40 2025 +0000
+
+    Add Stripe integration and update pricing layout
+
+[33mcommit 32a38be802bfeb2e57743a82c6527c5b0c28460b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 14:49:03 2025 -0800
+
+    Create db.ts
+
+[33mcommit 56161742d7543e61af342cc953123f3b36e2ea4d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 14:47:16 2025 -0800
+
+    Create schema.ts
+
+[33mcommit 8f1f20ee19b81d3c06183675c4eae43c4ba8d3cd[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 14:44:37 2025 -0800
+
+    Create drizzle.config.ts
+
+[33mcommit 2124faa75127ffd5bb241d3ed4b63c9baf538206[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 12:10:43 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 1b7f03f77f66948d5f1c0c89d9658cfe3d6bfdb9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 11:41:46 2025 -0800
+
+    Create page.tsx
+
+[33mcommit 3f0d4175e0b58de16368602380533e4f356b03b5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 11:28:59 2025 -0800
+
+    Delete components/ui/button.txt
+
+[33mcommit 7e6cdedd6e09b448844d90e712d44caead4f68d6[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 12 11:23:00 2025 -0800
+
+    Create button.txt
+
+[33mcommit 93e42fd7b736fb1e99f9009c55468b17978c3d7c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 20:10:00 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 8cd753357b2cbfebd48de040eec59b90418267e9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 20:05:47 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit b5a100fc3a9e88dfc7389ef817abe3c44d45d4ae[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 19:44:16 2025 -0800
+
+    Create site.webmanifest
+
+[33mcommit 895f8b7e4cc3c1af2d6fc7fec113028c5912475a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 19:42:39 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 1eee68eb77a682d431d7dfe6a7a52e130e0a4d0a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 19:36:34 2025 -0800
+
+    Add files via upload
+
+[33mcommit bc5219907ce5164df16ed46e3878cd338f5db0c0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 19:30:32 2025 -0800
+
+    Rename favicon.ico to testicon.
+
+[33mcommit 46d8fc45231d26e69f7ab415227409e7dab16cdc[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 19:12:54 2025 -0800
+
+    Delete public/favicon.ico
+
+[33mcommit 4ccfe2147624e329cfca4e96bf45f5db1d06ab2a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 15:52:36 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 3b3337141ce71de823466c45504ae0af87560194[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 15:00:15 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 0547d545760b692099f26e62805c860b1ec09f78[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 14:51:45 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 4f173979899eb24839724197b81b869033e03220[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 14:31:23 2025 -0800
+
+    Add files via upload
+
+[33mcommit 72d1c22a7708a3097033bcf0a86f90f9cd474591[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 13:33:34 2025 -0800
+
+    Update globals.css
+
+[33mcommit 0a424b598c6b1a287cd63cec0e661b633c0a4bbb[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 13:31:56 2025 -0800
+
+    Update postcss.config.js
+
+[33mcommit b8de27761ff0f9bf79e6deb66c8275727d87c3ed[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 13:22:19 2025 -0800
+
+    Update postcss.config.js
+
+[33mcommit 0fd34844437c4f71eae1c5c309107c3040b9c207[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 13:14:22 2025 -0800
+
+    Update postcss.config.js
+
+[33mcommit 1ca76d409df7bd6a5ba02bb6fce89241de1503f5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 13:01:41 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit bcca8d451c97e4aacae057696cfab8c2752752b5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 12:43:48 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 83984cecbdacc09e8e0d201d55bad48295bee52e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 12:42:49 2025 -0800
+
+    Update postcss.config.js
+
+[33mcommit 0d3ba93db4faefa7718f65c0300c1849dfd8a063[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 00:24:05 2025 -0800
+
+    Update postcss.config.js
+
+[33mcommit 2c966cf2dbaf87dc1117797152ad3a1da39e653a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 23:52:15 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 88b7366e50b8ae42e97608123b01e8b8efe7849a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 07:29:44 2025 +0000
+
+    Reset globals.css to clean Tailwind directives
+
+[33mcommit a87dddae52d061d3b28388dfdbc5f41e38ebef93[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 07:21:03 2025 +0000
+
+    Fix: overwrite globals.css with actual working version
+
+[33mcommit 06f569766ba3a284c16365885bed106a1250c604[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 23:16:20 2025 -0800
+
+    Update globals.css
+
+[33mcommit ef605f9fcfae1eb97d5c0f948b5aff61990c3b1d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:50:34 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit b42ccfc989d7961f40633ba5f6ecac58602e1579[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:33:33 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 5c1d1e28e058809abb0c388257cae35be6514966[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:23:18 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit daf98c1d23690737cc7d4d9655249e4331349393[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:22:29 2025 -0800
+
+    Update globals.css
+
+[33mcommit 6b460332279b8f60fe9d470f5b94d4c955fc74f3[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:12:23 2025 -0800
+
+    Update globals.css
+
+[33mcommit 32ca1acc3951133003a7a1bbe881cab2ed63e896[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:07:14 2025 -0800
+
+    Create postcss.config.js
+
+[33mcommit a8deec02d786bde6653a06c38c87c4582e07f8c9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 22:02:30 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 18dc1a95de0a35d9ad09d10c0c1726ff41c7d0e6[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 21:57:59 2025 -0800
+
+    Update globals.css
+
+[33mcommit b795aa43744b283be55c8e9a721ed77072b1c914[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 21:53:20 2025 -0800
+
+    Update globals.css
+
+[33mcommit 673cc6cfd9f1d1093c6942112f348c15edde0442[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 20:11:19 2025 -0800
+
+    Update tsconfig.json
+
+[33mcommit 585886a63d3e01c8c8fbe6a833d8f204fc3f99b2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 20:06:17 2025 -0800
+
+    Update package.json
+
+[33mcommit 9c7076ee84022f0cc82aad09dce1e6d6d47c3b2f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 19:58:12 2025 -0800
+
+    Update package.json
+
+[33mcommit 30d5157c02df524eec2b39da5efff44156500a79[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 19:51:15 2025 -0800
+
+    Update package.json
+
+[33mcommit 8101501dce02ac06a6379243341be9c718c3f9a8[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 19:47:00 2025 -0800
+
+    Update package.json
+
+[33mcommit 803620ab9d0b0e66ff75458d83183a0a3e9ddf0f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 19:41:31 2025 -0800
+
+    Update package.json
+
+[33mcommit e66c54598ecc3dccf6a553f40c2c379edacbb1ce[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 19:38:05 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 99ef258b3f6d68826df072ed96cc060b9d31b00f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 03:17:42 2025 +0000
+
+    Fix: ignore node_modules
+
+[33mcommit 583c37889f272b50362b122140b4f6ab57ca3138[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Tue Nov 11 03:07:48 2025 +0000
+
+    Add shadcn/ui: button, card, input
+
+[33mcommit 64f061b8949fd99b65d7fc124ca4307fd7e45151[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 12:25:38 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 4623147121bf46c0af1ccd61633c6d81545a3353[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 12:22:38 2025 -0800
+
+    Create utils.ts
+
+[33mcommit 0c38aa1923e9022e7dca7f0c340ee81935f79281[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 12:21:29 2025 -0800
+
+    Create button.tsx
+
+[33mcommit 0ba5313c42e47d9a323380705d24b66ce692437b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 12:19:33 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 044551e66a6cf216a6dcb6c534ba3c86c5f88f66[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 12:18:43 2025 -0800
+
+    Update package.json
+
+[33mcommit 500a3c668fbedb308cf69e4a7539c19f31cfd1fa[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:35:14 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 3ea1345b58a65abbe1faf245cb5de8a693e82f55[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:34:43 2025 -0800
+
+    Update package.json
+
+[33mcommit 90a8956a66ec95060ee49efed74231d29dff7cc0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:32:11 2025 -0800
+
+    Update package.json
+
+[33mcommit deb9d7dec0dc6ce7904a2314348c7394bd29864a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:30:00 2025 -0800
+
+    Update package.json
+
+[33mcommit 7979bb6490c8760761b9b98222ca4a2016a4d4a4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:27:58 2025 -0800
+
+    Update package.json
+
+[33mcommit 7980556b77f4bfb8b613e637d16c775974dba20a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:26:17 2025 -0800
+
+    Update package.json
+
+[33mcommit 7189792eb2fe0bc8f2b185c427306e6172c5ea9d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:23:10 2025 -0800
+
+    Update package.json
+
+[33mcommit 199e76ce17f639e71d0e6820f56259c3f0df7a5e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:21:32 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 31cdea3571f2606236f468fa2c515bdb6c6baa64[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:19:08 2025 -0800
+
+    Update page.tsx
+
+[33mcommit c0f9c5e69cdba9aba30f5d30a0d8ec8bb7cd37f9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 11:10:56 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit c6b38d1cf0a0d2d7a0a174c4618d316abccb56cb[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 10:14:31 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit b671c17bcfc4d10ed89d67218b6fe9ad7e9e781f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 10:07:41 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 9493e742301d2b9a944873b112d778814c5aa8fb[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 10:01:52 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit dbd4c788d47702bcca3c7fe31ad4eec3ce3477b6[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 09:59:01 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 94bab821a47911f0169e97f55cc6d2a8410295ca[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 09:56:34 2025 -0800
+
+    Update tailwind.config.ts
+
+[33mcommit 84f97cbe43338c5625d603f7e01722cd331855f5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 09:53:18 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 03bc978cb4c379c4437e26aea9b55a3cb0456e74[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 00:21:19 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 175ca763b77bc3417fede40f01f1694e5486ce23[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 00:19:05 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 7dec3a4a404303b48cd48d4e5902f07d42652f30[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:58:17 2025 -0800
+
+    Update page.tsx
+
+[33mcommit f73f34ca25e16d3814869e61c0be7780f54128c0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:57:26 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit c46e1c41df01d6dc319712272de1379c7161665d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:44:44 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 6ed2749c78af183cfa8f3e589838805044d0598e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:44:00 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit fc6795f5b34ccb4c7812cb17733274e11e5911d9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:38:47 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 7961a88fec556091f6c5f4dc934a37e8d37ebdfc[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:37:56 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit edd81fcfd2f158423149a86859dfee330e0c694c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:28:24 2025 -0800
+
+    Update page.tsx
+
+[33mcommit c1f7ee754e60d90b34cf7a80848e2e59a671f4e2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:24:58 2025 -0800
+
+    Update page.tsx
+
+[33mcommit e6fd28a671e426228cc2faae7d8989980c076566[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:23:26 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 36f01ab0179fd6e504618a0ce194271b893cdf8d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:06:43 2025 -0800
+
+    Update page.tsx
+
+[33mcommit d5235085576eb124be33ccf69f74c23d63a0a2e4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 23:00:39 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 6e7e919f38cf68465fd3e0dc5ee881de309cc8a5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 22:54:33 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 24f9e977bc8dd092fe7eb2005a17f4ba29416c43[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 22:46:38 2025 -0800
+
+    Update route.ts
+
+[33mcommit 5f063ad5cd18426051000c4c9e26638d7c2c8ca6[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 22:45:42 2025 -0800
+
+    Update page.tsx
+
+[33mcommit ed40d1e3a34fe4291a7172f5933393408e08a619[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 18:13:49 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 488762be51b65bc93157a385aedbb49ddf4ef261[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Mon Nov 10 01:57:06 2025 +0000
+
+    Add browser-image-compression
+
+[33mcommit 5ecee1fd894e2a2ae0160aee2ae524e3b0cb846c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 17:17:09 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 552158118c4f296f81d0c601ebccc2cee9981e92[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:33:03 2025 -0800
+
+    Update route.ts
+
+[33mcommit dbf09e8935e2e680efb6eec5c8e797e78ff29df8[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:30:05 2025 -0800
+
+    Create page.tsx
+
+[33mcommit 7b088a6299aa4cb0dec4ed989bb89387dc69ccba[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:29:27 2025 -0800
+
+    Delete app/page.tsx
+
+[33mcommit 62ad8cceca56111368e38d45d5cc2b3c6213c456[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:19:27 2025 -0800
+
+    Delete app/remove directory
+
+[33mcommit a69803695d2be4fefff030d0aff1a10d2bbed94b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:12:34 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 35b68be7534d0ef8a3dd59d206bd2a86fd468c43[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:08:51 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 0eb8fa0b0249cd05b0d2cc59e1380883ff3adbf9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 14:05:41 2025 -0800
+
+    Update route.ts
+
+[33mcommit 4bfc4d11049d1ddde3c7fac0379d84fe50373ae0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 12:16:05 2025 -0800
+
+    Update route.ts
+
+[33mcommit 649915c974a118c12f21b937ace8388742bf4f68[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 12:11:20 2025 -0800
+
+    Update route.ts
+    
+    git add app/api/remove-background/route.ts
+    git commit -m "Fix Replicate model hash syntax error in API route"
+    git push
+
+[33mcommit 1f15f3e6b45264f2d06ad31f88b5345062973f85[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 12:09:39 2025 -0800
+
+    Update route.ts
+
+[33mcommit e21265c778d86a7c419c858558cf14a0aff72b7a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 12:05:52 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 8bd4d60bc4a4df9a1c759879e73d262795e9854c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 12:04:35 2025 -0800
+
+    Update route.ts
+
+[33mcommit 0626140dda58f19c364a323edd0a876ec4d8a7b7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 11:45:20 2025 -0800
+
+    Update package.json
+
+[33mcommit b482c6e7feb48058ba9fc22f145b30100eaf8102[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sun Nov 9 11:37:31 2025 -0800
+
+    Create route.ts
+
+[33mcommit b37530c065e1156bd1188d1d1c6429ea692cab64[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 22:10:27 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 70ccaf899f57ff28920decbf601c7ae75169b5e9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 22:09:04 2025 -0800
+
+    Create background-removal.js
+
+[33mcommit b49a3c3ba0c2c0d9939bf162b39190c605904f8f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 21:40:11 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 57688e8c969d8e9b479256d7b33e0e34bee2f37f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 21:39:47 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 594d21e2539dbd2b04ffc1a1f6a16469c979d12d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 21:37:09 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 9abfadf13830137f770a6970bd34b031096f469e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 21:32:52 2025 -0800
+
+    Delete app/api/remove-bg directory
+
+[33mcommit 80bc632142c23cdcaced6a503e2541da77d85e25[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:44:45 2025 -0800
+
+    Create route.ts
+
+[33mcommit 6940a06f927157886c92777d7298415574a1913c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:27:18 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 4c68c31dde2a258b6cd2741f43593d13ff628810[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:13:28 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 210a82f64352eefc350db0cf088ebe9a123dfb2d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:09:49 2025 -0800
+
+    Update page.tsx
+
+[33mcommit da5c97de5ceee36885fe4346521704d54da70884[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:04:41 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 12a2f77812100b4cd59fd7c8f1edacb4d2cc448e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 20:00:13 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 82184a2188ddbf5ee8b75eba4e5c02ec266f412a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:57:48 2025 -0800
+
+    Update page.tsx
+
+[33mcommit b94dce643c0b915c1397b682a2f3edd5fc20d90f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:51:40 2025 -0800
+
+    Update page.tsx
+
+[33mcommit b45d81f884e8f038508409fd9a904330e606f360[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:47:16 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 51f4d231ca564a9fec69b2953f6a3e94fefa4deb[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:43:32 2025 -0800
+
+    Update page.tsx
+
+[33mcommit ee6b07e7e6c27dc0788406311502c7c97bba29ab[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:13:01 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 01b9b6d654a35fd4085bf1b75f66e13ec6329b60[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:08:47 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 4be35a5fecfbb513a5d9ee867faa624f2adfe09b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 19:03:18 2025 -0800
+
+    Update page.tsx
+
+[33mcommit cf8ef09cfefc7c255840b10218f90e9860938f79[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:41:26 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 6602f1cc853d95ae7c2f77b3c74a1a40563b81c0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:37:41 2025 -0800
+
+    Update page.tsx
+
+[33mcommit f1fdcfdca65f75862396a46756537dab68ee5eff[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:27:52 2025 -0800
+
+    Update page.tsx
+
+[33mcommit a90157ee1e75d6acf3ce0a04efe0a11b299c1f72[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:22:54 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 47498fdc0ca0252699ed9a64b878c9be618fec2c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:17:18 2025 -0800
+
+    Update page.tsx
+
+[33mcommit a1d106d98ec958e84677ff099d581110a4d95221[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:06:09 2025 -0800
+
+    Update page.tsx
+
+[33mcommit ebdc42a35d8a9060cfae7b4603371aa48e5840a7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 18:02:16 2025 -0800
+
+    Update page.tsx
+
+[33mcommit f0c04d327dffdc307c0905446a7c429f9ea2554e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:57:20 2025 -0800
+
+    Update page.tsx
+
+[33mcommit c6ff99c81940ffd25ff797f8097c77729005b8a5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:51:29 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 7aa3a90958bf2cf28c8bec66fb17a7688e100e55[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:44:32 2025 -0800
+
+    Update page.tsx
+
+[33mcommit e51c7b23cef252c138821b59e4cd38bf1fb5175d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:12:37 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 88b4d8de5f7f0b030c8fd127e1590c86b2151f7e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:07:50 2025 -0800
+
+    Delete app/api/remove-bg directory
+
+[33mcommit b5a79909d15c47ecdac0ba4e580d8108094dcb54[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 17:05:20 2025 -0800
+
+    Update page.tsx
+
+[33mcommit c1c8be5ec943680a61cc1de2536c1fe71113f92c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:54:29 2025 -0800
+
+    Update page.tsx
+
+[33mcommit ea00d6ef596950f02c948972a74ba9dd0fd809da[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:50:20 2025 -0800
+
+    Update package.json
+
+[33mcommit 3a7fdc50914e45efe763557805a230991027ab23[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:43:51 2025 -0800
+
+    Update page.tsx
+
+[33mcommit d1ab966c9f1cb63fc32951fcfd7572230bed0ae1[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:40:54 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 989792f4b70ed242e01808335a48b5043e6520e4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:31:51 2025 -0800
+
+    Update page.tsx
+
+[33mcommit cc986f16876d62458c8caf682cd5a1f3c39b4aaf[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:23:25 2025 -0800
+
+    Update page.tsx
+
+[33mcommit df112cae49547f584ba761fe59cb5084528196ba[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 16:21:22 2025 -0800
+
+    Update package.json
+
+[33mcommit 3f53bd38053a37302d3073aec63d7f35343dc4ac[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 14:21:44 2025 -0800
+
+    Update route.ts
+
+[33mcommit 8f2ace301d787cf39c7ebbf2a2cd2a92054a6a33[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 14:15:49 2025 -0800
+
+    Update route.ts
+
+[33mcommit 74fba14e0e7e10310a891bdd5a7cf5ede3562c1f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 14:10:12 2025 -0800
+
+    Update route.ts
+
+[33mcommit 8b28208df77b7f11b55efe4bf404d37f603a8406[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 14:00:58 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 84c7ed0d5980a9ee03b8e074421087c63dba6425[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 13:41:38 2025 -0800
+
+    Update route.ts
+
+[33mcommit f2924d9bec18314643e28105a289090c4ec7427b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 13:31:14 2025 -0800
+
+    Update route.ts
+    
+    git add app/api/remove-bg/route.ts
+    git commit -m "Force fresh build"
+    git push
+
+[33mcommit d22cf5cad06ee064f63fa960add5422304cc645d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 12:58:32 2025 -0800
+
+    Update route.ts
+
+[33mcommit c3c0c8e6e4462a37a82f9a852610715be39c8e91[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Sat Nov 8 11:53:28 2025 -0800
+
+    Update route.ts
+
+[33mcommit d3af7c4514e138bec2e74a6168a100b7f18136f5[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 21:47:07 2025 -0800
+
+    Update route.ts
+
+[33mcommit 7655e89f5043cc78e0f23bf0219cafeca6275694[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 21:19:56 2025 -0800
+
+    Update route.ts
+
+[33mcommit e67ba57d6d9ac93b26fdf0bb096f5fbd38ba7853[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 21:17:26 2025 -0800
+
+    Update route.ts
+
+[33mcommit 4c6c6324e73418f97c763e93568be7665d5b2426[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 21:17:03 2025 -0800
+
+    Update route.ts
+
+[33mcommit e33e58a7e650a051007b55d86718845daf4a1a94[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 21:15:59 2025 -0800
+
+    Update page.tsx
+
+[33mcommit e89de66ddcb2763a5b66ec9dd22d88b378f50df9[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 20:43:36 2025 -0800
+
+    Update route.ts
+
+[33mcommit 4f19a351e9db59e25186e13e3a7ebe22e483f9b2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 20:43:15 2025 -0800
+
+    Update route.ts
+
+[33mcommit 6af5a13b7fde7f4b53af59d290e61d4846d43592[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 19:29:11 2025 -0800
+
+    Update route.ts
+
+[33mcommit 358ae5f9335700b7f757913d64ff94134a1e3164[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 17:05:34 2025 -0800
+
+    Update page.tsx
+
+[33mcommit d8acaa098316ad69b9d9f9632d3e5b85af2050d7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 16:23:24 2025 -0800
+
+    Update route.ts
+
+[33mcommit f241aa8a846106efbcda9012d80643f4f5b76d17[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 16:00:58 2025 -0800
+
+    Update route.ts
+
+[33mcommit b1cb9c5f8dc4e00d7bba24613c7f4cc0bb70fc94[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:45:58 2025 -0800
+
+    Update route.ts
+
+[33mcommit 68aa7c76fdd1460cb91c84e26dd9efc9b159485a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:40:29 2025 -0800
+
+    Update route.ts
+
+[33mcommit d55b13afc121231ca83865fe492df4453a3442b1[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:40:07 2025 -0800
+
+    Update route.ts
+
+[33mcommit 07f21e813b88035d6b131ddc6a9df78085e65ef4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:32:14 2025 -0800
+
+    Update route.ts
+
+[33mcommit cbfe1428ee09c5d2e70c091a72db7e39e6ab4459[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:25:13 2025 -0800
+
+    Update route.ts
+
+[33mcommit ac220031d6bc5678c18dc6c179b3e0d46e44690f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:20:53 2025 -0800
+
+    Update route.ts
+
+[33mcommit 628637e7a6d9e113ba28fc247e9424336f68ce67[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 15:03:53 2025 -0800
+
+    Update route.ts
+
+[33mcommit d65a81285547b1ffb8e345258c584a9fe54b193f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 14:41:22 2025 -0800
+
+    Update route.ts
+
+[33mcommit ad947ed7e7b502fe6a4098d987fb81f8559ac066[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 14:06:37 2025 -0800
+
+    Update route.ts
+
+[33mcommit 03946b049784e73d5d225755cd739fffdfb6eea1[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 13:56:35 2025 -0800
+
+    Update route.ts
+
+[33mcommit 0976c3def9d66a74b8b81ad6cbdcfb8806d1148b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 13:49:19 2025 -0800
+
+    Update route.ts
+
+[33mcommit 08dd44be6e1d7c4e7af249d862c426784893e2c4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 13:33:20 2025 -0800
+
+    Update route.ts
+
+[33mcommit f6d7feda4c139ef6b6641d896c1010d339b0d8fb[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 13:25:08 2025 -0800
+
+    Update route.ts
+
+[33mcommit 847f8eb1dd1d139ef0d21085a444a5be45bdd5e2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 13:13:05 2025 -0800
+
+    Update route.ts
+
+[33mcommit f9862041f3f7404891778509439d3c4e88b075a7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 12:57:29 2025 -0800
+
+    Update route.ts
+
+[33mcommit c89b27777f3c3726bf0972663554e69d462cdc68[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 12:51:47 2025 -0800
+
+    Update route.ts
+
+[33mcommit 39d3f46bf90f9ccdc802064ad5ed42d86984c671[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 12:20:28 2025 -0800
+
+    Update route.ts
+
+[33mcommit 978ef938056d812d1c7bb9e25ec16585c1c12447[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 11:58:06 2025 -0800
+
+    Update route.ts
+
+[33mcommit 89de735d7296478acf534ab3fb97cf8cec17ac22[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 11:49:28 2025 -0800
+
+    Update route.ts
+
+[33mcommit 754ca68c0bb72e47d4d811115b6f1e869678bc4d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 10:18:50 2025 -0800
+
+    Update route.ts
+
+[33mcommit 46fb54113bf01ed5cc73d6d12e7ec1c33d5aec71[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 10:09:39 2025 -0800
+
+    Update route.ts
+
+[33mcommit 97b83fbc446c01d6ecaee723c74282ab6bea7789[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 09:58:59 2025 -0800
+
+    Update route.ts
+
+[33mcommit 596b051b4b5d492f2034fd14255b201f5c36b756[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Fri Nov 7 09:47:50 2025 -0800
+
+    Update route.ts
+
+[33mcommit d8dcffca5a7779ace0f2f1ba46b3ac246e8c954b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 23:02:40 2025 -0800
+
+    Update route.ts
+
+[33mcommit 486b5e73e8e95fb0aea1912a17f92ca8d2bb7498[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 22:50:20 2025 -0800
+
+    Update route.ts
+
+[33mcommit a4aa647b0a6a1826842375219c64416dbc5e8456[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 22:23:18 2025 -0800
+
+    Update route.ts
+
+[33mcommit 8b70e38ffb349e65afd685fc7be5d4fe26efaea4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 22:04:53 2025 -0800
+
+    Update route.ts
+
+[33mcommit d7ca0427836d86deda9739cdc19dad680bad9653[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:56:37 2025 -0800
+
+    Update route.ts
+
+[33mcommit ffeb255fed1700d2f2676b276d3afbf7e0906a66[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:49:48 2025 -0800
+
+    Update route.ts
+
+[33mcommit e3b7b4bf80f438b43ace0e5b0c2b10d66e987625[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:37:12 2025 -0800
+
+    Update route.ts
+
+[33mcommit c9d5edb30c044779b5f522d36ba229e8e906c3ce[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:32:44 2025 -0800
+
+    Update route.ts
+
+[33mcommit aceacf86cfcc98cd19c3d5b5f7a97a8081d706a0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:20:03 2025 -0800
+
+    Update route.ts
+
+[33mcommit df262661a9277de692bb78428e178e516a20231e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 21:18:48 2025 -0800
+
+    Update route.ts
+
+[33mcommit af2263f8c638b484003db0325af339080f751aa7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:51:26 2025 -0800
+
+    Update route.ts
+
+[33mcommit 642c795fc4a0c21bd2a1442f7cb891db7365e82a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:43:01 2025 -0800
+
+    Update route.ts
+
+[33mcommit 94929d0f0fc2995782b6673b0b0c3c2a8808ec82[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:36:59 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 3509116f19a2dd152409ee0e65888e4ec00d26a8[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:31:02 2025 -0800
+
+    Update route.ts
+
+[33mcommit d68fec3f3f995e2e13acec0786a9263cc35c013e[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:29:37 2025 -0800
+
+    Update page.tsx
+
+[33mcommit cf42a67616a4ecc23409e54c4e5628f7021a8a2d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 20:12:48 2025 -0800
+
+    Update route.ts
+
+[33mcommit 0b4b0afa57882a20cba7072170d2a099a9badd6d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 19:55:56 2025 -0800
+
+    Update route.ts
+
+[33mcommit 58485327edd9e62eec7282ec0ccccb31ace77e36[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 19:29:10 2025 -0800
+
+    Update route.ts
+
+[33mcommit 0d4b1e3ab4ac9b1c3bb430879c48a4d5d31b3025[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 17:55:23 2025 -0800
+
+    Update package.json
+
+[33mcommit 0ef48d8c728a0204aa12177cb70d0172746a5b8b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 17:53:47 2025 -0800
+
+    Update layout.tsx
+
+[33mcommit 61f48cb4071b6bc1a13d4cbef91d5c0ad6c57d5f[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 13:36:51 2025 -0800
+
+    Update README.md
+
+[33mcommit b794319ea55599edaaa394105003525e8206cd96[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 13:10:28 2025 -0800
+
+    Delete app/not-found.tsx.
+
+[33mcommit b946590b5221629434d76fbbeef6271869c09004[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 13:07:09 2025 -0800
+
+    Create not-found.tsx.
+
+[33mcommit bfdb615dce4ac6515f76de66107325106ac27703[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 13:06:06 2025 -0800
+
+    Update page.tsx
+
+[33mcommit a525b7d393738b686e971423b13eaef71dd7d918[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:55:28 2025 -0800
+
+    Update page.tsx
+
+[33mcommit c01d4dd6cbfd7f6d5215c73fcdcf0c2124aa5b70[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:47:45 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 95764052c55bd8592d6d861e6393a38214252f4b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:46:24 2025 -0800
+
+    Update page.tsx
+
+[33mcommit 69440a9189271e732f3105a1a2291ddf6cb72a34[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:18:32 2025 -0800
+
+    Add files via upload
+
+[33mcommit faeaeeb8e03b84dee62c754da9091e8b262338c4[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:17:32 2025 -0800
+
+    Create favicon.ico
+
+[33mcommit ae9a28932b67fb9d3d6dff5a8bc1d2b806d64eab[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:15:55 2025 -0800
+
+    Delete public
+
+[33mcommit ecce665683edada5d5cf9bc80f2d41d9a95ea068[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:14:14 2025 -0800
+
+    Create public
+
+[33mcommit c3707e03e620e0981c508ee26aa0fcc44d6e5cac[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:13:24 2025 -0800
+
+    Delete public/favicon.ico
+
+[33mcommit cadff4893395404cbab16414665aaa758118c8d2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:05:45 2025 -0800
+
+    Update route.ts
+
+[33mcommit c4c45f9958b9e959d4913c9a4285e96ab39ccd6d[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 12:04:36 2025 -0800
+
+    Create favicon.ico
+
+[33mcommit 06c154763287e473c900994fdaa78c7316e2455c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 11:52:43 2025 -0800
+
+    Create not-found.tsx
+
+[33mcommit 59289e1151b69c8f75b7add25487b565dd3ba824[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 10:52:11 2025 -0800
+
+    Create route.ts
+
+[33mcommit 37b521bda9906734ddc245b837fcfa44894e94ad[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Thu Nov 6 10:47:49 2025 -0800
+
+    Delete app/remove/app directory
+
+[33mcommit 3e764b25470b81fafec370df8f6ba5ca0a7aaaa7[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:52:47 2025 -0800
+
+    Update package.json
+
+[33mcommit ac8d4f1d89f91b877beaf031497e96bb422e9b9a[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:48:26 2025 -0800
+
+    Create tailwind.config.ts
+
+[33mcommit 8d28a07872c52b06cc2b8d3d923138b186f784f2[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:47:24 2025 -0800
+
+    Create globals.css
+
+[33mcommit f43127361930ce6cf7ab30990e47f37db3f2fdb0[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:45:41 2025 -0800
+
+    Create layout.tsx
+
+[33mcommit 7b251caf7827604f51356c254cc44d28c7caf1d3[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:43:29 2025 -0800
+
+    Delete app/app directory
+
+[33mcommit 54bbc54a304bf727cf044f27e6f0f1485c935689[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:40:09 2025 -0800
+
+    Create layout.tsx
+
+[33mcommit 48bf55f5bd773a6765af462e97af3c8ff68a9a5b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:11:07 2025 -0800
+
+    Create package.json
+
+[33mcommit 65cfddcf790f99c333eab98bc7ebec87c91dd475[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 22:08:48 2025 -0800
+
+    Create next.config.js
+
+[33mcommit 4af5f73331854a04095f91af134ccb87caf6922c[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 21:21:55 2025 -0800
+
+    Create page.tsx
+
+[33mcommit cd130e34218a8d0094843fc939b10c5af8a335c6[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 20:43:22 2025 -0800
+
+    Create package.json
+
+[33mcommit 8a66fe29283c2d9fb4f029f0f55d34bc66807303[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 20:42:34 2025 -0800
+
+    Create route.ts
+
+[33mcommit 7903e61ccb53575b629f9aeb145b9b403349e13b[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 20:41:50 2025 -0800
+
+    Create page.tsx
+
+[33mcommit 1587a67b1d3bf2d324b4298a71eaeb3be7f99a63[m
+Author: justinroame <justin_roame@yahoo.com>
+Date:   Wed Nov 5 20:34:19 2025 -0800
+
+    Initial commit
