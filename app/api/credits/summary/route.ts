@@ -1,35 +1,25 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";        // ✅ NEW AUTH
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
 import { and, eq, gt } from "drizzle-orm";
 
 export async function GET() {
-  // ✅ Use new NextAuth App Router auth handler
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
-  // User ID safely extracted
-  const userId = session?.user?.id;
+  const userId = (session?.user as any)?.id;
+  if (!userId) return NextResponse.json({ total: 0 });
 
-  // If no session → return 0 credits (NOT 500)
-  if (!userId) {
-    return NextResponse.json({ total: 0 });
-  }
-
-  const now = new Date();
-
-  // DB query
   const rows = await db
     .select()
     .from(credits)
     .where(
-      and(
-        eq(credits.userId, Number(userId)),
-        gt(credits.expiresAt, now)
-      )
+      and(eq(credits.userId, Number(userId)), gt(credits.expiresAt, new Date()))
     );
 
-  const total = rows.reduce((sum, r) => sum + r.amount, 0);
+  let sum = 0;
+  rows.forEach((r) => (sum += r.amount));
 
-  return NextResponse.json({ total });
+  return NextResponse.json({ total: sum });
 }
