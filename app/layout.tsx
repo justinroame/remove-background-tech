@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
