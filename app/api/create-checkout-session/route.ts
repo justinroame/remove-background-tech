@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { auth } from "@/auth"; // ✅ NEW — pulls from root auth.ts
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "latest",
 });
 
 export async function POST(req: Request) {
