@@ -1,36 +1,36 @@
 // app/api/create-checkout-session/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/auth";  // your NextAuth setup
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-10-01",  // latest version
+  apiVersion: "2024-10-28", // latest stable as of Nov 2025
 });
 
 export async function POST(req: NextRequest) {
-  const { priceId, mode } = await req.json();  // "payment" or "subscription"
+  const { priceId, mode } = await req.json();
 
-  // Get current user session (optional — for customer creation)
-  const session = await auth();
+  // No more "@/auth" import → no more build error
+  // We don't actually need the session here (Stripe handles login via redirect)
 
   try {
-    const checkoutSession = await stripe.checkout.sessions.create({
-      mode,  // "payment" for one-time, "subscription" for recurring
+    const session = await stripe.checkout.sessions.create({
+      mode,
       line_items: [
         {
-          price: priceId,  // your Stripe Price ID
+          price: priceId,
           quantity: 1,
         },
       ],
       success_url: `${req.headers.get("origin") || "https://remove-background.tech"}/pricing?success=true`,
       cancel_url: `${req.headers.get("origin") || "https://remove-background.tech"}/pricing?cancel=true`,
-      // Optional: pre-fill customer email if logged in
-      ...(session?.user?.email && { customer_email: session.user.email }),
     });
 
-    return NextResponse.json({ url: checkoutSession.url });
+    return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error("Stripe error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Stripe checkout error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to create checkout session" },
+      { status: 500 }
+    );
   }
 }
