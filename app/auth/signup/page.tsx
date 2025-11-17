@@ -2,18 +2,19 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    // Create user in DB through NextAuth-compatible API
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -22,16 +23,23 @@ export default function SignupPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error || "Something went wrong.");
+      setError(data.error || "Signup failed.");
       return;
     }
 
-    // Auto log in user
-    await signIn("credentials", {
+    // *** CRITICAL FIX ***
+    const result = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/pricing",
+      redirect: false, // REQUIRED FOR NEXTAUTH V5
     });
+
+    if (result?.error) {
+      setError("Login failed after signup.");
+      return;
+    }
+
+    router.push("/pricing");
   }
 
   return (
@@ -55,6 +63,7 @@ export default function SignupPage() {
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <input
@@ -63,6 +72,7 @@ export default function SignupPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
         <button className="w-full bg-blue-600 text-white p-3 rounded">
@@ -72,7 +82,9 @@ export default function SignupPage() {
 
       <p className="mt-4 text-center">
         Already have an account?{" "}
-        <a href="/auth/login" className="text-blue-600 font-medium">Log in</a>
+        <a href="/auth/login" className="text-blue-600 font-medium">
+          Log in
+        </a>
       </p>
     </div>
   );
