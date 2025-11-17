@@ -9,12 +9,10 @@ const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
-
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
@@ -43,15 +41,15 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id as string;
-        token.totalCredits = (user as any).totalCredits ?? 0;
+        token.id = user.id;
+        token.totalCredits = user.totalCredits ?? 0;
       }
       return token;
     },
 
     async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.totalCredits = token.totalCredits as number;
+      session.user.id = token.id;
+      session.user.totalCredits = token.totalCredits;
       return session;
     },
   },
