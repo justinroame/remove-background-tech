@@ -1,18 +1,19 @@
-// components/ClientProviders.tsx
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import CreditsPill from "@/components/CreditsPill";
+import Header from "@/components/Header"; // <- this is the new fixed header
 import useFreeDownloadRedirect from "@/hooks/useFreeDownloadRedirect";
 
-export default function ClientProviders({ children }: { children: React.ReactNode }) {
+export default function ClientProviders({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   useFreeDownloadRedirect();
 
   return (
     <SessionProvider>
-      <header className="w-full flex justify-end p-4">
-        <CreditsPill />
-      </header>
+      <Header />   {/* <-- This fixes all header logic! */}
       {children}
     </SessionProvider>
   );

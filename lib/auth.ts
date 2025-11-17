@@ -1,6 +1,6 @@
-// /lib/auth.ts
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
@@ -9,58 +9,57 @@ import { eq } from "drizzle-orm";
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+      authorize: async ({ email, password }) => {
+        const [user] = await db.select().from(users).where(eq(users.email, email));
 
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!user) return null;
 
-        const email = credentials.email.toLowerCase().trim();
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) return null;
 
-        const user = await db.query.users.findFirst({
-          where: (u) => eq(u.email, email),
-        });
-
-        if (!user || !user.password) return null;
-
-        const valid = await bcrypt.compare(credentials.password, user.password);
-        if (!valid) return null;
-
-        return {
-          id: String(user.id),
-          email: user.email,
-          totalCredits: user.totalCredits ?? 0,
-        };
+        return user;
       },
+    }),
+
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
 
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60, // 1 hour
+  },
+
+  jwt: {
+    maxAge: 60 * 60,
+  },
+
+  pages: {
+    signIn: "/auth/login",
+  },
 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.email = user.email;
         token.totalCredits = user.totalCredits ?? 0;
       }
       return token;
     },
 
     async session({ session, token }) {
-      session.user = {
-        id: token.id as string,
-        email: token.email as string,
-        totalCredits: token.totalCredits as number,
-      };
+      if (token?.id) {
+        session.user.id = token.id as string;
+        session.user.totalCredits = token.totalCredits as number;
+      }
       return session;
     },
-  },
-
-  pages: {
-    signIn: "/auth/login",
   },
 };
