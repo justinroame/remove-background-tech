@@ -5,8 +5,6 @@ import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// 🚨 DO NOT export authOptions (NOT allowed in v5)
-
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
@@ -34,16 +32,13 @@ const handler = NextAuth({
         return {
           id: String(user.id),
           email: user.email,
-          name: user.name ?? "",
           totalCredits: user.totalCredits ?? 0,
         };
       },
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   callbacks: {
     async jwt({ token, user }) {
