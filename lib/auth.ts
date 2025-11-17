@@ -1,12 +1,12 @@
 // /lib/auth.ts
-import type { AuthConfig } from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export const authOptions: AuthConfig = {
+export const authOptions: NextAuthConfig = {
   providers: [
     Credentials({
       credentials: {
@@ -52,12 +52,11 @@ export const authOptions: AuthConfig = {
     },
 
     async session({ session, token }) {
-      if (!session.user) session.user = {};
-
-      session.user.id = token.id as string;
-      session.user.email = token.email as string;
-      session.user.totalCredits = token.totalCredits as number;
-
+      session.user = {
+        id: token.id as string,
+        email: token.email as string,
+        totalCredits: token.totalCredits as number,
+      };
       return session;
     },
   },
