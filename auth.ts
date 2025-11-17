@@ -1,4 +1,4 @@
-// /auth.ts
+// auth.ts (root)
 import NextAuth from "next-auth";
 import { authOptions } from "@/lib/auth";
 
