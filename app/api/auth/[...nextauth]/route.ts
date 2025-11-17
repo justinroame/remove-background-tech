@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { users } from "@/drizzle/schema";  // ✅ fix this path
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const handler = NextAuth({
