@@ -24,11 +24,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // ←←← THIS IS THE ONLY FIX YOU NEED
         const normalizedEmail = credentials.email.toLowerCase().trim();
 
         const user = await db.query.users.findFirst({
-          where: eq(users.email, normalizedEmail), // ← use normalized email
+          where: eq(users.email, normalizedEmail),
         });
 
         if (!user || !user.password) return null;
@@ -39,7 +38,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: String(user.id),
           email: user.email,
-          name: user.name || null, // optional — safe even if name column doesn't exist yet
+          // ←←← REMOVED name line — your DB doesn't have it yet
         };
       },
     }),
