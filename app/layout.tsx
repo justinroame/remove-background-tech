@@ -1,30 +1,25 @@
-"use client";
-
 import { Inter } from "next/font/google";
-import dynamic from "next/dynamic";
-import { SessionProvider } from "next-auth/react";
-import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import ClientProviders from "@/components/ClientProviders";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
-
-const ClientProviders = dynamic(
-  () => import("@/components/ClientProviders"),
-  { ssr: false }
-);
 
 export const metadata = {
   title: "remove-background.tech - AI Background Removal",
   description: "Remove backgrounds from images automatically with AI.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider>
-          <ClientProviders>{children}</ClientProviders>
-        </SessionProvider>
+        {/* ClientProviders handles SessionProvider */}
+        <ClientProviders>{children}</ClientProviders>
         <Analytics />
       </body>
     </html>
