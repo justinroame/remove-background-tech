@@ -1,13 +1,12 @@
-// /lib/auth.ts
-import NextAuth from "next-auth";
+// lib/auth.ts
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import type { NextAuthConfig } from "next-auth";
 
-const handler = NextAuth({
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -15,20 +14,20 @@ const handler = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const email = credentials.email.toLowerCase().trim();
 
         const user = await db.query.users.findFirst({
-          where: eq(users.email, email),
+          where: (u) => eq(u.email, email),
         });
 
         if (!user || !user.password) return null;
 
-        // Check password
-        const ok = await bcrypt.compare(credentials.password, user.password);
-        if (!ok) return null;
+        const match = await bcrypt.compare(credentials.password, user.password);
+        if (!match) return null;
 
         return {
           id: String(user.id),
@@ -45,14 +44,18 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
         token.totalCredits = user.totalCredits ?? 0;
       }
       return token;
     },
 
     async session({ session, token }) {
-      session.user.id = token.id;
-      session.user.totalCredits = token.totalCredits;
+      session.user = {
+        id: token.id,
+        email: token.email,
+        totalCredits: token.totalCredits,
+      };
       return session;
     },
   },
@@ -60,6 +63,4 @@ const handler = NextAuth({
   pages: {
     signIn: "/auth/login",
   },
-});
-
-export { handler as GET, handler as POST };
+};
