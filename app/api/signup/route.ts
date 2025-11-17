@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -16,10 +16,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
+    // Check if user exists
     const existing = await db
       .select()
       .from(users)
@@ -33,15 +32,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash password
     const hashed = await bcrypt.hash(password, 12);
 
-    // Create new user with 3 free credits
+    // Create user with 3 free credits — NO `name` field (your DB doesn't have it)
     await db.insert(users).values({
       email: normalizedEmail,
       password: hashed,
-      name: name?.trim() || null,
-      totalCredits: 3,        // ← 3 FREE CREDITS ON SIGNUP
+      totalCredits: 3,    // ← 3 FREE CREDITS ON SIGNUP
       pro: false,
     });
 
