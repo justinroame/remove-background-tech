@@ -1,4 +1,6 @@
 // app/api/credits/summary/route.ts
+export const dynamic = "force-dynamic";
+
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
