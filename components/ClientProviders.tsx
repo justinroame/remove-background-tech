@@ -1,4 +1,3 @@
-// components/ClientProviders.tsx
 "use client";
 
 import CreditsPill from "./CreditsPill";
