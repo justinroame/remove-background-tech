@@ -1,25 +1,20 @@
-// lib/auth.ts (NextAuth v5 / Auth.js)
-
+// /lib/auth.ts
+import type { AuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-// ⭐ IMPORTANT: no NextAuthConfig import — removed in v5
-// ⭐ NextAuth v5 uses `AuthConfig` automatically with NextAuth()
-
-export const authOptions = {
+export const authOptions: AuthConfig = {
   providers: [
     Credentials({
-      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
 
-      async authorize(credentials) {
+      authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) return null;
 
         const email = credentials.email.toLowerCase().trim();
@@ -42,7 +37,9 @@ export const authOptions = {
     }),
   ],
 
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+  },
 
   callbacks: {
     async jwt({ token, user }) {
@@ -57,9 +54,9 @@ export const authOptions = {
     async session({ session, token }) {
       if (!session.user) session.user = {};
 
-      session.user.id = token.id;
-      session.user.email = token.email;
-      session.user.totalCredits = token.totalCredits;
+      session.user.id = token.id as string;
+      session.user.email = token.email as string;
+      session.user.totalCredits = token.totalCredits as number;
 
       return session;
     },
