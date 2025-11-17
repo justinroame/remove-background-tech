@@ -1,11 +1,22 @@
+// app/layout.tsx
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientProviders from "@/components/ClientProviders";
-import { Analytics } from "@vercel/analytics/next";
+import dynamic from "next/dynamic";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+// IMPORTANT: dynamically import SessionProvider (client only)
+const ClientSessionProvider = dynamic(
+  () => import("@/components/ClientSessionProvider"),
+  { ssr: false }
+);
+
+const ClientProviders = dynamic(() => import("@/components/ClientProviders"), {
+  ssr: false,
+});
+
+export const metadata: Metadata = {
   title: "remove-background.tech - AI Background Removal",
   description: "Remove backgrounds from images automatically with AI.",
 };
@@ -18,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* ClientProviders handles SessionProvider */}
-        <ClientProviders>{children}</ClientProviders>
-        <Analytics />
+        <ClientSessionProvider>
+          <ClientProviders>{children}</ClientProviders>
+        </ClientSessionProvider>
       </body>
     </html>
   );
