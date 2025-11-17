@@ -2,9 +2,9 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export const authOptions = {
   providers: [
@@ -17,8 +17,10 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        const email = credentials.email.toLowerCase().trim();
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, email),
         });
 
         if (!user) return null;
@@ -30,35 +32,42 @@ export const authOptions = {
 
         if (!valid) return null;
 
-        return user;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? "",
+          totalCredits: user.totalCredits ?? 0,
+        };
       },
     }),
   ],
+
+  session: {
+    strategy: "jwt",
+  },
 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        token.totalCredits = (user as any).totalCredits ?? 0;
+        token.totalCredits = user.totalCredits ?? 0;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (token?.id) {
-        (session.user as any).id = token.id as string;
-        (session.user as any).totalCredits = token.totalCredits as number;
+        session.user.id = token.id as string;
+        session.user.totalCredits = token.totalCredits as number;
       }
       return session;
     },
   },
 
-  session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/login",
   },
 };
 
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };
