@@ -1,68 +1,72 @@
 // lib/auth.ts
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { db } from "@/lib/db";
+import { users } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 
-export const authOptions: NextAuthOptions = {
+export const authConfig = {
   providers: [
-    CredentialsProvider({
-      name: "Credentials",
+    Credentials({
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { type: "text" },
+        password: { type: "password" },
       },
-
-      async authorize(credentials, req) {
+      authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const email = credentials.email.toLowerCase().trim();
+        const normalizedEmail = credentials.email.toLowerCase().trim();
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, normalizedEmail))
+          .limit(1);
 
         if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
+        const valid = await bcrypt.compare(credentials.password, user.password);
+        if (!valid) return null;
 
-        // MUST return the full User object including totalCredits
+        // MUST return a User-like object for NextAuth
         return {
           id: String(user.id),
           email: user.email,
-          name: user.name ?? "",
           totalCredits: user.totalCredits ?? 0,
-          pro: user.pro ?? false,
         };
       },
     }),
   ],
 
+  session: {
+    strategy: "jwt",
+  },
+
   callbacks: {
     async jwt({ token, user }) {
-      // On login:
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.totalCredits = (user as any).totalCredits ?? 0;
-        token.pro = (user as any).pro ?? false;
+        token.totalCredits = user.totalCredits ?? 0;
       }
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.totalCredits = token.totalCredits as number;
-        session.user.pro = token.pro as boolean;
+      if (token) {
+        session.user = {
+          id: token.id as string,
+          email: token.email as string,
+          totalCredits: token.totalCredits as number,
+        };
       }
+
       return session;
     },
   },
 
-  session: {
-    strategy: "jwt",
+  pages: {
+    signIn: "/login",
   },
-};
+} satisfies NextAuthConfig;
