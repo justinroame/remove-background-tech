@@ -1,3 +1,4 @@
+// app/api/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -6,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { name, email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -15,11 +16,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if email is already registered
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
     const existing = await db
       .select()
       .from(users)
-      .where(eq(users.email, email))
+      .where(eq(users.email, normalizedEmail))
       .limit(1);
 
     if (existing.length > 0) {
@@ -30,19 +34,22 @@ export async function POST(req: Request) {
     }
 
     // Hash password
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 12);
 
-    // Insert new user
+    // Create new user with 3 free credits
     await db.insert(users).values({
-      email,
-      password: hashed, // 🔥 Drizzle column is literally "password"
+      email: normalizedEmail,
+      password: hashed,
+      name: name?.trim() || null,
+      totalCredits: 3,        // ← 3 FREE CREDITS ON SIGNUP
+      pro: false,
     });
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Signup error:", err);
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Failed to create account" },
       { status: 500 }
     );
   }
