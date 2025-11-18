@@ -1,3 +1,4 @@
+// app/api/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -10,48 +11,51 @@ export async function POST(req: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password required" },
+        { error: "Email and password are required." },
         { status: 400 }
       );
     }
 
-    const trimmedEmail = email.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const [existing] = await db
+    const existing = await db
       .select()
       .from(users)
-      .where(eq(users.email, trimmedEmail));
+      .where(eq(users.email, normalizedEmail));
 
-    if (existing) {
+    if (existing.length > 0) {
       return NextResponse.json(
-        { error: "Email already in use" },
+        { error: "An account with this email already exists." },
         { status: 409 }
       );
     }
 
-    const hashed = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const [newUser] = await db
       .insert(users)
       .values({
-        email: trimmedEmail,
-        password: hashed,
-        totalCredits: 3, // free credits
+        email: normalizedEmail,
+        password: hashedPassword,
+        totalCredits: 3,
         pro: false,
       })
       .returning();
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: String(newUser.id),
-        email: newUser.email,
-      },
-    });
-  } catch (error) {
-    console.error("Signup error:", error);
     return NextResponse.json(
-      { error: "Server error" },
+      {
+        success: true,
+        user: {
+          id: String(newUser.id),
+          email: newUser.email,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("SIGNUP ERROR:", error);
+    return NextResponse.json(
+      { error: "Something went wrong during signup." },
       { status: 500 }
     );
   }

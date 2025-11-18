@@ -19,7 +19,6 @@ export default function SignupPage() {
     const data = {
       email: formData.get("email") as string,
       password: formData.get("password") as string,
-      name: (formData.get("name") as string) || undefined,
     };
 
     const res = await fetch("/api/signup", {
@@ -28,14 +27,14 @@ export default function SignupPage() {
       body: JSON.stringify(data),
     });
 
+    const json = await res.json();
+
     if (!res.ok) {
-      const json = await res.json();
       setError(json.error || "Signup failed");
       setLoading(false);
       return;
     }
 
-    // SAFE auto-login — this is correct and production-ready
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -43,25 +42,46 @@ export default function SignupPage() {
     });
 
     if (result?.error) {
-      setError("Account created! Please log in.");
+      setError("Account created, but auto-login failed. Please log in manually.");
       setLoading(false);
-    } else {
-      router.push("/pricing");
+      return;
     }
+
+    router.push("/pricing");
+    router.refresh();
   };
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-gray-900 rounded-2xl shadow-2xl p-8">
-        <h1 className="text-3xl font-bold text-white text-center mb-8">Create your account</h1>
-        
-        {error && <p className="text-red-400 text-center mb-4 bg-red-900/50 px-4 py-3 rounded">{error}</p>}
-        
+        <h1 className="text-3xl font-bold text-white text-center mb-8">
+          Create your account
+        </h1>
+
+        {error && (
+          <p className="text-red-400 text-center mb-4 bg-red-900/50 px-4 py-3 rounded">
+            {error}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
-          <input name="name" placeholder="Name (optional)" className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white" />
-          <input name="email" type="email" required placeholder="Email" className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white" />
-          <input name="password" type="password" required minLength={6} placeholder="Password" className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white" />
-          
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="Email"
+            className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white"
+          />
+
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={6}
+            placeholder="Password"
+            className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white"
+          />
+
           <button
             type="submit"
             disabled={loading}
@@ -73,7 +93,9 @@ export default function SignupPage() {
 
         <p className="text-center text-gray-400 mt-6">
           Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-400 hover:underline">Log in</a>
+          <a href="/auth/login" className="text-blue-400 hover:underline">
+            Log in
+          </a>
         </p>
       </div>
     </div>
