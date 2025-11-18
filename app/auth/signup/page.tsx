@@ -1,91 +1,59 @@
-"use client";
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
-export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
+export async function POST(req: Request) {
+  try {
+    const { email, password } = await req.json();
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Signup failed.");
-      return;
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required." },
+        { status: 400 }
+      );
     }
 
-    // *** CRITICAL FIX ***
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false, // REQUIRED FOR NEXTAUTH V5
-    });
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (result?.error) {
-      setError("Login failed after signup.");
-      return;
+    // 1. Check if user already exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail));
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "An account with this email already exists." },
+        { status: 400 }
+      );
     }
 
-    router.push("/pricing");
+    // 2. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Create user with FREE credits
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email: normalizedEmail,
+        password: hashedPassword,
+        totalCredits: 3, // free credits
+        pro: false,
+      })
+      .returning();
+
+    return NextResponse.json(
+      { success: true, userId: newUser.id },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("SIGNUP ERROR:", error);
+    return NextResponse.json(
+      { error: "Something went wrong during signup." },
+      { status: 500 }
+    );
   }
-
-  return (
-    <div className="max-w-md mx-auto p-10">
-      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
-
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-
-      <form onSubmit={handleSignup} className="space-y-4">
-        <input
-          type="text"
-          className="w-full border p-3 rounded"
-          placeholder="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          type="email"
-          className="w-full border p-3 rounded"
-          placeholder="Email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          type="password"
-          className="w-full border p-3 rounded"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <button className="w-full bg-blue-600 text-white p-3 rounded">
-          Sign Up
-        </button>
-      </form>
-
-      <p className="mt-4 text-center">
-        Already have an account?{" "}
-        <a href="/auth/login" className="text-blue-600 font-medium">
-          Log in
-        </a>
-      </p>
-    </div>
-  );
 }
