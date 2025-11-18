@@ -1,4 +1,3 @@
-// app/api/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -7,9 +6,13 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password } = await req.json();
+
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Email and password required" },
+        { status: 400 }
+      );
     }
 
     const trimmedEmail = email.toLowerCase().trim();
@@ -20,7 +23,10 @@ export async function POST(req: Request) {
       .where(eq(users.email, trimmedEmail));
 
     if (existing) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Email already in use" },
+        { status: 409 }
+      );
     }
 
     const hashed = await bcrypt.hash(password, 12);
@@ -30,8 +36,7 @@ export async function POST(req: Request) {
       .values({
         email: trimmedEmail,
         password: hashed,
-        name: name?.trim() || null,
-        totalCredits: 3,
+        totalCredits: 3, // free credits
         pro: false,
       })
       .returning();
@@ -39,12 +44,15 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       user: {
-        id: String(newUser.id),  // ← CRITICAL: string, not number
+        id: String(newUser.id),
         email: newUser.email,
       },
     });
   } catch (error) {
     console.error("Signup error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
