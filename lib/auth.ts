@@ -15,31 +15,35 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const email = credentials.email.toLowerCase().trim();
 
-        const user = await db
+        // Select *only serializable fields*
+        const [user] = await db
           .select({
             id: users.id,
             email: users.email,
             password: users.password,
             totalCredits: users.totalCredits,
+            pro: users.pro,
           })
           .from(users)
-          .where(eq(users.email, email))
-          .then((rows) => rows[0]);
+          .where(eq(users.email, email));
 
-        if (!user || !user.password) return null;
+        if (!user) return null;
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
+        // Return clean, serializable user object
         return {
           id: String(user.id),
           email: user.email,
           totalCredits: user.totalCredits ?? 0,
+          pro: user.pro ?? false,
         };
       },
     }),
@@ -52,7 +56,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60, // 1 hour — auto logout after 1 hour of login time
+    maxAge: 60 * 60, // 1 hour
   },
 
   jwt: {
@@ -68,13 +72,16 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.totalCredits = user.totalCredits ?? 0;
+        token.pro = user.pro ?? false;
       }
       return token;
     },
+
     async session({ session, token }) {
       if (token?.id) {
         session.user.id = token.id as string;
         session.user.totalCredits = token.totalCredits as number;
+        session.user.pro = token.pro as boolean;
       }
       return session;
     },
