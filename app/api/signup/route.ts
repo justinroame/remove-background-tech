@@ -18,12 +18,12 @@ export async function POST(req: Request) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existing = await db
+    const [existing] = await db
       .select()
       .from(users)
       .where(eq(users.email, normalizedEmail));
 
-    if (existing.length > 0) {
+    if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists." },
         { status: 409 }

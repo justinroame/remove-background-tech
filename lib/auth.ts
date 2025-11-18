@@ -20,33 +20,21 @@ export const authOptions: NextAuthOptions = {
 
         const email = credentials.email.toLowerCase().trim();
 
-        const user = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            password: users.password,
-            totalCredits: users.totalCredits,
-          })
+        const [user] = await db
+          .select()
           .from(users)
-          .where(eq(users.email, email))
-          .then((rows) => rows[0]);
+          .where(eq(users.email, email));
 
-        // If no user OR no hashed password in DB
-        if (!user || !user.password || typeof user.password !== "string") {
-          return null;
-        }
+        if (!user || !user.password) return null;
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
         return {
           id: String(user.id),
           email: user.email,
-          totalCredits: user.totalCredits ?? 0,
+          totalCredits: user.totalCredits ?? 3,
+          pro: user.pro ?? false,
         };
       },
     }),
@@ -62,29 +50,28 @@ export const authOptions: NextAuthOptions = {
     maxAge: 60 * 60,
   },
 
-  jwt: {
-    maxAge: 60 * 60,
-  },
-
-  pages: {
-    signIn: "/auth/login",
-  },
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.totalCredits = user.totalCredits ?? 0;
+        token.totalCredits = user.totalCredits ?? 3;
+        token.pro = user.pro ?? false;
       }
       return token;
     },
 
     async session({ session, token }) {
-      if (token?.id) {
-        session.user.id = token.id as string;
-        session.user.totalCredits = token.totalCredits as number;
-      }
+      if (!session.user) session.user = {} as any;
+
+      session.user.id = token.id as string;
+      session.user.totalCredits = token.totalCredits as number;
+      session.user.pro = token.pro as boolean;
+
       return session;
     },
+  },
+
+  pages: {
+    signIn: "/auth/login",
   },
 };
