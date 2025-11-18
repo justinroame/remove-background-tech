@@ -21,7 +21,6 @@ export const authOptions: NextAuthOptions = {
 
         const email = credentials.email.toLowerCase().trim();
 
-        // Select *only serializable fields*
         const [user] = await db
           .select({
             id: users.id,
@@ -35,10 +34,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
+        // 🔥 TypeScript fix — ensure password is a string
+        if (!user.password || typeof user.password !== "string") {
+          return null;
+        }
+
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        // Return clean, serializable user object
         return {
           id: String(user.id),
           email: user.email,
@@ -56,7 +59,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60, // 1 hour
+    maxAge: 60 * 60,
   },
 
   jwt: {
@@ -76,7 +79,6 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-
     async session({ session, token }) {
       if (token?.id) {
         session.user.id = token.id as string;
