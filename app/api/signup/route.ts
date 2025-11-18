@@ -1,3 +1,4 @@
+// app/api/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -6,49 +7,44 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
-
+    const { email, password, name } = await req.json();
     if (!email || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
-    // Check if user exists
-    const [existingUser] = await db
+    const trimmedEmail = email.toLowerCase().trim();
+
+    const [existing] = await db
       .select()
       .from(users)
-      .where(eq(users.email, email));
+      .where(eq(users.email, trimmedEmail));
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 400 }
-      );
+    if (existing) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 12);
 
     const [newUser] = await db
       .insert(users)
       .values({
-        email,
-        password: hashedPassword,
-        totalCredits: 0,
+        email: trimmedEmail,
+        password: hashed,
+        name: name?.trim() || null,
+        totalCredits: 3,
         pro: false,
       })
       .returning();
 
-    // ⭐ IMPORTANT FIX: Always return id as STRING
     return NextResponse.json({
-      id: String(newUser.id),
-      email: newUser.email,
-      totalCredits: newUser.totalCredits ?? 0,
-      pro: newUser.pro ?? false,
+      success: true,
+      user: {
+        id: String(newUser.id),  // ← CRITICAL: string, not number
+        email: newUser.email,
+      },
     });
-  } catch (err) {
-    console.error("SIGNUP ERROR:", err);
-    return NextResponse.json(
-      { error: "Server error creating user" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Signup error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
