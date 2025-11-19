@@ -20,17 +20,17 @@ function EditorContent() {
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // NEW: background selector state (default: white)
+  // Default background: white
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
 
-  // Hydrate images when URL params change
+  // Hydrate on load
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
   //
-  // CANVAS EXPORT: draw image + selected background (no padding)
+  // CANVAS EXPORT — selected background applied behind the PNG
   //
   async function downloadWithBackground(
     sourceUrl: string,
@@ -38,13 +38,11 @@ function EditorContent() {
     background: BgStyle
   ) {
     try {
-      // Load source image
       const image = new Image();
       image.crossOrigin = "anonymous";
       const loaded = new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () =>
-          reject(new Error("Failed to load image"));
+        image.onerror = () => reject(new Error("Failed to load image"));
       });
       image.src = sourceUrl;
       await loaded;
@@ -56,7 +54,7 @@ function EditorContent() {
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas not supported");
 
-      // Background
+      // Fill background
       if (background === "white") {
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -67,13 +65,12 @@ function EditorContent() {
         ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent
       }
 
-      // Draw main image
+      // Draw final image
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-      // Export PNG
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => {
-          if (!b) return reject(new Error("Failed to create image blob"));
+          if (!b) return reject(new Error("Failed to create blob"));
           resolve(b);
         }, "image/png");
       });
@@ -93,7 +90,7 @@ function EditorContent() {
   }
 
   //
-  // DOWNLOAD WITH WATERMARK (no credits)
+  // DOWNLOAD WITH WATERMARK
   //
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
@@ -101,13 +98,12 @@ function EditorContent() {
   };
 
   //
-  // DOWNLOAD CLEAN + CREDIT CONSUMPTION
+  // DOWNLOAD CLEAN & CONSUME CREDITS
   //
   const handleDownloadClean = async () => {
     if (status === "loading") return;
-
     if (!session?.user) return router.push("/auth/signup");
-    if (!cleanImage) return alert("Clean image is not ready yet.");
+    if (!cleanImage) return alert("Clean image not ready.");
 
     setLoadingClean(true);
 
@@ -115,7 +111,7 @@ function EditorContent() {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 })
+        body: JSON.stringify({ count: 1 }),
       });
 
       const data = await res.json();
@@ -125,8 +121,8 @@ function EditorContent() {
       }
 
       if (!res.ok) {
-        console.error("CONSUME ERROR", data);
-        return alert(data.error || "Unexpected error consuming credits.");
+        console.error("CREDIT ERROR:", data);
+        return alert(data.error || "Unexpected credit error.");
       }
 
       window.dispatchEvent(new CustomEvent("credits-updated"));
@@ -134,7 +130,7 @@ function EditorContent() {
       await downloadWithBackground(cleanImage, "clean-no-background.png", bgStyle);
     } catch (err) {
       console.error("CLEAN DOWNLOAD ERROR:", err);
-      alert("Network error. Try again.");
+      alert("Network error.");
     } finally {
       setLoadingClean(false);
     }
@@ -171,11 +167,13 @@ function EditorContent() {
     setCleanImage(data.clean);
 
     router.replace(
-      `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean || "")}`
+      `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
+        data.clean || ""
+      )}`
     );
   }
 
-  // PREVIEW BACKGROUND STYLE
+  // Preview background inside editor only
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -185,6 +183,7 @@ function EditorContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F5F6]">
+
       {/* Toolbar */}
       <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -214,77 +213,88 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Editor layout */}
-      <div className="flex flex-1">
-        <div className="flex flex-1 justify-center gap-8 p-8">
-          {/* LEFT: image + upload/delete */}
-          <div className="flex flex-1 flex-col items-center">
-            <div
-              className={`relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl shadow-lg transition ${previewBackgroundClass}`}
-            >
-              {watermarkedImage ? (
-                <img
-                  src={watermarkedImage}
-                  alt="Processed"
-                  className="max-h-full max-w-full rounded object-contain"
-                />
-              ) : (
-                <div className="text-gray-400 text-lg">Upload an image to begin</div>
-              )}
-            </div>
+      {/* Main layout */}
+      <div className="flex flex-1 px-8 py-6">
 
-            <div className="mt-8 flex items-center gap-6">
-              {/* Upload (+) */}
-              <label htmlFor="image-upload" className="cursor-pointer">
-                <div className="flex size-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow-sm text-3xl text-gray-700 hover:bg-gray-50 transition">
-                  +
-                </div>
-              </label>
-
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUpload}
+        {/* LEFT — Image + buttons */}
+        <div className="flex flex-1 flex-col items-center">
+          <div
+            className={`relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl shadow-lg transition ${previewBackgroundClass}`}
+          >
+            {watermarkedImage ? (
+              <img
+                src={watermarkedImage}
+                alt="Processed"
+                className="max-h-full max-w-full rounded object-contain"
               />
-
-              {/* Delete (–) */}
-              <button
-                onClick={handleDeleteImage}
-                className="flex size-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow-sm text-3xl text-gray-700 hover:bg-gray-50 transition"
-              >
-                –
-              </button>
-            </div>
+            ) : (
+              <div className="text-gray-400 text-lg">
+                Upload an image to begin
+              </div>
+            )}
           </div>
 
-          {/* RIGHT: background options (FIXED & CLOSE TO IMAGE) */}
-          <div className="flex flex-col items-center gap-6 pt-4 ml-4">
-            {/* Transparent */}
-            <button
-              onClick={() => setBgStyle("none")}
-              className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "none" ? "border-blue-500 shadow-md" : "border-gray-300"
-              } bg-[url('/checkerboard.png')] bg-repeat`}
+          {/* Upload / Delete */}
+          <div className="mt-8 flex items-center gap-6">
+            <label htmlFor="image-upload" className="cursor-pointer">
+              <div className="flex size-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow-sm text-3xl text-gray-700 hover:bg-gray-50 transition">
+                +
+              </div>
+            </label>
+
+            <input
+              id="image-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUpload}
             />
 
-            {/* White */}
             <button
-              onClick={() => setBgStyle("white")}
-              className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "white" ? "border-blue-500 shadow-md" : "border-gray-300"
-              } bg-white`}
-            />
-
-            {/* Black */}
-            <button
-              onClick={() => setBgStyle("black")}
-              className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "black" ? "border-blue-500 shadow-md" : "border-gray-300"
-              } bg-black`}
-            />
+              onClick={handleDeleteImage}
+              className="flex size-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow-sm text-3xl text-gray-700 hover:bg-gray-50 transition"
+            >
+              –
+            </button>
           </div>
+        </div>
+
+        {/* RIGHT — Background Options (tight next to image) */}
+        <div className="flex flex-col items-center gap-4 ml-6 select-none">
+
+          {/* Transparent */}
+          <button
+            onClick={() => setBgStyle("none")}
+            className={`
+              h-20 w-20 rounded-xl border-4 transition-all duration-150
+              hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-blue-300
+              ${bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"}
+              bg-[url('/checkerboard.png')] bg-repeat
+            `}
+          />
+
+          {/* White */}
+          <button
+            onClick={() => setBgStyle("white")}
+            className={`
+              h-20 w-20 rounded-xl border-4 transition-all duration-150
+              hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-blue-300
+              ${bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"}
+              bg-white
+            `}
+          />
+
+          {/* Black */}
+          <button
+            onClick={() => setBgStyle("black")}
+            className={`
+              h-20 w-20 rounded-xl border-4 transition-all duration-150
+              hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-blue-300
+              ${bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"}
+              bg-black
+            `}
+          />
+
         </div>
       </div>
     </div>
