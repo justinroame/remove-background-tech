@@ -37,7 +37,6 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
 
-      // Redirect to editor with both watermarked (img) and clean URL (clean)
       router.push(
         `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
           data.clean
@@ -79,33 +78,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2.5">
-              <span className="text-lg font-semibold">
-                <span className="text-gray-800">remove-background</span>
-                <span className="text-blue-600">.tech</span>
-              </span>
-            </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">
-                Pricing
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-gray-700 hover:text-gray-900">
-              Log in
-            </Link>
-            <Link href="/signup" className="text-sm text-gray-700 hover:text-gray-900">
-              Sign up
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* Main */}
       <main className="mx-auto max-w-4xl px-6 py-20">
         <div className="flex flex-col items-center text-center">
@@ -119,7 +91,6 @@ export default function Home() {
             remove the background
           </h1>
 
-          {/* Upload Button + Drop Zone */}
           <div
             className="relative border-2 border-dashed border-gray-300 rounded-2xl p-10 mb-10 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
             onDrop={onDrop}
@@ -152,7 +123,6 @@ export default function Home() {
 
           {error && <p className="text-red-600 mt-6">{error}</p>}
 
-          {/* Sample Images */}
           <div className="space-y-4 mt-16">
             <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
 
