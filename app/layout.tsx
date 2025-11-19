@@ -1,25 +1,24 @@
-// app/layout.tsx — CLEAN + CORRECT
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// app/layout.tsx — FINAL
 import "./globals.css";
-import ClientProviders from "@/components/ClientProviders";
-import GlobalHeader from "@/components/GlobalHeader"; // ← NEW
+import { Inter } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
+import GlobalHeader from "@/components/GlobalHeader";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "remove-background.tech",
   description: "AI Background Removal",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientProviders>
-          <GlobalHeader />      {/* ONLY ONE HEADER IN THE WHOLE APP */}
+        <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+          <GlobalHeader />
           <main className="pt-20">{children}</main>
-        </ClientProviders>
+        </SessionProvider>
       </body>
     </html>
   );
