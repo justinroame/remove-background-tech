@@ -1,4 +1,3 @@
-// app/api/remove-background/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
 import { v2 as cloudinary } from "cloudinary";
@@ -42,7 +41,7 @@ export const POST = async (req: NextRequest) => {
 
     const originalUrl = original.secure_url;
 
-    // Run AI remover
+    // AI remover
     const output = (await replicate.run(
       "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
       { input: { image: originalUrl } }
@@ -51,43 +50,48 @@ export const POST = async (req: NextRequest) => {
     const resp = await fetch(output);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
-    // If not logged in → always return watermarked
-    if (!userId) {
-      const wmUrl = await new Promise<string>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: "remove-bg/processed",
-            format: "png",
-            transformation: [
-              { width: 1024, crop: "limit" },
-              {
-                overlay: {
-                  font_family: "Arial",
-                  font_size: 50,
-                  font_weight: "bold",
-                  text: "remove-background.tech",
-                  opacity: 70,
-                },
-                gravity: "center",
-                y: 20,
+    //
+    // ALWAYS CREATE WATERMARKED VERSION — for BOTH logged in & logged out
+    //
+    const watermarkedUrl = await new Promise<string>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "remove-bg/processed",
+          format: "png",
+          transformation: [
+            { width: 1024, crop: "limit" },
+            {
+              overlay: {
+                font_family: "Arial",
+                font_size: 50,
+                font_weight: "bold",
+                text: "remove-background.tech",
+                opacity: 70,
               },
-            ],
-          },
-          (err, result) =>
-            err ? reject(err) : resolve(result!.secure_url)
-        );
-        stream.end(cleanBuf);
-      });
+              gravity: "center",
+              y: 20,
+            },
+          ],
+        },
+        (err, result) =>
+          err ? reject(err) : resolve(result!.secure_url)
+      );
+      stream.end(cleanBuf);
+    });
 
+    //
+    // Logged out users → only return watermarked version
+    //
+    if (!userId) {
       return NextResponse.json({
         original: originalUrl,
-        processed: wmUrl,
+        processed: watermarkedUrl,
         clean: null,
         hasCredits: false,
       });
     }
 
-    // Logged-in users — load credits
+    // Logged in → check credits
     const [user] = await db
       .select()
       .from(users)
@@ -95,11 +99,13 @@ export const POST = async (req: NextRequest) => {
 
     const hasCredits = (user?.totalCredits ?? 0) >= 1;
 
-    let returnedUrl: string;
+    //
+    // ALWAYS RETURN processed = watermarked version
+    //
     let cleanUrl: string | null = null;
 
     if (hasCredits) {
-      // Return CLEAN version
+      // Pre-generate clean version so download is instant
       cleanUrl = await new Promise<string>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "remove-bg/clean", format: "png" },
@@ -108,43 +114,12 @@ export const POST = async (req: NextRequest) => {
         );
         stream.end(cleanBuf);
       });
-
-      returnedUrl = cleanUrl;
-    } else {
-      // Return WATERMARKED version
-      returnedUrl = await new Promise<string>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: "remove-bg/processed",
-            format: "png",
-            transformation: [
-              { width: 1024, crop: "limit" },
-              {
-                overlay: {
-                  font_family: "Arial",
-                  font_size: 50,
-                  font_weight: "bold",
-                  text: "remove-background.tech",
-                  opacity: 70,
-                },
-                gravity: "center",
-                y: 20,
-              },
-            ],
-          },
-          (err, result) =>
-            err ? reject(err) : resolve(result!.secure_url)
-        );
-        stream.end(cleanBuf);
-      });
-
-      cleanUrl = null;
     }
 
     return NextResponse.json({
       original: originalUrl,
-      processed: returnedUrl,
-      clean: cleanUrl,
+      processed: watermarkedUrl,
+      clean: cleanUrl, // only included for logged-in users with credits
       hasCredits,
     });
   } catch (err: any) {
