@@ -1,8 +1,7 @@
-// app/api/remove-background/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
 import { v2 as cloudinary } from "cloudinary";
-import { getServerSession } from "next-auth/next";   // ✅ Correct for v4
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
@@ -32,13 +31,10 @@ export const POST = async (req: NextRequest) => {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload original to Cloudinary
+    // Upload original
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "remove-bg/original",
-          resource_type: "image",
-        },
+        { folder: "remove-bg/original", resource_type: "image" },
         (err, result) => (err ? reject(err) : resolve(result))
       );
       stream.end(buffer);
@@ -46,16 +42,16 @@ export const POST = async (req: NextRequest) => {
 
     const originalUrl = original.secure_url;
 
-    // Run the AI background remover
-    const output = (await replicate.run(
+    // Run AI remover
+    const output = await replicate.run(
       "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
       { input: { image: originalUrl } }
-    )) as unknown as string;
+    );
 
-    const resp = await fetch(output);
+    const resp = await fetch(output as string);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
-    // ALWAYS create a watermarked version — logged in or not
+    // ALWAYS GENERATE WATERMARK
     const watermarkedUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -76,63 +72,48 @@ export const POST = async (req: NextRequest) => {
             },
           ],
         },
-        (err, result) =>
-          err ? reject(err) : resolve(result!.secure_url)
+        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
       );
       stream.end(cleanBuf);
     });
 
-    // Logged out → only return watermarked version
+    // If logged out → no clean version
     if (!userId) {
       return NextResponse.json({
         original: originalUrl,
         processed: watermarkedUrl,
         clean: null,
-        hasCredits: false,
+        hasCredits: false
       });
     }
 
-    // Logged in → load credits
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-
+    // Logged-in user → fetch credits
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
     const hasCredits = (user?.totalCredits ?? 0) >= 1;
 
-    let cleanUrl: string | null = null;
+    let cleanUrl = null;
 
     if (hasCredits) {
-      // Pre-generate clean version to speed up download
       cleanUrl = await new Promise<string>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: "remove-bg/clean",
-            format: "png",
-          },
-          (err, result) =>
-            err ? reject(err) : resolve(result!.secure_url)
+          { folder: "remove-bg/clean", format: "png" },
+          (err, result) => (err ? reject(err) : resolve(result!.secure_url))
         );
         stream.end(cleanBuf);
       });
     }
 
-    // Logged in always returns watermark for preview
     return NextResponse.json({
       original: originalUrl,
       processed: watermarkedUrl,
-      clean: cleanUrl, // Only for logged-in users w/ credits
-      hasCredits,
+      clean: cleanUrl,
+      hasCredits
     });
 
   } catch (err: any) {
     console.error("REMOVE_BG_ERROR:", err);
-
     return NextResponse.json(
-      {
-        error: "Failed to process image",
-        details: err.message,
-      },
+      { error: "Failed to process image", details: err.message },
       { status: 500 }
     );
   }

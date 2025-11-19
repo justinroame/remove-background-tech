@@ -1,52 +1,51 @@
-// app/api/credits/consume/route.ts
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const userId = Number(session.user.id);
     const { count } = await req.json();
 
     if (!count || Number(count) <= 0) {
-      return NextResponse.json(
-        { error: "Missing or invalid credit count" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing or invalid credit count" }, { status: 400 });
     }
 
-    // Consume credits
-    await consumeCredits(userId, Number(count));
+    // Load user
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
 
-    const summary = await getUserCreditSummary(userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if ((user.totalCredits ?? 0) < Number(count)) {
+      return NextResponse.json({ error: "Not enough credits" }, { status: 402 });
+    }
+
+    // Deduct credits
+    await db
+      .update(users)
+      .set({ totalCredits: user.totalCredits - Number(count) })
+      .where(eq(users.id, userId));
 
     return NextResponse.json({
       success: true,
-      total: summary.total,
+      total: user.totalCredits - Number(count)
     });
 
   } catch (err: any) {
     console.error("CREDITS_CONSUME_ERROR:", err);
-
-    if (String(err?.message).toLowerCase().includes("not enough")) {
-      return NextResponse.json(
-        { error: "Not enough credits" },
-        { status: 402 }
-      );
-    }
-
     return NextResponse.json(
       { error: err.message || "Failed to consume credits" },
       { status: 400 }
