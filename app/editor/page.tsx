@@ -1,3 +1,4 @@
+// app/editor/page.tsx ← FINAL PERFECT VERSION (copy-paste entire file)
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -5,44 +6,42 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 function EditorContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const { data: session, update } = useSession();
+
   const img = params.get("img");
   const cleanParam = params.get("clean");
 
-  // 🚨 SAFEST WAY TO USE useSession() IN CLIENT COMPONENTS
-  // Avoid destructuring — this prevents SSR build crashes.
-  const session = useSession().data;
-
-  const [selectedBackground, setSelectedBackground] = useState<
-    "transparent" | "white" | "black"
-  >("transparent");
-
-  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img);
-  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam);
+  const [selectedBackground, setSelectedBackground] = useState<"transparent" | "white" | "black">("transparent");
+  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img || null);
+  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam || null);
   const [credits, setCredits] = useState<number | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
   const [loadingWatermarked, setLoadingWatermarked] = useState(false);
 
-  // Fetch credits for logged-in user
+  // Always refresh session on load → fixes stale credits
+  useEffect(() => {
+    update();
+  }, [update]);
+
+  // Fetch latest credits from API
   useEffect(() => {
     const fetchCredits = async () => {
-      const userId = Number((session?.user as any)?.id);
-      if (!userId) return;
-
+      if (!session?.user?.id) return;
       try {
-        const res = await fetch(`/api/credits/summary?userId=${userId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setCredits(data.total);
+        const res = await fetch("/api/credits/summary");
+        if (res.ok) {
+          const data = await res.json();
+          setCredits(data.total);
+        }
       } catch (e) {
         console.error("Failed to fetch credits", e);
       }
     };
-
     fetchCredits();
   }, [session]);
 
@@ -59,73 +58,42 @@ function EditorContent() {
         body: form,
       });
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error || "Failed");
 
       setWatermarkedImage(data.processed);
       setCleanImage(data.clean);
-
-      const newUrl = `/editor?img=${encodeURIComponent(
-        data.processed
-      )}&clean=${encodeURIComponent(data.clean)}`;
-      router.replace(newUrl);
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("Failed to process new image");
+      router.replace(`/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean)}`);
+    } catch (err: any) {
+      alert(err.message || "Failed to process image");
     }
   };
 
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
     setCleanImage(null);
+    router.replace("/editor");
   };
 
-  function triggerDownload(url: string, filename: string) {
+  const triggerDownload = (url: string, filename: string) => {
     const a = document.createElement("a");
-    a.href = url;
+    a.href = url + "?fl_attachment"; // Cloudinary force download
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
-  }
+  };
 
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
-
-    if (!session?.user) {
-      const key = "freeWatermarkedDownloads";
-      const current = Number(localStorage.getItem(key) || "0");
-      if (current >= 5) {
-        router.push("/pricing");
-        return;
-      }
-      localStorage.setItem(key, String(current + 1));
-    }
-
-    setLoadingWatermarked(true);
-    try {
-      triggerDownload(watermarkedImage, "remove-background-watermarked.png");
-    } finally {
-      setLoadingWatermarked(false);
-    }
+    triggerDownload(watermarkedImage, "remove-background-with-watermark.png");
   };
 
   const handleDownloadClean = async () => {
-    if (!cleanImage) {
-      alert("Clean image not available.");
-      return;
-    }
+    if (!cleanImage) return alert("Clean image not available");
+    if (!session?.user) return router.push("/signup");
 
-    if (!session?.user) {
-      const next = `/editor?img=${encodeURIComponent(
-        watermarkedImage || ""
-      )}&clean=${encodeURIComponent(cleanImage)}`;
-      router.push(`/signup?next=${encodeURIComponent(next)}`);
-      return;
-    }
-
-    const userId = Number((session.user as any).id);
-
-    if (credits !== null && credits <= 0) {
+    if ((credits ?? 0) <= 0) {
       router.push("/pricing");
       return;
     }
@@ -135,7 +103,7 @@ function EditorContent() {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, count: 1 }),
+        body: JSON.stringify({ count: 1 }),
       });
 
       const data = await res.json();
@@ -147,8 +115,7 @@ function EditorContent() {
       setCredits(data.total);
       triggerDownload(cleanImage, "remove-background-clean.png");
     } catch (err) {
-      console.error("Clean download error:", err);
-      alert("Failed to consume credit");
+      alert("Failed to deduct credit");
     } finally {
       setLoadingClean(false);
     }
@@ -169,29 +136,31 @@ function EditorContent() {
               </div>
               <span className="text-xl font-semibold tracking-tight">
                 <span className="text-gray-700">remove-background</span>
-                <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
-                  .tech
-                </span>
+                <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">.tech</span>
               </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/pricing" className="text-sm text-gray-700 hover:text-gray-900">
-                Pricing
-              </Link>
-            </nav>
           </div>
-          <div className="flex items-center gap-4">
-            {session?.user && (
-              <span className="text-sm text-gray-700">
-                Credits: {credits ?? "…"}
-              </span>
+
+          {/* Right side: Credits + Logout */}
+          <div className="flex items-center gap-6">
+            {session?.user ? (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  Credits: {credits ?? "..."}
+                </span>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="text-sm font-medium text-red-600 hover:text-red-700"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-sm text-gray-700 hover:text-gray-900">Log in</Link>
+                <Link href="/auth/signup" className="text-sm text-gray-700 hover:text-gray-900">Sign up</Link>
+              </>
             )}
-            <Link href="/login" className="text-sm text-gray-700 hover:text-gray-900">
-              Log in
-            </Link>
-            <Link href="/signup" className="text-sm text-gray-700 hover:text-gray-900">
-              Sign up
-            </Link>
           </div>
         </div>
       </header>
@@ -199,25 +168,20 @@ function EditorContent() {
       {/* Toolbar */}
       <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
-            Background
-          </span>
-
+          <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">Background</span>
           <div className="flex gap-3">
             <Button
               variant="outline"
-              className="rounded-full px-6 py-2 text-sm font-medium"
               onClick={handleDownloadWatermarked}
               disabled={!watermarkedImage || loadingWatermarked}
             >
               <Download className="mr-2 size-4" />
               {loadingWatermarked ? "Downloading…" : "With watermark"}
             </Button>
-
             <Button
-              className="rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
               onClick={handleDownloadClean}
               disabled={!cleanImage || loadingClean}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               <Download className="mr-2 size-4" />
               {loadingClean ? "Processing…" : "No watermark"}
@@ -226,37 +190,20 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* Main Content */}
       <div className="flex flex-1">
-        {/* Canvas */}
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div
-            className="relative flex h-full w-full items-center justify-center rounded-xl shadow-lg"
+            className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl shadow-lg"
             style={{
-              backgroundColor:
-                selectedBackground === "transparent"
-                  ? "#FFFFFF"
-                  : selectedBackground === "white"
-                  ? "#FFFFFF"
-                  : "#000000",
-              backgroundImage:
-                selectedBackground === "transparent"
-                  ? "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)"
-                  : "none",
-              backgroundSize:
-                selectedBackground === "transparent" ? "20px 20px" : "auto",
-              backgroundPosition:
-                selectedBackground === "transparent"
-                  ? "0 0, 0 10px, 10px -10px, -10px 0px"
-                  : "0 0",
+              backgroundColor: selectedBackground === "white" ? "#FFFFFF" : selectedBackground === "black" ? "#000000" : "transparent",
+              backgroundImage: selectedBackground === "transparent" ? "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)" : "none",
+              backgroundSize: selectedBackground === "transparent" ? "20px 20px" : "auto",
+              backgroundPosition: selectedBackground === "transparent" ? "0 0, 0 10px, 10px -10px, -10px 0px" : "0 0",
             }}
           >
             {watermarkedImage && (
-              <img
-                src={watermarkedImage}
-                className="max-h-full max-w-full rounded object-contain"
-                alt="Result"
-              />
+              <img src={watermarkedImage} className="max-h-full max-w-full rounded object-contain" alt="Result" />
             )}
           </div>
 
@@ -269,20 +216,9 @@ function EditorContent() {
                 </svg>
               </div>
             </label>
-
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-
+            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             {watermarkedImage && (
-              <button
-                onClick={handleDeleteImage}
-                className="flex size-12 items-center justify-center rounded-lg border-2 border-gray-300 hover:border-red-500 hover:bg-red-50"
-              >
+              <button onClick={handleDeleteImage} className="flex size-12 items-center justify-center rounded-lg border-2 border-gray-300 hover:border-red-500 hover:bg-red-50">
                 <svg width="24" height="24" stroke="currentColor" strokeWidth="2">
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
@@ -293,42 +229,24 @@ function EditorContent() {
 
         {/* Sidebar */}
         <div className="w-80 border-l border-gray-200 bg-white p-8">
-          <h3 className="mb-6 text-center text-sm font-semibold text-gray-600">
-            Color
-          </h3>
-
+          <h3 className="mb-6 text-center text-sm font-semibold text-gray-600">Color</h3>
           <div className="flex justify-center gap-4">
             <button
               onClick={() => setSelectedBackground("transparent")}
-              className={`flex size-20 items-center justify-center rounded-xl border-4 ${
-                selectedBackground === "transparent"
-                  ? "border-blue-600"
-                  : "border-gray-300"
-              }`}
+              className={`flex size-20 items-center justify-center rounded-xl border-4 ${selectedBackground === "transparent" ? "border-blue-600" : "border-gray-300"}`}
               style={{
-                backgroundImage:
-                  "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
+                backgroundImage: "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
                 backgroundSize: "10px 10px",
                 backgroundPosition: "0 0, 0 5px, 5px -5px, -5px 0px",
               }}
             />
-
             <button
               onClick={() => setSelectedBackground("white")}
-              className={`size-20 rounded-xl border-4 bg-white ${
-                selectedBackground === "white"
-                  ? "border-blue-600"
-                  : "border-gray-300"
-              }`}
+              className={`size-20 rounded-xl border-4 bg-white ${selectedBackground === "white" ? "border-blue-600" : "border-gray-300"}`}
             />
-
             <button
               onClick={() => setSelectedBackground("black")}
-              className={`size-20 rounded-xl border-4 bg-black ${
-                selectedBackground === "black"
-                  ? "border-blue-600"
-                  : "border-gray-300"
-              }`}
+              className={`size-20 rounded-xl border-4 bg-black ${selectedBackground === "black" ? "border-blue-600" : "border-gray-300"}`}
             />
           </div>
         </div>
