@@ -1,7 +1,7 @@
 // app/api/credits/consume/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // ← FIXED
+import { authOptions } from "@/auth";
 import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
 
 export async function POST(req: Request) {
@@ -16,7 +16,6 @@ export async function POST(req: Request) {
     }
 
     const userId = Number(session.user.id);
-
     const { count } = await req.json();
 
     if (!count || Number(count) <= 0) {
@@ -26,10 +25,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Consume credits
     await consumeCredits(userId, Number(count));
 
-    // Get updated credit total
     const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({

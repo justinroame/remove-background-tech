@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -9,16 +9,24 @@ import { useSession } from "next-auth/react";
 function EditorContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const img = params.get("img");
   const cleanParam = params.get("clean");
 
-  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img);
-  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam);
+  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
+  const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // --- FIXED IMAGE UPLOAD ---
+  // Make sure params hydrate correctly
+  useEffect(() => {
+    if (img) setWatermarkedImage(img);
+    if (cleanParam) setCleanImage(cleanParam);
+  }, [img, cleanParam]);
+
+  // -------------------------------
+  // IMAGE UPLOAD
+  // -------------------------------
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -35,7 +43,6 @@ function EditorContent() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Processing failed");
 
       setWatermarkedImage(data.processed);
@@ -51,32 +58,51 @@ function EditorContent() {
     }
   };
 
-  // --- FIXED CLOUDINARY DOWNLOAD (WORKS EVERYWHERE) ---
+  // -------------------------------
+  // UNIVERSAL DOWNLOAD HANDLER
+  // (Works with all Cloudinary URLs)
+  // -------------------------------
   async function triggerDownload(url: string, filename: string) {
     try {
       const res = await fetch(url);
       const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
 
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
+
       a.href = blobUrl;
       a.download = filename;
+      a.style.display = "none";
+
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
 
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error("Download error:", err);
-      alert("Failed to download image");
+      console.error("DOWNLOAD ERROR:", err);
+      alert("Failed to download image.");
     }
   }
 
+  // -------------------------------
+  // WATERMARKED DOWNLOAD
+  // -------------------------------
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
     triggerDownload(watermarkedImage, "with-watermark.png");
   };
 
+  // -------------------------------
+  // CLEAN DOWNLOAD (AUTH + CREDITS)
+  // -------------------------------
   const handleDownloadClean = async () => {
-    if (!cleanImage) return alert("Clean image not ready");
+    if (!cleanImage) return alert("Clean image is not ready yet.");
+
+    // Wait until session fully loads
+    if (status === "loading") return;
+
+    // Not logged in = redirect to signup
     if (!session?.user) return router.push("/auth/signup");
 
     setLoadingClean(true);
@@ -94,13 +120,14 @@ function EditorContent() {
         if (data.error?.toLowerCase().includes("not enough")) {
           return router.push("/pricing");
         }
-        alert(data.error);
-        return;
+        return alert(data.error);
       }
 
+      // Success → Download clean version
       await triggerDownload(cleanImage, "clean-no-background.png");
-    } catch {
-      alert("Network error — please try again");
+    } catch (err) {
+      console.error("CLEAN DOWNLOAD ERROR:", err);
+      alert("Network error — please try again.");
     } finally {
       setLoadingClean(false);
     }
@@ -137,7 +164,7 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Editor */}
+      {/* Editor Canvas */}
       <div className="flex flex-1">
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
@@ -148,14 +175,22 @@ function EditorContent() {
                 className="max-h-full max-w-full rounded object-contain"
               />
             ) : (
-              <div className="text-gray-400 text-lg">Upload an image to get started</div>
+              <div className="text-gray-400 text-lg">
+                Upload an image to get started
+              </div>
             )}
           </div>
 
           <div className="mt-8">
             <label htmlFor="image-upload" className="cursor-pointer">
               <div className="flex size-16 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition">
-                <svg width="32" height="32" stroke="currentColor" strokeWidth="2" fill="none">
+                <svg
+                  width="32"
+                  height="32"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                >
                   <line x1="16" y1="8" x2="16" y2="24" />
                   <line x1="8" y1="16" x2="24" y2="16" />
                 </svg>
