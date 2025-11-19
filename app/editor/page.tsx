@@ -43,7 +43,8 @@ function EditorContent() {
       image.crossOrigin = "anonymous";
       const loaded = new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => reject(new Error("Failed to load image"));
+        image.onerror = () =>
+          reject(new Error("Failed to load image"));
       });
       image.src = sourceUrl;
       await loaded;
@@ -63,14 +64,13 @@ function EditorContent() {
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else {
-        // Transparent
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent
       }
 
-      // Draw main image over background
+      // Draw main image
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-      // Export to PNG
+      // Export PNG
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => {
           if (!b) return reject(new Error("Failed to create image blob"));
@@ -97,11 +97,7 @@ function EditorContent() {
   //
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
-    downloadWithBackground(
-      watermarkedImage,
-      "with-watermark.png",
-      bgStyle
-    );
+    downloadWithBackground(watermarkedImage, "with-watermark.png", bgStyle);
   };
 
   //
@@ -110,29 +106,20 @@ function EditorContent() {
   const handleDownloadClean = async () => {
     if (status === "loading") return;
 
-    // Not logged in → signup
-    if (!session?.user) {
-      return router.push("/auth/signup");
-    }
-
-    if (!cleanImage) {
-      alert("Clean image is not ready yet.");
-      return;
-    }
+    if (!session?.user) return router.push("/auth/signup");
+    if (!cleanImage) return alert("Clean image is not ready yet.");
 
     setLoadingClean(true);
 
     try {
-      // Deduct 1 credit
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 }),
+        body: JSON.stringify({ count: 1 })
       });
 
       const data = await res.json();
 
-      // Not enough credits → pricing
       if (res.status === 402 || String(data.error).toLowerCase().includes("not enough")) {
         return router.push("/pricing");
       }
@@ -142,15 +129,9 @@ function EditorContent() {
         return alert(data.error || "Unexpected error consuming credits.");
       }
 
-      // Notify all CreditPills to refresh
       window.dispatchEvent(new CustomEvent("credits-updated"));
 
-      // Download clean image with selected background
-      await downloadWithBackground(
-        cleanImage,
-        "clean-no-background.png",
-        bgStyle
-      );
+      await downloadWithBackground(cleanImage, "clean-no-background.png", bgStyle);
     } catch (err) {
       console.error("CLEAN DOWNLOAD ERROR:", err);
       alert("Network error. Try again.");
@@ -190,13 +171,11 @@ function EditorContent() {
     setCleanImage(data.clean);
 
     router.replace(
-      `/editor?img=${encodeURIComponent(
-        data.processed
-      )}&clean=${encodeURIComponent(data.clean || "")}`
+      `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean || "")}`
     );
   }
 
-  // PREVIEW BACKGROUND STYLE (just for the editor canvas)
+  // PREVIEW BACKGROUND STYLE
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -250,13 +229,10 @@ function EditorContent() {
                   className="max-h-full max-w-full rounded object-contain"
                 />
               ) : (
-                <div className="text-gray-400 text-lg">
-                  Upload an image to begin
-                </div>
+                <div className="text-gray-400 text-lg">Upload an image to begin</div>
               )}
             </div>
 
-            {/* Upload + Delete */}
             <div className="mt-8 flex items-center gap-6">
               {/* Upload (+) */}
               <label htmlFor="image-upload" className="cursor-pointer">
@@ -283,35 +259,29 @@ function EditorContent() {
             </div>
           </div>
 
-          {/* RIGHT: background options (pulled in close) */}
-          <div className="w-24 flex flex-col items-center gap-6 pt-4">
-            {/* No Background (transparent) */}
+          {/* RIGHT: background options (FIXED & CLOSE TO IMAGE) */}
+          <div className="flex flex-col items-center gap-6 pt-4 ml-4">
+            {/* Transparent */}
             <button
               onClick={() => setBgStyle("none")}
               className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "none"
-                  ? "border-blue-500 shadow-md"
-                  : "border-gray-300"
+                bgStyle === "none" ? "border-blue-500 shadow-md" : "border-gray-300"
               } bg-[url('/checkerboard.png')] bg-repeat`}
             />
 
-            {/* White Background */}
+            {/* White */}
             <button
               onClick={() => setBgStyle("white")}
               className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "white"
-                  ? "border-blue-500 shadow-md"
-                  : "border-gray-300"
+                bgStyle === "white" ? "border-blue-500 shadow-md" : "border-gray-300"
               } bg-white`}
             />
 
-            {/* Black Background */}
+            {/* Black */}
             <button
               onClick={() => setBgStyle("black")}
               className={`h-20 w-20 rounded-xl border-4 shadow-sm transition ${
-                bgStyle === "black"
-                  ? "border-blue-500 shadow-md"
-                  : "border-gray-300"
+                bgStyle === "black" ? "border-blue-500 shadow-md" : "border-gray-300"
               } bg-black`}
             />
           </div>
