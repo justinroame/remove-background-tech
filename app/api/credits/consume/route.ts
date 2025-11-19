@@ -1,4 +1,5 @@
-// app/api/credits/consume/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
@@ -15,7 +16,6 @@ export async function POST(req: Request) {
     }
 
     const userId = Number(session.user.id);
-
     const { count } = await req.json();
 
     if (!count || Number(count) <= 0) {
@@ -25,10 +25,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Consume credits
+    // Consume credit
     await consumeCredits(userId, Number(count));
 
-    // Return fresh total
+    // Return fresh
     const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({

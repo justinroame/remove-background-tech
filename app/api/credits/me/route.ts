@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getUserCreditSummary } from "@/lib/credits";
