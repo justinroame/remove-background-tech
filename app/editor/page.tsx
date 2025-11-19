@@ -11,77 +11,66 @@ function EditorContent() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const imgParam = params.get("img");
+  const img = params.get("img");
+  const cleanParam = params.get("clean");
 
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Hydrate watermark from URL
+  // Properly hydrate URL params
   useEffect(() => {
-    if (imgParam) setWatermarkedImage(imgParam);
-  }, [imgParam]);
+    if (img) setWatermarkedImage(img);
+    if (cleanParam) setCleanImage(cleanParam);
+  }, [img, cleanParam]);
 
-  // --------------------
-  // Upload handler
-  // --------------------
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const form = new FormData();
-    form.append("image", file);
-
-    try {
-      const res = await fetch("/api/remove-background", {
-        method: "POST",
-        body: form,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Processing failed");
-
-      // Store both URLs in state
-      setWatermarkedImage(data.processed);
-      setCleanImage(data.clean); // <- important
-
-      // Update only watermark in URL
-      router.replace(`/editor?img=${encodeURIComponent(data.processed)}`);
-    } catch (err: any) {
-      alert(err.message || "Failed to remove background");
-    }
-  };
-
-  // --------------------
-  // Download helper
-  // --------------------
+  //
+  // UNIVERSAL DOWNLOAD (compatible with Cloudinary)
+  //
   async function triggerDownload(url: string, filename: string) {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
 
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename;
-    a.click();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
 
-    URL.revokeObjectURL(blobUrl);
+      a.href = blobUrl;
+      a.download = filename;
+      a.style.display = "none";
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("DOWNLOAD ERROR:", err);
+      alert("Failed to download image.");
+    }
   }
 
-  // --------------------
-  // Download CLEAN
-  // --------------------
-  const handleDownloadClean = async () => {
-    if (!cleanImage) {
-      return alert("Clean image not ready — reupload the image.");
-    }
+  //
+  // WATERMARK DOWNLOAD
+  //
+  const handleDownloadWatermarked = () => {
+    if (!watermarkedImage) return;
+    triggerDownload(watermarkedImage, "with-watermark.png");
+  };
 
+  //
+  // CLEAN DOWNLOAD (AUTH + CREDIT DEDUCTION)
+  //
+  const handleDownloadClean = async () => {
     if (status === "loading") return;
+
+    // Not logged in
     if (!session?.user) return router.push("/auth/signup");
 
     setLoadingClean(true);
 
     try {
+      // Deduct 1 credit
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,14 +80,24 @@ function EditorContent() {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        if (data.error?.toLowerCase().includes("not enough")) {
+        if (String(data.error).toLowerCase().includes("not enough")) {
           return router.push("/pricing");
         }
-        return alert(data.error);
+
+        return alert(data.error || "Unexpected error");
       }
 
-      // Successful credit deduction → download clean image
-      await triggerDownload(cleanImage, "clean-no-background.png");
+      //
+      // SUCCESS — ALWAYS USE cleanParam FROM URL
+      //
+      if (cleanImage) {
+        await triggerDownload(cleanImage, "clean-no-background.png");
+      } else {
+        alert("Clean image not available yet.");
+      }
+    } catch (err) {
+      console.error("CLEAN DOWNLOAD ERROR:", err);
+      alert("Network error — try again.");
     } finally {
       setLoadingClean(false);
     }
@@ -106,23 +105,27 @@ function EditorContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F5F6]">
-      <div className="border-b bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between">
-          <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm">Background</span>
+      {/* Toolbar */}
+      <div className="border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
+            Background
+          </span>
 
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => triggerDownload(watermarkedImage!, "with-watermark.png")}
+              onClick={handleDownloadWatermarked}
               disabled={!watermarkedImage}
             >
               <Download className="mr-2 size-4" />
               With watermark
             </Button>
 
+            {/* FIXED: Button ALWAYS clickable unless loading */}
             <Button
               onClick={handleDownloadClean}
-              disabled={!cleanImage || loadingClean}
+              disabled={loadingClean}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Download className="mr-2 size-4" />
@@ -132,29 +135,73 @@ function EditorContent() {
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-8">
-        <div className="relative w-full max-w-4xl flex items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
-          {watermarkedImage ? (
-            <img src={watermarkedImage} className="max-w-full max-h-full object-contain rounded" />
-          ) : (
-            <div className="text-gray-400 text-lg">Upload an image to get started</div>
-          )}
-        </div>
+      {/* Editor Canvas */}
+      <div className="flex flex-1">
+        <div className="flex flex-1 flex-col items-center justify-center p-8">
+          <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
+            {watermarkedImage ? (
+              <img
+                src={watermarkedImage}
+                alt="Processed"
+                className="max-h-full max-w-full rounded object-contain"
+              />
+            ) : (
+              <div className="text-gray-400 text-lg">
+                Upload an image to get started
+              </div>
+            )}
+          </div>
 
-        <div className="mt-8">
-          <label htmlFor="image-upload" className="cursor-pointer">
-            <div className="size-16 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700">
-              +
-            </div>
-          </label>
+          <div className="mt-8">
+            <label htmlFor="image-upload" className="cursor-pointer">
+              <div className="flex size-16 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition">
+                <svg
+                  width="32"
+                  height="32"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                >
+                  <line x1="16" y1="8" x2="16" y2="24" />
+                  <line x1="8" y1="16" x2="24" y2="16" />
+                </svg>
+              </div>
+            </label>
 
-          <input
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
+            <input
+              id="image-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const form = new FormData();
+                form.append("image", file);
+
+                const res = await fetch("/api/remove-background", {
+                  method: "POST",
+                  body: form,
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                  alert(data.error || "Processing failed");
+                  return;
+                }
+
+                setWatermarkedImage(data.processed);
+                setCleanImage(data.clean);
+
+                router.replace(
+                  `/editor?img=${encodeURIComponent(
+                    data.processed
+                  )}&clean=${encodeURIComponent(data.clean || "")}`
+                );
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
