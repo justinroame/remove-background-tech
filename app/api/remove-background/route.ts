@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Replicate from "replicate";
 import { v2 as cloudinary } from "cloudinary";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
@@ -24,14 +24,13 @@ export const POST = async (req: NextRequest) => {
 
     const form = await req.formData();
     const file = form.get("image") as File | null;
-
     if (!file) {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload original
+    // Upload original image to Cloudinary
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "remove-bg/original", resource_type: "image" },
@@ -42,16 +41,34 @@ export const POST = async (req: NextRequest) => {
 
     const originalUrl = original.secure_url;
 
-    // Run AI remover
-    const output = await replicate.run(
+    //
+    // RUN REPLICATE AI
+    //
+    const result = await replicate.run(
       "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
       { input: { image: originalUrl } }
     );
 
-    const resp = await fetch(output as string);
+    // Normalize unknown output shape
+    const outputUrl =
+      typeof result === "string"
+        ? result
+        : Array.isArray(result)
+        ? result[0]
+        : (result as any)?.output ||
+          (result as any)?.url ||
+          Object.values(result as any)[0];
+
+    if (!outputUrl || typeof outputUrl !== "string") {
+      throw new Error("Replicate returned invalid output");
+    }
+
+    const resp = await fetch(outputUrl);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
-    // ALWAYS GENERATE WATERMARK
+    //
+    // ALWAYS GENERATE WATERMARK — shown in editor for both logged-in & logged-out users
+    //
     const watermarkedUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -72,32 +89,43 @@ export const POST = async (req: NextRequest) => {
             },
           ],
         },
-        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
+        (err, result) =>
+          err ? reject(err) : resolve(result!.secure_url)
       );
       stream.end(cleanBuf);
     });
 
-    // If logged out → no clean version
+    //
+    // If NOT logged in → return ONLY watermark
+    //
     if (!userId) {
       return NextResponse.json({
         original: originalUrl,
         processed: watermarkedUrl,
         clean: null,
-        hasCredits: false
+        hasCredits: false,
       });
     }
 
-    // Logged-in user → fetch credits
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    //
+    // Logged in → check credits
+    //
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
     const hasCredits = (user?.totalCredits ?? 0) >= 1;
 
-    let cleanUrl = null;
+    let cleanUrl: string | null = null;
 
     if (hasCredits) {
+      // Pre-generate clean version BEFORE downloading
       cleanUrl = await new Promise<string>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "remove-bg/clean", format: "png" },
-          (err, result) => (err ? reject(err) : resolve(result!.secure_url))
+          (err, result) =>
+            err ? reject(err) : resolve(result!.secure_url)
         );
         stream.end(cleanBuf);
       });
@@ -107,11 +135,11 @@ export const POST = async (req: NextRequest) => {
       original: originalUrl,
       processed: watermarkedUrl,
       clean: cleanUrl,
-      hasCredits
+      hasCredits,
     });
-
   } catch (err: any) {
     console.error("REMOVE_BG_ERROR:", err);
+
     return NextResponse.json(
       { error: "Failed to process image", details: err.message },
       { status: 500 }
