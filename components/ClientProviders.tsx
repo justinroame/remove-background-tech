@@ -1,4 +1,4 @@
-// components/ClientProviders.tsx ← FINAL 100% WORKING VERSION
+// components/ClientProviders.tsx
 "use client";
 
 import { SessionProvider, useSession, signOut } from "next-auth/react";
@@ -11,45 +11,61 @@ export default function ClientProviders({ children }: { children: React.ReactNod
 
   return (
     <SessionProvider>
-      <Header />
+      <GlobalHeader />
       <main className="pt-20">{children}</main>
     </SessionProvider>
   );
 }
 
-// Inline Header — no external file needed, no import errors
-function Header() {
+// ONE GLOBAL HEADER — used everywhere
+function GlobalHeader() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
     return (
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+          <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
         </div>
       </header>
     );
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="relative flex size-11 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
-              <rect x="2" y="2" width="12" height="12" stroke="currentColor" strokeWidth="2" rx="2" opacity="0.4" />
-              <rect x="10" y="10" width="12" height="12" fill="currentColor" rx="2" />
-            </svg>
-          </div>
-          <span className="text-xl font-semibold tracking-tight">
-            <span className="text-gray-700">remove-background</span>
-            <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">.tech</span>
-          </span>
-        </Link>
+        {/* Logo + Pricing */}
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="relative flex size-11 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+                <rect
+                  x="2"
+                  y="2"
+                  width="12"
+                  height="12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  rx="2"
+                  opacity="0.4"
+                />
+                <rect x="10" y="10" width="12" height="12" fill="currentColor" rx="2" />
+              </svg>
+            </div>
+            <span className="text-xl font-semibold tracking-tight">
+              <span className="text-gray-700">remove-background</span>
+              <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
+                .tech
+              </span>
+            </span>
+          </Link>
+          <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+            Pricing
+          </Link>
+        </div>
 
-        {/* Right side */}
+        {/* Right side — Credits + Logout / Auth */}
         <div className="flex items-center gap-6">
           {session?.user ? (
             <>
@@ -65,9 +81,9 @@ function Header() {
             <>
               <Link
                 href="/auth/login"
-                className="px-5 py-2.5 border border-gray-300 rounded-full font-medium hover:bg-gray-50 transition"
+                className="text-sm font-medium text-gray-700 hover:text-gray-900"
               >
-                Login
+                Log in
               </Link>
               <Link
                 href="/auth/signup"

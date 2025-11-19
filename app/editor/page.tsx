@@ -1,4 +1,4 @@
-// app/editor/page.tsx ← FINAL 100% WORKING VERSION (copy-paste entire file)
+// app/editor/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -6,6 +6,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useSession } from "next-auth/react";
+
+const FREE_UPLOAD_KEY = "rb_free_upload_count";
+const FREE_UPLOAD_LIMIT = 5;
 
 function EditorContent() {
   const params = useSearchParams();
@@ -16,7 +19,9 @@ function EditorContent() {
   const cleanParam = params.get("clean");
 
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img || null);
-  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam || null);
+  const [cleanImage, setCleanImage] = useState<string | null>(
+    cleanParam && cleanParam !== "null" && cleanParam !== "undefined" ? cleanParam : null
+  );
   const [loadingClean, setLoadingClean] = useState(false);
 
   // Fix flashing: force session refresh once
@@ -27,6 +32,18 @@ function EditorContent() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isLoggedIn = !!session?.user;
+
+    // Guest upload limiting via localStorage
+    if (!isLoggedIn && typeof window !== "undefined") {
+      const current = Number(localStorage.getItem(FREE_UPLOAD_KEY) || "0");
+      if (current >= FREE_UPLOAD_LIMIT) {
+        alert("You’ve used your 5 free images. Please upgrade to continue using the editor.");
+        router.push("/pricing");
+        return;
+      }
+    }
 
     const form = new FormData();
     form.append("image", file);
@@ -41,9 +58,22 @@ function EditorContent() {
       if (!res.ok) throw new Error(data.error || "Processing failed");
 
       setWatermarkedImage(data.processed);
-      setCleanImage(data.clean);
-      router.replace(`/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean)}`);
+      setCleanImage(data.clean || null);
+
+      if (typeof window !== "undefined") {
+        const search = new URLSearchParams();
+        if (data.processed) search.set("img", data.processed);
+        if (data.clean) search.set("clean", data.clean);
+        router.replace(`/editor?${search.toString()}`);
+      }
+
+      // Increment guest upload count only on success
+      if (!isLoggedIn && typeof window !== "undefined") {
+        const current = Number(localStorage.getItem(FREE_UPLOAD_KEY) || "0");
+        localStorage.setItem(FREE_UPLOAD_KEY, String(current + 1));
+      }
     } catch (err: any) {
+      console.error(err);
       alert(err.message || "Failed to remove background");
     }
   };
@@ -63,8 +93,16 @@ function EditorContent() {
   };
 
   const handleDownloadClean = async () => {
-    if (!cleanImage) return alert("Clean image not ready");
-    if (!session?.user) return router.push("/auth/signup");
+    // If not logged in → push to signup (CTA)
+    if (!session?.user) {
+      router.push("/auth/signup");
+      return;
+    }
+
+    if (!cleanImage) {
+      alert("Clean image not ready yet, please re-upload.");
+      return;
+    }
 
     setLoadingClean(true);
     try {
@@ -106,7 +144,11 @@ function EditorContent() {
               <Download className="mr-2 size-4" />
               With watermark
             </Button>
-            <Button onClick={handleDownloadClean} disabled={!cleanImage || loadingClean} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={handleDownloadClean}
+              disabled={loadingClean}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               <Download className="mr-2 size-4" />
               {loadingClean ? "Processing…" : "No watermark"}
             </Button>
@@ -134,7 +176,13 @@ function EditorContent() {
                 </svg>
               </div>
             </label>
-            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <input
+              id="image-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
           </div>
         </div>
       </div>
