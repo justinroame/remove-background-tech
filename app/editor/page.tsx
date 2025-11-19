@@ -18,14 +18,14 @@ function EditorContent() {
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Properly hydrate URL params
+  // Hydrate images when URL params load
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
   //
-  // UNIVERSAL DOWNLOAD (compatible with Cloudinary)
+  // SAFE DOWNLOAD HANDLER (fixes Cloudinary download issues)
   //
   async function triggerDownload(url: string, filename: string) {
     try {
@@ -37,21 +37,19 @@ function EditorContent() {
 
       a.href = blobUrl;
       a.download = filename;
-      a.style.display = "none";
-
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
 
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("DOWNLOAD ERROR:", err);
-      alert("Failed to download image.");
+      alert("Failed to download file.");
     }
   }
 
   //
-  // WATERMARK DOWNLOAD
+  // DOWNLOAD WITH WATERMARK
   //
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
@@ -59,18 +57,19 @@ function EditorContent() {
   };
 
   //
-  // CLEAN DOWNLOAD (AUTH + CREDIT DEDUCTION)
+  // DOWNLOAD NO WATERMARK + CREDIT DEDUCTION
   //
   const handleDownloadClean = async () => {
     if (status === "loading") return;
 
-    // Not logged in
-    if (!session?.user) return router.push("/auth/signup");
+    if (!session?.user) {
+      return router.push("/auth/signup");
+    }
 
     setLoadingClean(true);
 
     try {
-      // Deduct 1 credit
+      // Deduct one credit
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,25 +78,26 @@ function EditorContent() {
 
       const data = await res.json();
 
-      if (!res.ok || data.error) {
-        if (String(data.error).toLowerCase().includes("not enough")) {
-          return router.push("/pricing");
-        }
-
-        return alert(data.error || "Unexpected error");
+      // Payment error (not enough credits)
+      if (res.status === 402 || String(data.error).toLowerCase().includes("not enough")) {
+        return router.push("/pricing");
       }
 
-      //
-      // SUCCESS — ALWAYS USE cleanParam FROM URL
-      //
+      if (!res.ok) {
+        console.error("CONSUME ERROR", data);
+        return alert(data.error || "Unexpected error consuming credits.");
+      }
+
+      // Successful credit deduction → download
       if (cleanImage) {
         await triggerDownload(cleanImage, "clean-no-background.png");
       } else {
-        alert("Clean image not available yet.");
+        alert("Clean image is not ready yet.");
       }
+
     } catch (err) {
       console.error("CLEAN DOWNLOAD ERROR:", err);
-      alert("Network error — try again.");
+      alert("Network error. Try again.");
     } finally {
       setLoadingClean(false);
     }
@@ -122,11 +122,10 @@ function EditorContent() {
               With watermark
             </Button>
 
-            {/* FIXED: Button ALWAYS clickable unless loading */}
             <Button
               onClick={handleDownloadClean}
               disabled={loadingClean}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Download className="mr-2 size-4" />
               {loadingClean ? "Processing…" : "No watermark"}
@@ -135,7 +134,7 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Editor Canvas */}
+      {/* Image Canvas */}
       <div className="flex flex-1">
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
@@ -147,7 +146,7 @@ function EditorContent() {
               />
             ) : (
               <div className="text-gray-400 text-lg">
-                Upload an image to get started
+                Upload an image to begin
               </div>
             )}
           </div>
@@ -186,8 +185,9 @@ function EditorContent() {
                 });
 
                 const data = await res.json();
+
                 if (!res.ok) {
-                  alert(data.error || "Processing failed");
+                  alert(data.error || "Processing failed.");
                   return;
                 }
 
@@ -195,9 +195,7 @@ function EditorContent() {
                 setCleanImage(data.clean);
 
                 router.replace(
-                  `/editor?img=${encodeURIComponent(
-                    data.processed
-                  )}&clean=${encodeURIComponent(data.clean || "")}`
+                  `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean || "")}`
                 );
               }}
             />
