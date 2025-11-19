@@ -18,15 +18,13 @@ function EditorContent() {
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Hydrate images when URL params load
+  // Hydrate images when URL params change
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
-  //
-  // SAFE DOWNLOAD HANDLER (fixes Cloudinary download issues)
-  //
+  // UNIVERSAL DOWNLOAD HANDLER
   async function triggerDownload(url: string, filename: string) {
     try {
       const res = await fetch(url);
@@ -37,6 +35,8 @@ function EditorContent() {
 
       a.href = blobUrl;
       a.download = filename;
+      a.style.display = "none";
+
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -48,20 +48,17 @@ function EditorContent() {
     }
   }
 
-  //
   // DOWNLOAD WITH WATERMARK
-  //
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
     triggerDownload(watermarkedImage, "with-watermark.png");
   };
 
-  //
-  // DOWNLOAD NO WATERMARK + CREDIT DEDUCTION
-  //
+  // DOWNLOAD CLEAN + CREDIT CONSUMPTION
   const handleDownloadClean = async () => {
     if (status === "loading") return;
 
+    // Not logged in → signup
     if (!session?.user) {
       return router.push("/auth/signup");
     }
@@ -69,7 +66,7 @@ function EditorContent() {
     setLoadingClean(true);
 
     try {
-      // Deduct one credit
+      // Deduct 1 credit
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,7 +75,7 @@ function EditorContent() {
 
       const data = await res.json();
 
-      // Payment error (not enough credits)
+      // Not enough credits
       if (res.status === 402 || String(data.error).toLowerCase().includes("not enough")) {
         return router.push("/pricing");
       }
@@ -88,7 +85,11 @@ function EditorContent() {
         return alert(data.error || "Unexpected error consuming credits.");
       }
 
-      // Successful credit deduction → download
+      // *** IMPORTANT ***
+      // Tell CreditsPill components to refresh immediately
+      window.dispatchEvent(new CustomEvent("credits-updated"));
+
+      // Download clean image
       if (cleanImage) {
         await triggerDownload(cleanImage, "clean-no-background.png");
       } else {
@@ -134,7 +135,7 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Image Canvas */}
+      {/* Canvas */}
       <div className="flex flex-1">
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
