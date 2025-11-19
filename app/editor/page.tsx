@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useSession } from "next-auth/react";
 
-const FREE_UPLOAD_KEY = "rb_free_upload_count";
-const FREE_UPLOAD_LIMIT = 5;
-
 function EditorContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -19,12 +16,10 @@ function EditorContent() {
   const cleanParam = params.get("clean");
 
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img || null);
-  const [cleanImage, setCleanImage] = useState<string | null>(
-    cleanParam && cleanParam !== "null" && cleanParam !== "undefined" ? cleanParam : null
-  );
+  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam || null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Fix flashing: force session refresh once
+  // Force a real session refresh once (fixes header flicker)
   useEffect(() => {
     update();
   }, [update]);
@@ -32,18 +27,6 @@ function EditorContent() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const isLoggedIn = !!session?.user;
-
-    // Guest upload limiting via localStorage
-    if (!isLoggedIn && typeof window !== "undefined") {
-      const current = Number(localStorage.getItem(FREE_UPLOAD_KEY) || "0");
-      if (current >= FREE_UPLOAD_LIMIT) {
-        alert("You’ve used your 5 free images. Please upgrade to continue using the editor.");
-        router.push("/pricing");
-        return;
-      }
-    }
 
     const form = new FormData();
     form.append("image", file);
@@ -58,29 +41,19 @@ function EditorContent() {
       if (!res.ok) throw new Error(data.error || "Processing failed");
 
       setWatermarkedImage(data.processed);
-      setCleanImage(data.clean || null);
+      setCleanImage(data.clean);
 
-      if (typeof window !== "undefined") {
-        const search = new URLSearchParams();
-        if (data.processed) search.set("img", data.processed);
-        if (data.clean) search.set("clean", data.clean);
-        router.replace(`/editor?${search.toString()}`);
-      }
-
-      // Increment guest upload count only on success
-      if (!isLoggedIn && typeof window !== "undefined") {
-        const current = Number(localStorage.getItem(FREE_UPLOAD_KEY) || "0");
-        localStorage.setItem(FREE_UPLOAD_KEY, String(current + 1));
-      }
+      router.replace(
+        `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean)}`
+      );
     } catch (err: any) {
-      console.error(err);
       alert(err.message || "Failed to remove background");
     }
   };
 
   const triggerDownload = (url: string, filename: string) => {
     const a = document.createElement("a");
-    a.href = url + "?fl_attachment";
+    a.href = url + `?fl_attachment=${filename}`;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
@@ -93,39 +66,32 @@ function EditorContent() {
   };
 
   const handleDownloadClean = async () => {
-    // If not logged in → push to signup (CTA)
-    if (!session?.user) {
-      router.push("/auth/signup");
-      return;
-    }
-
-    if (!cleanImage) {
-      alert("Clean image not ready yet, please re-upload.");
-      return;
-    }
+    if (!cleanImage) return alert("Clean image not ready");
+    if (!session?.user) return router.push("/auth/signup");
 
     setLoadingClean(true);
+
     try {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 }),
+        body: JSON.stringify({ count: 1 }), // FIXED — send only count
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        if (data.error?.toLowerCase().includes("not enough")) {
+        if (data.error?.includes("Not enough")) {
           router.push("/pricing");
         } else {
-          alert(data.error || "Not enough credits");
+          alert(data.error);
         }
         return;
       }
 
       triggerDownload(cleanImage, "clean-no-background.png");
     } catch {
-      alert("Network error — please try again");
+      alert("Network error — try again");
     } finally {
       setLoadingClean(false);
     }
@@ -133,20 +99,22 @@ function EditorContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F5F6]">
-      {/* Toolbar only — no header here */}
+      {/* Toolbar */}
       <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
             Background
           </span>
+
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleDownloadWatermarked} disabled={!watermarkedImage}>
               <Download className="mr-2 size-4" />
               With watermark
             </Button>
+
             <Button
               onClick={handleDownloadClean}
-              disabled={loadingClean}
+              disabled={!cleanImage || loadingClean}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Download className="mr-2 size-4" />
@@ -156,12 +124,16 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Main Editor Area */}
+      {/* Main editor */}
       <div className="flex flex-1">
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
             {watermarkedImage ? (
-              <img src={watermarkedImage} alt="Processed" className="max-h-full max-w-full rounded object-contain" />
+              <img
+                src={watermarkedImage}
+                alt="Processed"
+                className="max-h-full max-w-full rounded object-contain"
+              />
             ) : (
               <div className="text-gray-400 text-lg">Upload an image to get started</div>
             )}
@@ -176,6 +148,7 @@ function EditorContent() {
                 </svg>
               </div>
             </label>
+
             <input
               id="image-upload"
               type="file"

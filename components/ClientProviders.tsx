@@ -1,100 +1,35 @@
 // components/ClientProviders.tsx
 "use client";
 
-import { SessionProvider, useSession, signOut } from "next-auth/react";
-import Link from "next/link";
-import CreditsPill from "./CreditsPill";
-import useFreeDownloadRedirect from "@/hooks/useFreeDownloadRedirect";
+import { SessionProvider, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
-  useFreeDownloadRedirect();
-
   return (
-    <SessionProvider>
-      <GlobalHeader />
-      <main className="pt-20">{children}</main>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+      <SessionStabilizer>{children}</SessionStabilizer>
     </SessionProvider>
   );
 }
 
-// ONE GLOBAL HEADER — used everywhere
-function GlobalHeader() {
-  const { data: session, status } = useSession();
+/**
+ * Prevents flashing header by:
+ * - forcing a session refresh once
+ * - delaying render until session is stabilized
+ */
+function SessionStabilizer({ children }: { children: React.ReactNode }) {
+  const { data: session, status, update } = useSession();
+  const [ready, setReady] = useState(false);
 
-  if (status === "loading") {
-    return (
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-          <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
-        </div>
-      </header>
-    );
+  useEffect(() => {
+    // refresh session 1 time on first load to eliminate flicker
+    update().finally(() => setReady(true));
+  }, [update]);
+
+  // while loading — show nothing (prevents layout flicker)
+  if (!ready || status === "loading") {
+    return null;
   }
 
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo + Pricing */}
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="relative flex size-11 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
-                <rect
-                  x="2"
-                  y="2"
-                  width="12"
-                  height="12"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  rx="2"
-                  opacity="0.4"
-                />
-                <rect x="10" y="10" width="12" height="12" fill="currentColor" rx="2" />
-              </svg>
-            </div>
-            <span className="text-xl font-semibold tracking-tight">
-              <span className="text-gray-700">remove-background</span>
-              <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
-                .tech
-              </span>
-            </span>
-          </Link>
-          <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900">
-            Pricing
-          </Link>
-        </div>
-
-        {/* Right side — Credits + Logout / Auth */}
-        <div className="flex items-center gap-6">
-          {session?.user ? (
-            <>
-              <CreditsPill />
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="px-5 py-2.5 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/auth/login"
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </header>
-  );
+  return <>{children}</>;
 }
