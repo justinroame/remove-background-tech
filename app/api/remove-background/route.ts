@@ -3,9 +3,7 @@ import Replicate from "replicate";
 import { v2 as cloudinary } from "cloudinary";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -16,6 +14,8 @@ cloudinary.config({
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
+
+export const dynamic = "force-dynamic";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -30,13 +30,12 @@ export const POST = async (req: NextRequest) => {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload original image to Cloudinary
+    // Upload original to Cloudinary
     const original = await new Promise<any>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
+      cloudinary.uploader.upload_stream(
         { folder: "remove-bg/original", resource_type: "image" },
         (err, result) => (err ? reject(err) : resolve(result))
-      );
-      stream.end(buffer);
+      ).end(buffer);
     });
 
     const originalUrl = original.secure_url;
@@ -49,7 +48,6 @@ export const POST = async (req: NextRequest) => {
       { input: { image: originalUrl } }
     );
 
-    // Normalize unknown output shape
     const outputUrl =
       typeof result === "string"
         ? result
@@ -60,17 +58,17 @@ export const POST = async (req: NextRequest) => {
           Object.values(result as any)[0];
 
     if (!outputUrl || typeof outputUrl !== "string") {
-      throw new Error("Replicate returned invalid output");
+      throw new Error("Replicate returned invalid output URL");
     }
 
     const resp = await fetch(outputUrl);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
     //
-    // ALWAYS GENERATE WATERMARK — shown in editor for both logged-in & logged-out users
+    // ALWAYS PROCESS WATERMARK
     //
     const watermarkedUrl = await new Promise<string>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
+      cloudinary.uploader.upload_stream(
         {
           folder: "remove-bg/processed",
           format: "png",
@@ -89,15 +87,11 @@ export const POST = async (req: NextRequest) => {
             },
           ],
         },
-        (err, result) =>
-          err ? reject(err) : resolve(result!.secure_url)
-      );
-      stream.end(cleanBuf);
+        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
+      ).end(cleanBuf);
     });
 
-    //
-    // If NOT logged in → return ONLY watermark
-    //
+    // NOT LOGGED IN → return ONLY WATERMARKED
     if (!userId) {
       return NextResponse.json({
         original: originalUrl,
@@ -108,34 +102,37 @@ export const POST = async (req: NextRequest) => {
     }
 
     //
-    // Logged in → check credits
+    // LOGGED-IN PATH: CHECK + DEDUCT CREDIT BEFORE GENERATING CLEAN VERSION
     //
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
 
-    const hasCredits = (user?.totalCredits ?? 0) >= 1;
+    const summary = await getUserCreditSummary(userId);
+    const totalCredits = summary.total;
 
-    let cleanUrl: string | null = null;
-
-    if (hasCredits) {
-      // Pre-generate clean version BEFORE downloading
-      cleanUrl = await new Promise<string>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "remove-bg/clean", format: "png" },
-          (err, result) =>
-            err ? reject(err) : resolve(result!.secure_url)
-        );
-        stream.end(cleanBuf);
+    if (totalCredits < 1) {
+      return NextResponse.json({
+        original: originalUrl,
+        processed: watermarkedUrl,
+        clean: null,
+        hasCredits: false,
       });
     }
+
+    // DEDUCT CREDIT (FIFO)
+    await consumeCredits(userId, 1);
+
+    // Generate clean version AFTER successful deduction
+    const cleanUrl = await new Promise<string>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: "remove-bg/clean", format: "png" },
+        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
+      ).end(cleanBuf);
+    });
 
     return NextResponse.json({
       original: originalUrl,
       processed: watermarkedUrl,
       clean: cleanUrl,
-      hasCredits,
+      hasCredits: true,
     });
   } catch (err: any) {
     console.error("REMOVE_BG_ERROR:", err);

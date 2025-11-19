@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { consumeCredits, syncUserTotalCredits } from "@/lib/credits";
+import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
 
 export async function POST(req: Request) {
   try {
@@ -26,20 +26,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // Deduct from FIFO credit batches (the real credit system)
-    const result = await consumeCredits(userId, Number(count));
+    // Deduct from FIFO credit batches
+    await consumeCredits(userId, Number(count));
 
-    // Recompute totals + update user.totalCredits
-    const total = await syncUserTotalCredits(userId);
+    // Return fresh totals for UI
+    const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({
       success: true,
-      total
+      total: summary.total,
     });
 
   } catch (err: any) {
     console.error("CREDITS_CONSUME_ERROR:", err);
 
+    // Standardize error detection
     if (String(err?.message).toLowerCase().includes("not enough")) {
       return NextResponse.json(
         { error: "Not enough credits" },
