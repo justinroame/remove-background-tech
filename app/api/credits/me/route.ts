@@ -1,21 +1,18 @@
-// app/api/credits/me/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
+import { auth } from "@/auth";
 import { getUserCreditSummary } from "@/lib/credits";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ authenticated: false, total: 0 });
+    return NextResponse.json(
+      { error: "Not authenticated" },
+      { status: 401 }
+    );
   }
 
   const summary = await getUserCreditSummary(Number(session.user.id));
 
-  return NextResponse.json({
-    authenticated: true,
-    total: summary.total,
-    pro: summary.pro,
-  });
+  return NextResponse.json(summary);
 }
