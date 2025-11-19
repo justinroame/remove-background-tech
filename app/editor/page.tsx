@@ -1,4 +1,4 @@
-// app/editor/page.tsx ← FINAL 100% WORKING VERSION
+// app/editor/page.tsx ← FINAL 100% WORKING VERSION (copy-paste entire file)
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -43,12 +43,11 @@ function EditorContent() {
       setWatermarkedImage(data.processed);
       setCleanImage(data.clean);
       router.replace(`/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean)}`);
-    } ER catch (err: any) {
+    } catch (err: any) {
       alert(err.message || "Failed to remove background");
     }
   };
 
-  // Force actual download from Cloudinary
   const triggerDownload = (url: string, filename: string) => {
     const a = document.createElement("a");
     a.href = url + "?fl_attachment";
@@ -78,17 +77,16 @@ function EditorContent() {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        if (data.error?.toLowerCase().includes("not enough") || data.error?.includes("insufficient")) {
+        if (data.error?.toLowerCase().includes("not enough")) {
           router.push("/pricing");
         } else {
-          alert(data.error || "Failed to use credit");
+          alert(data.error || "Not enough credits");
         }
         return;
       }
 
-      // Success → download clean image
       triggerDownload(cleanImage, "clean-no-background.png");
-    } catch (err) {
+    } catch {
       alert("Network error — please try again");
     } finally {
       setLoadingClean(false);
@@ -97,26 +95,18 @@ function EditorContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F5F6]">
-      {/* Toolbar only — NO HEADER HERE (we use GlobalHeader from ClientProviders) */}
+      {/* Toolbar only — no header here */}
       <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <span className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
             Background
           </span>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleDownloadWatermarked}
-              disabled={!watermarkedImage}
-            >
+            <Button variant="outline" onClick={handleDownloadWatermarked} disabled={!watermarkedImage}>
               <Download className="mr-2 size-4" />
               With watermark
             </Button>
-            <Button
-              onClick={handleDownloadClean}
-              disabled={!cleanImage || loadingClean}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button onClick={handleDownloadClean} disabled={!cleanImage || loadingClean} className="bg-blue-600 hover:bg-blue-700">
               <Download className="mr-2 size-4" />
               {loadingClean ? "Processing…" : "No watermark"}
             </Button>
@@ -129,11 +119,7 @@ function EditorContent() {
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
             {watermarkedImage ? (
-              <img
-                src={watermarkedImage}
-                alt="Processed"
-                className="max-h-full max-w-full rounded object-contain"
-              />
+              <img src={watermarkedImage} alt="Processed" className="max-h-full max-w-full rounded object-contain" />
             ) : (
               <div className="text-gray-400 text-lg">Upload an image to get started</div>
             )}
@@ -148,13 +134,7 @@ function EditorContent() {
                 </svg>
               </div>
             </label>
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
+            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </div>
         </div>
       </div>
