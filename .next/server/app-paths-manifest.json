@@ -1,1 +1,18 @@
-{}
+{
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/create-checkout-session/route": "app/api/create-checkout-session/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/credits/consume/route": "app/api/credits/consume/route.js",
+  "/api/stripe/checkout/route": "app/api/stripe/checkout/route.js",
+  "/api/stripe/subscribe/route": "app/api/stripe/subscribe/route.js",
+  "/api/stripe/success/route": "app/api/stripe/success/route.js",
+  "/api/signup/route": "app/api/signup/route.js",
+  "/api/stripe/webhook/route": "app/api/stripe/webhook/route.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/auth/signup/page": "app/auth/signup/page.js",
+  "/page": "app/page.js",
+  "/editor/page": "app/editor/page.js",
+  "/pricing/page": "app/pricing/page.js",
+  "/api/remove-background/route": "app/api/remove-background/route.js",
+  "/api/credits/summary/route": "app/api/credits/summary/route.js"
+}

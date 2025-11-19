@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -9,21 +9,16 @@ import { useSession } from "next-auth/react";
 function EditorContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { data: session } = useSession();
 
   const img = params.get("img");
   const cleanParam = params.get("clean");
 
-  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img || null);
-  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam || null);
+  const [watermarkedImage, setWatermarkedImage] = useState<string | null>(img);
+  const [cleanImage, setCleanImage] = useState<string | null>(cleanParam);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Fixes NextAuth flashing by syncing once
-  useEffect(() => {
-    update();
-  }, [update]);
-
-  // --- FIXED TYPE HERE ---
+  // --- FIXED IMAGE UPLOAD ---
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -56,15 +51,24 @@ function EditorContent() {
     }
   };
 
-  // Safe Cloudinary download behavior
-  const triggerDownload = (url: string, filename: string) => {
-    const a = document.createElement("a");
-    a.href = url + `?fl_attachment=${filename}`;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  };
+  // --- FIXED CLOUDINARY DOWNLOAD (WORKS EVERYWHERE) ---
+  async function triggerDownload(url: string, filename: string) {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      a.click();
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download error:", err);
+      alert("Failed to download image");
+    }
+  }
 
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
@@ -81,21 +85,20 @@ function EditorContent() {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 }), // backend auto-injects userId
+        body: JSON.stringify({ count: 1 }),
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-          if (data.error?.toLowerCase().includes("not enough")) {
-            return router.push("/pricing");
-          }
-          alert(data.error);
-          return;
+        if (data.error?.toLowerCase().includes("not enough")) {
+          return router.push("/pricing");
+        }
+        alert(data.error);
+        return;
       }
 
-      // Success — trigger clean download
-      triggerDownload(cleanImage, "clean-no-background.png");
+      await triggerDownload(cleanImage, "clean-no-background.png");
     } catch {
       alert("Network error — please try again");
     } finally {
@@ -113,7 +116,11 @@ function EditorContent() {
           </span>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={handleDownloadWatermarked} disabled={!watermarkedImage}>
+            <Button
+              variant="outline"
+              onClick={handleDownloadWatermarked}
+              disabled={!watermarkedImage}
+            >
               <Download className="mr-2 size-4" />
               With watermark
             </Button>
