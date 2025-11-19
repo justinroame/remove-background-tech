@@ -1,18 +1,21 @@
+// app/api/credits/consume/route.ts
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
-//
+
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    const userId = session?.user?.id;
+    const session = await getServerSession(authOptions);
 
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       );
     }
+
+    const userId = Number(session.user.id);
 
     const { count } = await req.json();
 
@@ -23,30 +26,29 @@ export async function POST(req: Request) {
       );
     }
 
-    // Consume credits for this user only
-    await consumeCredits(Number(userId), Number(count));
+    // Consume credits
+    await consumeCredits(userId, Number(count));
 
-    // Return updated totals
-    const summary = await getUserCreditSummary(Number(userId));
+    // Return fresh credit count
+    const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({
       success: true,
       total: summary.total,
     });
+
   } catch (err: any) {
     console.error("CREDITS_CONSUME_ERROR:", err);
 
-    const message = String(err?.message || "").toLowerCase();
-
-    if (message.includes("not enough")) {
+    if (String(err?.message).toLowerCase().includes("not enough")) {
       return NextResponse.json(
         { error: "Not enough credits" },
-        { status: 402 } // 402 = Payment Required
+        { status: 402 }
       );
     }
 
     return NextResponse.json(
-      { error: err?.message || "Failed to consume credits" },
+      { error: err.message || "Failed to consume credits" },
       { status: 400 }
     );
   }
