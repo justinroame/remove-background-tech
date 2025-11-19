@@ -27,10 +27,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Consume credit
+    // Consume credits
     await consumeCredits(userId, Number(count));
 
-    // Return fresh
     const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({

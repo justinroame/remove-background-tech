@@ -6,4 +6,4 @@ const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
 
-// ❌ DO NOT export `auth` — that is NextAuth v5 syntax
+// ❌ Do NOT export `auth` — NextAuth v4 does not support that helper.

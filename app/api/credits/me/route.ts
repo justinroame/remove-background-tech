@@ -1,11 +1,13 @@
+// app/api/credits/me/route.ts
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import { getUserCreditSummary } from "@/lib/credits";
 
 export async function GET() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return NextResponse.json(
@@ -14,7 +16,8 @@ export async function GET() {
     );
   }
 
-  const summary = await getUserCreditSummary(Number(session.user.id));
+  const userId = Number(session.user.id);
+  const summary = await getUserCreditSummary(userId);
 
   return NextResponse.json(summary);
 }
