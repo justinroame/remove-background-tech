@@ -18,7 +18,7 @@ function EditorContent() {
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
 
-  // Make sure params hydrate correctly
+  // Hydrate URL params
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
@@ -27,9 +27,7 @@ function EditorContent() {
   // -------------------------------
   // IMAGE UPLOAD
   // -------------------------------
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -49,9 +47,9 @@ function EditorContent() {
       setCleanImage(data.clean);
 
       router.replace(
-        `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
-          data.clean
-        )}`
+        `/editor?img=${encodeURIComponent(
+          data.processed
+        )}&clean=${encodeURIComponent(data.clean)}`
       );
     } catch (err: any) {
       alert(err.message || "Failed to remove background");
@@ -60,7 +58,6 @@ function EditorContent() {
 
   // -------------------------------
   // UNIVERSAL DOWNLOAD HANDLER
-  // (Works with all Cloudinary URLs)
   // -------------------------------
   async function triggerDownload(url: string, filename: string) {
     try {
@@ -86,7 +83,7 @@ function EditorContent() {
   }
 
   // -------------------------------
-  // WATERMARKED DOWNLOAD
+  // WATERMARK DOWNLOAD
   // -------------------------------
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
@@ -99,11 +96,13 @@ function EditorContent() {
   const handleDownloadClean = async () => {
     if (!cleanImage) return alert("Clean image is not ready yet.");
 
-    // Wait until session fully loads
+    // Fix: wait for session hydration
     if (status === "loading") return;
 
-    // Not logged in = redirect to signup
-    if (!session?.user) return router.push("/auth/signup");
+    // Not logged in → redirect
+    if (status !== "authenticated") {
+      return router.push("/auth/signup");
+    }
 
     setLoadingClean(true);
 
@@ -123,11 +122,11 @@ function EditorContent() {
         return alert(data.error);
       }
 
-      // Success → Download clean version
+      // SUCCESS — download clean version
       await triggerDownload(cleanImage, "clean-no-background.png");
-    } catch (err) {
+    } catch (err: any) {
       console.error("CLEAN DOWNLOAD ERROR:", err);
-      alert("Network error — please try again.");
+      alert(err.message || "Network error");
     } finally {
       setLoadingClean(false);
     }
@@ -154,7 +153,7 @@ function EditorContent() {
 
             <Button
               onClick={handleDownloadClean}
-              disabled={!cleanImage || loadingClean}
+              disabled={loadingClean || status === "loading"}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Download className="mr-2 size-4" />
@@ -164,7 +163,7 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* Editor Canvas */}
+      {/* Canvas */}
       <div className="flex flex-1">
         <div className="flex flex-1 flex-col items-center justify-center p-8">
           <div className="relative flex h-full w-full max-w-4xl items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg">
