@@ -1,10 +1,14 @@
+// app/api/credits/consume/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import { consumeCredits, getUserCreditSummary } from "@/lib/credits";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -14,8 +18,6 @@ export async function POST(req: Request) {
     }
 
     const userId = Number(session.user.id);
-
-    // Read JSON body properly (App Router)
     const { count } = await req.json();
 
     if (!count || Number(count) <= 0) {
@@ -25,10 +27,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Consume credits
+    // Consume credit
     await consumeCredits(userId, Number(count));
 
-    // Return updated credit summary
+    // Return fresh
     const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({
