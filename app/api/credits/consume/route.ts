@@ -17,19 +17,30 @@ export async function POST(req: Request) {
     }
 
     const userId = Number(session.user.id);
-    const { count } = await req.json();
 
-    if (!count || Number(count) <= 0) {
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const count = Number(body?.count);
+
+    if (!count || count <= 0) {
       return NextResponse.json(
         { error: "Missing or invalid credit count" },
         { status: 400 }
       );
     }
 
-    // Deduct from FIFO credit batches
-    await consumeCredits(userId, Number(count));
+    // Deduct FIFO credit batches
+    await consumeCredits(userId, count);
 
-    // Return fresh totals for UI
+    // Return new totals
     const summary = await getUserCreditSummary(userId);
 
     return NextResponse.json({
@@ -40,8 +51,9 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error("CREDITS_CONSUME_ERROR:", err);
 
-    // Standardize error detection
-    if (String(err?.message).toLowerCase().includes("not enough")) {
+    const message = String(err?.message || "").toLowerCase();
+
+    if (message.includes("not enough")) {
       return NextResponse.json(
         { error: "Not enough credits" },
         { status: 402 }
