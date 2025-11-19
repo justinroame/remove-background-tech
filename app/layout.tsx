@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import ClientProviders from "@/components/ClientProviders";
-import Header from "@/components/Header";
+import GlobalHeader from "@/components/GlobalHeader"; // ✅ FIXED
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   description: "AI Background Removal",
 };
 
-// ---- FIXED TYPE HERE ----
 export default function RootLayout({
   children,
 }: {
@@ -22,7 +21,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ClientProviders>
-          <Header />
+          <GlobalHeader />   {/* ✅ FIXED */}
           <main className="pt-20">{children}</main>
         </ClientProviders>
       </body>
