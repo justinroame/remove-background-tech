@@ -1,109 +1,62 @@
-// app/auth/signup/page.tsx — LIGHT MODE + FREE CREDITS + HOMEPAGE REDIRECT
-"use client";
+// app/api/signup/route.ts
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
+import { addCredits } from "@/lib/credits";
+import { eq } from "drizzle-orm";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+export const dynamic = "force-dynamic";
 
-export default function SignupPage() {
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { email, password } = body;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-    };
-
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      setError(json.error || "Signup failed");
-      setLoading(false);
-      return;
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
+    // 🔍 Check if user already exists
+    const existing = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
 
-    if (result?.error) {
-      setError("Account created, but auto-login failed. Please log in manually.");
-      setLoading(false);
-      return;
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { error: "Email already exists" },
+        { status: 400 }
+      );
     }
 
-    // ✅ FIXED — Redirect to homepage instead of pricing
-    router.push("/");
-    router.refresh();
-  };
+    // 🆕 Create the new user
+    const result = await db
+      .insert(users)
+      .values({
+        email,
+        password, // (you can hash later)
+      })
+      .returning({ id: users.id });
 
-  return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 border border-gray-200">
-        
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
-          Create your account
-        </h1>
+    const newUserId = result[0].id;
 
-        <p className="text-center text-blue-600 font-medium mb-6">
-          Sign up and get <span className="font-bold">3 free credits</span> 🎉
-        </p>
+    // 🎁 Add 3 free signup credits
+    await addCredits({
+      userId: newUserId,
+      amount: 3,
+      source: "signup_bonus",
+      daysValid: 30,
+    });
 
-        {error && (
-          <p className="text-red-600 text-center mb-4 bg-red-100 px-4 py-3 rounded-lg border border-red-300">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="Email"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
-          />
-
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            placeholder="Password"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-4 rounded-lg font-semibold text-white transition"
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-600 font-medium hover:underline">
-            Log in
-          </a>
-        </p>
-      </div>
-    </div>
-  );
+    return NextResponse.json({ success: true, userId: newUserId });
+  } catch (err) {
+    console.error("SIGNUP ERROR:", err);
+    return NextResponse.json(
+      { error: "Signup failed" },
+      { status: 500 }
+    );
+  }
 }
