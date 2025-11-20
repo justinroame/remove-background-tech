@@ -3,20 +3,24 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { credits } from "@/db/schema";
-import { addCredits, syncUserTotalCredits } from "@/lib/credits";
-import { eq, sql } from "drizzle-orm";
+import { addCredits } from "@/lib/credits";
+import { sql } from "drizzle-orm";
+
+// ✅ Next.js 14 / App Router compatible settings
+export const dynamic = "force-dynamic";
+export const preferredRegion = "iad1";
+export const maxDuration = 300;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const config = {
-  api: { bodyParser: false },
-};
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-async function readBuffer(readable: ReadableStream<Uint8Array>) {
-  const chunks: any[] = [];
+// Utility: read raw body for Stripe signature verification
+async function readRawBody(readable: ReadableStream<Uint8Array>) {
   const reader = readable.getReader();
+  const chunks = [];
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -24,8 +28,6 @@ async function readBuffer(readable: ReadableStream<Uint8Array>) {
   }
   return Buffer.concat(chunks);
 }
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 // PRICE → CREDITS MAP (Option A)
 function mapPriceToCredits(priceId: string): number | null {
@@ -38,7 +40,7 @@ function mapPriceToCredits(priceId: string): number | null {
     "price_1ST7EIC7SdJDqSQLRLfW3Lbh": 500,
     "price_1ST7EIC7SdJDqSQL8RFOBHvs": 1000,
 
-    // ===== SUBS =====
+    // ===== SUBSCRIPTIONS =====
     "price_1ST85YC7SdJDqSQLl9BDMF9i": 50,
     "price_1ST85YC7SdJDqSQLmyewfZya": 250,
     "price_1ST85YC7SdJDqSQL2iAc6jQN": 500,
@@ -50,111 +52,105 @@ function mapPriceToCredits(priceId: string): number | null {
   return map[priceId] ?? null;
 }
 
+// ------------------------------------------------------------
+// MAIN WEBHOOK HANDLER
+// ------------------------------------------------------------
 export async function POST(req: Request) {
-  const body = await readBuffer(req.body as any);
-  const sig = req.headers.get("stripe-signature");
+  const rawBody = await readRawBody(req.body as any);
+  const signature = req.headers.get("stripe-signature");
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, sig!, webhookSecret);
+    event = stripe.webhooks.constructEvent(rawBody, signature!, webhookSecret);
   } catch (err: any) {
-    console.error("❌ Webhook signature error:", err.message);
+    console.error("❌ Stripe signature verification failed:", err.message);
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
-  // ----------------------------------------------------------
-  // PAYG PURCHASE
-  // ----------------------------------------------------------
+  // ============================================================
+  // PAYG — checkout.session.completed (one-time purchases)
+  // ============================================================
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
     const userId = session.metadata?.userId;
     const priceId = session.metadata?.priceId;
-    const creditMode = session.metadata?.creditMode;
+    const mode = session.metadata?.creditMode; // PAYG or SUBSCRIPTION
 
-    if (!userId || !priceId || creditMode !== "PAYG") {
-      return NextResponse.json({ ok: true });
+    if (!userId || !priceId || mode !== "PAYG") {
+      return NextResponse.json({ received: true });
     }
 
-    const credits = mapPriceToCredits(priceId);
-    if (!credits) return NextResponse.json({ ok: true });
-
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 30);
+    const creditAmount = mapPriceToCredits(priceId);
+    if (!creditAmount) return NextResponse.json({ received: true });
 
     await addCredits({
       userId: Number(userId),
-      amount: credits,
+      amount: creditAmount,
       source: "stripe:payg",
       daysValid: 30,
     });
 
-    console.log("💳 Added PAYG credits:", credits);
+    console.log(`💳 PAYG credits added: ${creditAmount} credits for user ${userId}`);
   }
 
-  // ----------------------------------------------------------
-  // SUBSCRIPTION RENEWAL
-  // ----------------------------------------------------------
+  // ============================================================
+  // SUBSCRIPTION — invoice.payment_succeeded
+  // ============================================================
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object as Stripe.Invoice;
 
     const userId = invoice.metadata?.userId;
-    const line = invoice.lines.data[0];
+    const line = invoice.lines.data?.[0];
     const priceId = line?.price?.id;
+    const periodEnd = line?.period?.end;
 
-    if (!userId || !priceId) return NextResponse.json({ ok: true });
+    if (!userId || !priceId || !periodEnd) {
+      return NextResponse.json({ received: true });
+    }
 
-    const credits = mapPriceToCredits(priceId);
-    if (!credits) return NextResponse.json({ ok: true });
+    const creditAmount = mapPriceToCredits(priceId);
+    if (!creditAmount) return NextResponse.json({ received: true });
 
-    // Expiration = Stripe cycle end
-    const periodEnd = line.period?.end;
-    const expires = new Date(periodEnd * 1000);
-
-    // 1. Expire old subscription credits
+    // 1. Expire all previous subscription credits immediately
     await db
       .update(credits)
       .set({ amount: 0, expiresAt: new Date() })
-      .where(
-        sql`${credits.userId} = ${Number(userId)} AND ${credits.source} LIKE 'stripe:subscription%'`
-      );
+      .where(sql`${credits.userId} = ${Number(userId)} AND ${credits.source} LIKE 'stripe:subscription%'`);
 
     // 2. Add new subscription credits
+    const expires = new Date(periodEnd * 1000);
+
     await addCredits({
       userId: Number(userId),
-      amount: credits,
+      amount: creditAmount,
       source: "stripe:subscription",
       daysValid: Math.ceil((expires.getTime() - Date.now()) / 86400000),
     });
 
-    console.log("🔄 Added subscription credits:", credits);
+    console.log(`🔄 Subscription renewed → ${creditAmount} credits added for user ${userId}`);
   }
 
-  // ----------------------------------------------------------
-  // SUBSCRIPTION CANCELED
-  // ----------------------------------------------------------
-  if (
-    event.type === "customer.subscription.deleted" ||
-    event.type === "customer.subscription.updated"
-  ) {
+  // ============================================================
+  // SUBSCRIPTION CANCELED — customer.subscription.deleted
+  // ============================================================
+  if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata?.userId;
 
-    if (!userId) return NextResponse.json({ ok: true });
+    if (!userId) return NextResponse.json({ received: true });
 
-    // Expire these credits in 30 days
+    // Subscription canceled → expire remaining credits in 30 days
     const expires = new Date();
     expires.setDate(expires.getDate() + 30);
 
     await db
       .update(credits)
       .set({ expiresAt: expires })
-      .where(
-        sql`${credits.userId} = ${Number(userId)} AND ${credits.source} LIKE 'stripe:subscription%'`
-      );
+      .where(sql`${credits.userId} = ${Number(userId)} AND ${credits.source} LIKE 'stripe:subscription%'`);
 
-    console.log("⚠️ Subscription canceled → credits set to expire in 30 days");
+    console.log(`⚠️ Subscription canceled → credits expire in 30 days for user ${userId}`);
   }
 
   return NextResponse.json({ received: true });
