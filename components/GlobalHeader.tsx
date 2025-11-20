@@ -1,4 +1,4 @@
-// components/GlobalHeader.tsx — FINAL
+// components/GlobalHeader.tsx — FINAL UPDATED LOGO
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -26,7 +26,23 @@ export default function GlobalHeader() {
         {/* Logo */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3">
-            <div className="size-11 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg" />
+
+            {/* 🔵 UPDATED LOGO (matches your mockup) */}
+            <div className="size-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg flex items-center justify-center relative overflow-hidden">
+              {/* Outer translucent square */}
+              <div
+                className="absolute w-5 h-5 rounded-md border-2 border-white/40"
+                style={{ top: "6px", left: "6px" }}
+              />
+
+              {/* Inner solid white square */}
+              <div
+                className="absolute w-4 h-4 rounded-md bg-white"
+                style={{ bottom: "6px", right: "6px" }}
+              />
+            </div>
+
+            {/* Logo text */}
             <span className="text-xl font-semibold tracking-tight">
               <span className="text-gray-700">remove-background</span>
               <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent font-bold">
