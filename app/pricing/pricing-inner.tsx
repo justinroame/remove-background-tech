@@ -6,8 +6,6 @@ import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Zap } from "lucide-react";
-import Link from "next/link";
 
 // PAYG prices
 const PAYG_PRICE_IDS: Record<string, string> = {
@@ -29,6 +27,7 @@ const PRO_PRICE_IDS: Record<string, string> = {
   "5000": "price_1ST85YC7SdJDqSQLAKFbT9fN",
 };
 
+// Unified checkout function
 async function startCheckout(priceId: string, mode: "payment" | "subscription") {
   const res = await fetch("/api/create-checkout-session", {
     method: "POST",
@@ -46,7 +45,8 @@ export default function PricingInner() {
   const success = params.get("success");
   const cancel = params.get("cancel");
 
-  const [payAsYouGoOption, setPayAsYouGoOption] = useState("50");
+  // FIX: Default to **first item** in each dropdown
+  const [payAsYouGoOption, setPayAsYouGoOption] = useState("5");
   const [proOption, setProOption] = useState("50");
 
   const buy = (priceId: string, mode: "payment" | "subscription") => {
@@ -59,7 +59,7 @@ export default function PricingInner() {
 
   return (
     <>
-      {/* SUCCESS / ERROR BANNERS */}
+      {/* SUCCESS / CANCEL BANNERS */}
       {success && (
         <div className="w-full bg-green-600 text-white p-4 text-center font-bold text-lg">
           Payment successful! Credits added.
@@ -72,7 +72,7 @@ export default function PricingInner() {
         </div>
       )}
 
-      {/* MAIN PRICING UI */}
+      {/* MAIN LAYOUT */}
       <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-800 md:text-5xl">
@@ -81,12 +81,12 @@ export default function PricingInner() {
           <p className="text-lg text-gray-600">Start free. Scale fast. Never overpay.</p>
         </div>
 
-        {/* TWO CARD GRID */}
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-
-          {/* PAY-AS-YOU-GO */}
+          {/* PAYG CARD */}
           <Card className="flex flex-col rounded-2xl bg-white p-8 shadow-lg">
-            <h3 className="text-3xl font-bold text-gray-800 mb-6">Pay as you go credits</h3>
+            <h3 className="text-3xl font-bold text-gray-800 mb-6">
+              Pay as you go credits
+            </h3>
 
             <label className="mb-2 block text-sm text-gray-600">Amount</label>
             <select
@@ -102,6 +102,7 @@ export default function PricingInner() {
               <option value="1000">1000 credits - $299</option>
             </select>
 
+            {/* Dynamic price */}
             <div className="mb-6 text-5xl font-bold text-gray-800">
               {payAsYouGoOption === "5" && "$3"}
               {payAsYouGoOption === "15" && "$9"}
@@ -125,7 +126,7 @@ export default function PricingInner() {
             </p>
           </Card>
 
-          {/* SUBSCRIPTION */}
+          {/* SUBSCRIPTION CARD */}
           <Card className="relative flex flex-col rounded-2xl border-2 border-yellow-400 bg-white p-8 shadow-xl">
             <div className="absolute -top-3 right-6">
               <span className="rounded-full bg-yellow-400 px-3 py-1 text-xs font-semibold text-gray-900">
@@ -170,7 +171,9 @@ export default function PricingInner() {
             </Button>
 
             <div>
-              <p className="font-bold text-xl text-gray-800 mb-2">Pro - Removes Watermarks</p>
+              <p className="font-bold text-xl text-gray-800 mb-2">
+                Pro - Removes Watermarks
+              </p>
               <ul className="space-y-1 text-sm text-gray-600">
                 <li className="font-bold text-xl">Full HD Images</li>
                 <li className="font-bold text-xl">Best Value</li>
