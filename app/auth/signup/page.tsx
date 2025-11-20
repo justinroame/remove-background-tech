@@ -1,4 +1,4 @@
-// app/auth/signup/page.tsx — LIGHT MODE VERSION
+// app/auth/signup/page.tsx — LIGHT MODE + FREE CREDIT MESSAGE
 "use client";
 
 import { useState } from "react";
@@ -54,9 +54,14 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">
+        
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
           Create your account
         </h1>
+
+        <p className="text-center text-blue-600 font-medium mb-6">
+          Sign up and get <span className="font-bold">3 free credits</span> 🎉
+        </p>
 
         {error && (
           <p className="text-red-600 text-center mb-4 bg-red-100 px-4 py-3 rounded-lg border border-red-300">

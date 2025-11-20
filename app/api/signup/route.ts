@@ -1,62 +1,52 @@
-// app/api/signup/route.ts
+// app/api/signup/route.ts — ADD 3 FREE SIGNUP CREDITS
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { users } from "@/db/schema";
+import { users, credits } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const [existing] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, normalizedEmail));
-
-    if (existing) {
-      return NextResponse.json(
-        { error: "An account with this email already exists." },
-        { status: 409 }
-      );
+    // Check if user exists
+    const existing = await db.select().from(users).where(eq(users.email, email));
+    if (existing.length > 0) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const [newUser] = await db
+    // Create user
+    const hashed = await bcrypt.hash(password, 10);
+    const newUser = await db
       .insert(users)
       .values({
-        email: normalizedEmail,
-        password: hashedPassword,
-        totalCredits: 3,
-        pro: false,
+        email,
+        password: hashed,
+        totalCredits: 3, // UI convenience, but credits table is source of truth
       })
       .returning();
 
-    return NextResponse.json(
-      {
-        success: true,
-        user: {
-          id: String(newUser.id),
-          email: newUser.email,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("SIGNUP ERROR:", error);
-    return NextResponse.json(
-      { error: "Something went wrong during signup." },
-      { status: 500 }
-    );
+    const userId = newUser[0].id;
+
+    // Create 3-credit signup batch
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await db.insert(credits).values({
+      userId,
+      amount: 3,
+      source: "SIGNUP",
+      expiresAt,
+    });
+
+    return NextResponse.json({ success: true });
+
+  } catch (err: any) {
+    console.error("SIGNUP_ERROR:", err);
+    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
   }
 }
