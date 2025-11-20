@@ -1,16 +1,16 @@
 // app/pricing/page.tsx
 "use client";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import PricingInner from "./pricing-inner";
+
+const PricingInner = dynamic(() => import("./pricing-inner"), {
+  ssr: false,
+});
 
 export default function PricingPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-center">Loading pricing…</div>}>
+    <Suspense fallback={<div className="p-10 text-center">Loading…</div>}>
       <PricingInner />
     </Suspense>
   );
