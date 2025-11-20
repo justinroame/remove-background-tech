@@ -1,4 +1,4 @@
-// app/auth/signup/page.tsx
+// app/auth/signup/page.tsx — LIGHT MODE VERSION
 "use client";
 
 import { useState } from "react";
@@ -52,14 +52,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-gray-900 rounded-2xl shadow-2xl p-8">
-        <h1 className="text-3xl font-bold text-white text-center mb-8">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 border border-gray-200">
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">
           Create your account
         </h1>
 
         {error && (
-          <p className="text-red-400 text-center mb-4 bg-red-900/50 px-4 py-3 rounded">
+          <p className="text-red-600 text-center mb-4 bg-red-100 px-4 py-3 rounded-lg border border-red-300">
             {error}
           </p>
         )}
@@ -70,7 +70,7 @@ export default function SignupPage() {
             type="email"
             required
             placeholder="Email"
-            className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
           />
 
           <input
@@ -79,7 +79,7 @@ export default function SignupPage() {
             required
             minLength={6}
             placeholder="Password"
-            className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
           />
 
           <button
@@ -91,9 +91,9 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="text-center text-gray-400 mt-6">
+        <p className="text-center text-gray-600 mt-6">
           Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-400 hover:underline">
+          <a href="/auth/login" className="text-blue-600 font-medium hover:underline">
             Log in
           </a>
         </p>
