@@ -56,21 +56,24 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.totalCredits = user.totalCredits ?? 3;
         token.pro = user.pro ?? false;
+        token.email = user.email;
       }
       return token;
     },
 
     async session({ session, token }) {
-      session.user = {
-        id: token.id as string,
-        totalCredits: token.totalCredits as number,
-        pro: token.pro as boolean,
-      };
+      if (!session.user) session.user = {} as any;
+
+      session.user.id = token.id as string;
+      session.user.email = token.email as string;
+      session.user.totalCredits = token.totalCredits as number;
+      session.user.pro = token.pro as boolean;
+
       return session;
     },
 
-    // 🎯 ALWAYS redirect to homepage after login/signup
-    async redirect({ url, baseUrl }) {
+    // 🔥 FIX: ALWAYS redirect login/signup → homepage
+    async redirect({ baseUrl }) {
       return baseUrl + "/";
     },
   },
