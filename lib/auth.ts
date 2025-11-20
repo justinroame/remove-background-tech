@@ -61,13 +61,17 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      if (!session.user) session.user = {} as any;
-
-      session.user.id = token.id as string;
-      session.user.totalCredits = token.totalCredits as number;
-      session.user.pro = token.pro as boolean;
-
+      session.user = {
+        id: token.id as string,
+        totalCredits: token.totalCredits as number,
+        pro: token.pro as boolean,
+      };
       return session;
+    },
+
+    // 🎯 ALWAYS redirect to homepage after login/signup
+    async redirect({ url, baseUrl }) {
+      return baseUrl + "/";
     },
   },
 
