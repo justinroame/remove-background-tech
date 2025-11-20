@@ -1,4 +1,5 @@
 // app/api/stripe/webhook/route.ts
+// app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
@@ -6,13 +7,12 @@ import { credits } from "@/db/schema";
 import { addCredits } from "@/lib/credits";
 import { sql } from "drizzle-orm";
 
-// ✅ Next.js 14 / App Router compatible settings
 export const dynamic = "force-dynamic";
 export const preferredRegion = "iad1";
 export const maxDuration = 300;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-10-29.clover",
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
