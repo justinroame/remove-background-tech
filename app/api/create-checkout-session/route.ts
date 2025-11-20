@@ -15,14 +15,13 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = session.user.id;
-
     const { priceId, mode } = await req.json();
 
     if (!priceId || !mode) {
       return NextResponse.json({ error: "Missing priceId or mode" }, { status: 400 });
     }
 
-    // Build the checkout session
+    // Build checkout session
     const checkout = await stripe.checkout.sessions.create({
       mode,
       line_items: [
@@ -31,13 +30,18 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.get("origin")}/pricing?success=true`,
-      cancel_url: `${req.headers.get("origin")}/pricing?cancel=true`,
 
-      // CRITICAL — metadata ensures Stripe webhook knows what to award
+      // ✅ FIXED — redirect to HOME PAGE with success banner
+      success_url: `${req.headers.get("origin")}/?success=1`,
+
+      // Cancel sends them back to pricing
+      cancel_url: `${req.headers.get("origin")}/pricing?cancel=1`,
+
+      // Critical metadata for webhook processing
       metadata: {
         userId: String(userId),
         priceId,
+        creditMode: mode === "payment" ? "PAYG" : "SUBSCRIPTION",
       },
     });
 

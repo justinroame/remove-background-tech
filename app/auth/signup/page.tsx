@@ -35,6 +35,7 @@ export default function SignupPage() {
       return;
     }
 
+    // Login automatically
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -47,7 +48,8 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/pricing");
+    // ✅ FIXED — redirect to homepage instead of pricing
+    router.push("/");
     router.refresh();
   };
 
