@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 export const preferredRegion = "iad1";
 export const maxDuration = 300;
 
-// IMPORTANT — must match your project's type definition
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
 });
@@ -65,16 +64,18 @@ export async function POST(req: Request) {
   }
 
   // --------------------------
-  // PAYG CHECKOUT
+  // PAYG CHECKOUT (ONE-TIME)
   // --------------------------
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
     const userId = session.metadata?.userId;
     const priceId = session.metadata?.priceId;
-    const mode = session.metadata?.creditMode;
 
-    if (!userId || !priceId || mode !== "PAYG") {
+    // ✅ REAL PAYG CHECK
+    const isPayg = session.mode === "payment";
+
+    if (!userId || !priceId || !isPayg) {
       return NextResponse.json({ received: true });
     }
 
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
       daysValid: 30,
     });
 
-    console.log(`💳 Added PAYG credits: ${creditAmount} → user ${userId}`);
+    console.log(`💳 PAYG credits added: ${creditAmount} → user ${userId}`);
   }
 
   // --------------------------
@@ -116,10 +117,9 @@ export async function POST(req: Request) {
       .set({ amount: 0, expiresAt: new Date() })
       .where(
         sql`${credits.userId} = ${Number(userId)} 
-        AND ${credits.source} LIKE 'stripe:subscription%'`
+             AND ${credits.source} LIKE 'stripe:subscription%'`
       );
 
-    // New expiration date = subscription billing cycle end
     const expires = new Date(periodEnd * 1000);
     const daysValid = Math.ceil((expires.getTime() - Date.now()) / 86400000);
 
@@ -149,8 +149,8 @@ export async function POST(req: Request) {
       .update(credits)
       .set({ expiresAt: expires })
       .where(
-        sql`${credits.userId} = ${Number(userId)} 
-        AND ${credits.source} LIKE 'stripe:subscription%'`
+        sql`${credits.userId} = ${Number(userId)}
+             AND ${credits.source} LIKE 'stripe:subscription%'`
       );
 
     console.log(`⚠️ Subscription canceled → credits expire in 30 days for user ${userId}`);
