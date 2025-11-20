@@ -11,24 +11,12 @@ export const preferredRegion = "iad1";
 export const maxDuration = 300;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-10-29.clover",
+  apiVersion: "2023-10-16",
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// Read raw request body for Stripe signature verification
-async function readRawBody(readable: ReadableStream<Uint8Array>) {
-  const reader = readable.getReader();
-  const chunks = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) chunks.push(value);
-  }
-  return Buffer.concat(chunks);
-}
-
-// PRICE→CREDITS MAP
+// PRICE→CREDIT MAP
 function mapPriceToCredits(priceId: string): number | null {
   const map: Record<string, number> = {
     // PAYG
@@ -51,12 +39,11 @@ function mapPriceToCredits(priceId: string): number | null {
   return map[priceId] ?? null;
 }
 
-
-// ---------------------------------------------------------------
+// ------------------------------------------------------------------
 // MAIN WEBHOOK HANDLER
-// ---------------------------------------------------------------
+// ------------------------------------------------------------------
 export async function POST(req: Request) {
-  const rawBody = await readRawBody(req.body as any);
+  const rawBody = await req.text();
   const signature = req.headers.get("stripe-signature");
 
   let event: Stripe.Event;
@@ -69,7 +56,7 @@ export async function POST(req: Request) {
   }
 
   // ============================================================
-  // PAYG — checkout.session.completed
+  // PAYG PAYMENT
   // ============================================================
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -92,24 +79,19 @@ export async function POST(req: Request) {
       daysValid: 30,
     });
 
-    console.log(`💳 PAYG credits added: ${creditAmount} credits for user ${userId}`);
+    console.log(`💳 PAYG credits added → ${creditAmount} credits for user ${userId}`);
   }
 
   // ============================================================
-  // SUBSCRIPTION — invoice.payment_succeeded
+  // SUBSCRIPTION RENEWAL (INVOICE)
   // ============================================================
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object as Stripe.Invoice;
 
     const userId = invoice.metadata?.userId;
     const line = invoice.lines.data?.[0];
-
-    // ❗ Clover API: price is not typed on InvoiceLineItem
-    // So we extract it safely:
-    const priceId = (line as any)?.price?.id;
-
-    // Subscription period end timestamp
-    const periodEnd = (line as any)?.period?.end;
+    const priceId = line?.price?.id;
+    const periodEnd = line?.period?.end;
 
     if (!userId || !priceId || !periodEnd) {
       return NextResponse.json({ received: true });
@@ -118,7 +100,7 @@ export async function POST(req: Request) {
     const creditAmount = mapPriceToCredits(priceId);
     if (!creditAmount) return NextResponse.json({ received: true });
 
-    // 1. Expire old subscription credit immediately
+    // Expire old subscription credits
     await db
       .update(credits)
       .set({ amount: 0, expiresAt: new Date() })
@@ -126,7 +108,7 @@ export async function POST(req: Request) {
         sql`${credits.userId} = ${Number(userId)} AND ${credits.source} LIKE 'stripe:subscription%'`
       );
 
-    // 2. Add new subscription credits
+    // New credits
     const expires = new Date(periodEnd * 1000);
 
     await addCredits({
@@ -140,9 +122,9 @@ export async function POST(req: Request) {
   }
 
   // ============================================================
-  // SUBSCRIPTION CANCELED
+  // SUBSCRIPTION CANCELED (not deleted!)
   // ============================================================
-  if (event.type === "customer.subscription.deleted") {
+  if (event.type === "customer.subscription.canceled") {
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata?.userId;
 
