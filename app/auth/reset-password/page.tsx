@@ -1,15 +1,17 @@
 "use client";
 
-export const dynamic = "force-dynamic"; // ✅ required so useSearchParams won't break build
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store"; // <-- REQUIRED so Next.js NEVER prerenders it
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const token = searchParams.get("token");
 
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
 
@@ -37,7 +39,7 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div className="max-w-md mx-auto p-10">
-        <h1 className="text-2xl font-bold mb-4">Invalid reset link</h1>
+        <h1 className="text-2xl font-bold mb-4">Invalid Reset Link</h1>
         <p>Please request a new password reset.</p>
       </div>
     );
