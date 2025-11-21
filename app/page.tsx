@@ -150,12 +150,20 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ✅ FIXED TERMS LINK */}
+          {/* Terms */}
           <p className="mt-12 max-w-2xl text-xs text-gray-600">
             By uploading an image you agree to our{" "}
             <Link href="/legal" className="underline hover:text-gray-800">
               Terms & Privacy
             </Link>.
+          </p>
+
+          {/* ✅ Contact Us link */}
+          <p className="mt-3 max-w-2xl text-xs text-gray-600">
+            Need help?{" "}
+            <Link href="/contact" className="underline hover:text-gray-800 font-medium">
+              Contact Us
+            </Link>
           </p>
         </div>
       </main>

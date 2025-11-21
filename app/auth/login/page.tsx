@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -48,6 +49,13 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
+        {/* 🔵 New Forgot Password Link */}
+        <p className="text-right text-sm">
+          <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
+            Forgot password?
+          </Link>
+        </p>
 
         <button className="w-full bg-blue-600 text-white p-3 rounded">
           Log In
