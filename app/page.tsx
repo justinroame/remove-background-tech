@@ -158,7 +158,7 @@ export default function Home() {
             </Link>.
           </p>
 
-          {/* ✅ Contact Us link */}
+          {/* Contact Us link */}
           <p className="mt-3 max-w-2xl text-xs text-gray-600">
             Need help?{" "}
             <Link href="/contact" className="underline hover:text-gray-800 font-medium">
