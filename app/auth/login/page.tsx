@@ -50,24 +50,20 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        {/* 🔵 New Forgot Password Link */}
-        <p className="text-right text-sm">
-          <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
-            Forgot password?
-          </Link>
-        </p>
-
         <button className="w-full bg-blue-600 text-white p-3 rounded">
           Log In
         </button>
       </form>
 
-      <button
-        onClick={() => signIn("google")}
-        className="mt-6 w-full bg-white border p-3 rounded shadow"
-      >
-        Continue with Google
-      </button>
+      {/* 🔵 Forgot Password moved BELOW everything */}
+      <p className="mt-6 text-center text-sm">
+        <Link
+          href="/auth/forgot-password"
+          className="text-blue-600 hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </p>
     </div>
   );
 }
