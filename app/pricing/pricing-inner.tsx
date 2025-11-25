@@ -1,4 +1,3 @@
-// app/pricing/pricing-inner.tsx
 "use client";
 
 import { useState } from "react";
@@ -27,14 +26,12 @@ const PRO_PRICE_IDS: Record<string, string> = {
   "5000": "price_1ST85YC7SdJDqSQLAKFbT9fN",
 };
 
-// Unified checkout function
 async function startCheckout(priceId: string, mode: "payment" | "subscription") {
   const res = await fetch("/api/create-checkout-session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ priceId, mode }),
   });
-
   const data = await res.json();
   if (data?.url) window.location.href = data.url;
 }
@@ -45,7 +42,6 @@ export default function PricingInner() {
   const success = params.get("success");
   const cancel = params.get("cancel");
 
-  // FIX: Default to **first item** in each dropdown
   const [payAsYouGoOption, setPayAsYouGoOption] = useState("5");
   const [proOption, setProOption] = useState("50");
 
@@ -59,36 +55,63 @@ export default function PricingInner() {
 
   return (
     <>
-      {/* SUCCESS / CANCEL BANNERS */}
+      {/* FAQ Schema for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How much does it cost to remove a background from an image?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "You can buy credits starting at $3 or choose a Pro subscription starting at $9/month for high-volume background removal."
+                }
+              }
+            ]
+          }),
+        }}
+      />
+
+      {/* SUCCESS / CANCEL */}
       {success && (
         <div className="w-full bg-green-600 text-white p-4 text-center font-bold text-lg">
           Payment successful! Credits added.
         </div>
       )}
-
       {cancel && (
         <div className="w-full bg-yellow-600 text-white p-4 text-center font-bold text-lg">
           Payment cancelled — try again anytime.
         </div>
       )}
 
-      {/* MAIN LAYOUT */}
+      {/* PAGE HEADER */}
       <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-800 md:text-5xl">
-            Choose Your Plan
+            Background Remover Pricing
           </h1>
-          <p className="text-lg text-gray-600">Start free. Scale fast. Never overpay.</p>
+          <p className="text-lg text-gray-600 max-w-xl mx-auto">
+            Simple and flexible. Buy credits or subscribe — perfect for e-commerce, product photos, agencies, and creators.
+          </p>
         </div>
 
+        {/* GRID */}
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
+
           {/* PAYG CARD */}
           <Card className="flex flex-col rounded-2xl bg-white p-8 shadow-lg">
-            <h3 className="text-3xl font-bold text-gray-800 mb-6">
-              Pay as you go credits
+            <h3 className="text-3xl font-bold text-gray-800 mb-2">
+              Pay-as-you-go Credits
             </h3>
+            <p className="text-gray-600 text-sm mb-6">
+              One credit removes the background from one image.
+            </p>
 
-            <label className="mb-2 block text-sm text-gray-600">Amount</label>
+            <label className="mb-2 block text-sm text-gray-600">Credits</label>
             <select
               className="w-full rounded-lg border border-gray-300 px-4 py-3 mb-6"
               value={payAsYouGoOption}
@@ -102,7 +125,7 @@ export default function PricingInner() {
               <option value="1000">1000 credits - $299</option>
             </select>
 
-            {/* Dynamic price */}
+            {/* Price */}
             <div className="mb-6 text-5xl font-bold text-gray-800">
               {payAsYouGoOption === "5" && "$3"}
               {payAsYouGoOption === "15" && "$9"}
@@ -116,13 +139,13 @@ export default function PricingInner() {
               className="mb-6 rounded-full bg-blue-600 py-6 text-base font-medium text-white hover:bg-blue-700"
               onClick={() => buy(PAYG_PRICE_IDS[payAsYouGoOption], "payment")}
             >
-              Buy now
+              Buy Credits
             </Button>
 
-            <p className="text-gray-600 font-bold text-xl leading-relaxed">
-              Pay-as-you-go – start small, scale instantly.<br />
-              Buy only what you need — no commitment.<br />
-              Credits expire in 30 days.
+            <p className="text-gray-600 leading-relaxed text-sm">
+              • Perfect for occasional users<br />
+              • No commitment — buy what you need<br />
+              • Credits usable for HD background removal
             </p>
           </Card>
 
@@ -134,12 +157,12 @@ export default function PricingInner() {
               </span>
             </div>
 
-            <h3 className="text-3xl font-bold text-gray-800 mb-2">Pro Package</h3>
+            <h3 className="text-3xl font-bold text-gray-800 mb-2">Pro Subscription</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Use up to <span className="font-semibold">{proOption}</span> credits per month
+              High-volume background removal — up to {proOption} images/month.
             </p>
 
-            <label className="mb-2 block text-sm text-gray-600">Amount</label>
+            <label className="mb-2 block text-sm text-gray-600">Monthly Credits</label>
             <select
               className="w-full rounded-lg border border-gray-300 px-4 py-3 mb-6"
               value={proOption}
@@ -171,13 +194,12 @@ export default function PricingInner() {
             </Button>
 
             <div>
-              <p className="font-bold text-xl text-gray-800 mb-2">
-                Pro - Removes Watermarks
-              </p>
+              <p className="font-bold text-xl text-gray-800 mb-2">Includes:</p>
               <ul className="space-y-1 text-sm text-gray-600">
-                <li className="font-bold text-xl">Full HD Images</li>
-                <li className="font-bold text-xl">Best Value</li>
-                <li className="font-bold text-xl">Cancel anytime</li>
+                <li>• Removes watermarks</li>
+                <li>• HD background removal</li>
+                <li>• Best value for teams & e-commerce</li>
+                <li>• Cancel anytime</li>
               </ul>
             </div>
           </Card>

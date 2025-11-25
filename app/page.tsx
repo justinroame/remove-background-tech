@@ -7,10 +7,49 @@ import { Sparkles, Loader2 } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { useRouter } from "next/navigation";
 
+/* ──────────────────────────────
+   MAIN PAGE + METADATA (SEO)
+──────────────────────────────── */
+export const metadata = {
+  title: "Remove Background from Image – Free AI Background Remover",
+  description:
+    "Upload an image to remove the background instantly using free AI. Download a clean transparent PNG in seconds. Perfect for product photos, portraits, and social images.",
+  keywords: [
+    "remove background",
+    "remove background from image",
+    "background remover",
+    "ai background remover",
+    "remove bg",
+    "transparent background",
+    "erase image background",
+    "image background removal tool",
+  ],
+  alternates: {
+    canonical: "https://remove-background.tech",
+  },
+  openGraph: {
+    title: "Free AI Background Remover – Remove Background from Image",
+    description:
+      "Upload any photo → AI removes the background → download a transparent PNG instantly. 100% free, no signup required.",
+    url: "https://remove-background.tech",
+    siteName: "Remove Background Tech",
+    images: [
+      {
+        url: "/og-preview.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Remove background from image using AI",
+      },
+    ],
+    type: "website",
+  },
+  robots: "index, follow",
+};
+
 export default function Home() {
+  /* state + router unchanged */
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const router = useRouter();
 
   async function handleFile(file: File) {
@@ -78,33 +117,65 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      {/* Main */}
+
+      {/* Tiny FAQ schema (SEO gold) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is this background remover free?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes — you can remove background from images instantly with no signup required."
+                }
+              }
+            ]
+          }),
+        }}
+      />
+
       <main className="mx-auto max-w-4xl px-6 py-10 md:py-20">
         <div className="flex flex-col items-center text-center">
 
-          {/* Sparkle Icon */}
+          {/* Invisible SEO H1 */}
+          <h1 className="sr-only">
+            Remove Background from Image – Free AI Tool Online
+          </h1>
+
+          {/* Icon */}
           <div className="mb-4 md:mb-8 flex justify-end w-full">
             <Sparkles className="size-8 md:size-10 text-yellow-500" />
           </div>
 
-          {/* HERO TEXT */}
-          <h1 className="mb-6 md:mb-8 text-3xl md:text-5xl font-bold text-gray-800 leading-tight">
-            Upload an image to
-            <br />
-            remove the background
-          </h1>
+          {/* Visible main headline */}
+          <h2 className="mb-6 md:mb-8 text-3xl md:text-5xl font-bold text-gray-800 leading-tight">
+            Upload an image to<br />
+            <span className="text-blue-600">remove the background</span>
+          </h2>
 
-          {/* UPLOAD BOX */}
+          {/* Tiny semantic booster paragraph */}
+          <p className="text-gray-600 text-sm md:text-base max-w-xl mb-6">
+            Instantly remove background from any image using free AI. Upload a photo and download a clean transparent PNG in seconds.
+          </p>
+
+          {/* Upload Box */}
           <div
             className="relative border-2 border-dashed border-gray-300 rounded-2xl p-6 md:p-10 mb-6 md:mb-10 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
             onDrop={onDrop}
             onDragOver={allowDrop}
+            aria-label="Upload or drop image to remove background"
           >
             <input
               type="file"
               accept="image/*"
               onChange={onFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
+              aria-label="Select image to remove background"
             />
 
             <Button
@@ -123,42 +194,50 @@ export default function Home() {
             </Button>
           </div>
 
-          {/* DRAG TEXT */}
+          {/* Drag Text */}
           <p className="mb-2 text-sm md:text-base font-medium text-gray-700">
-            or drag an image here
+            or drag and drop an image to remove the background
           </p>
 
           {error && <p className="text-red-600 mt-4 md:mt-6">{error}</p>}
 
-          {/* SAMPLE IMAGES SECTION */}
+          {/* Sample images */}
           <div className="space-y-3 md:space-y-4 mt-10 md:mt-16">
             <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
 
             <div className="flex gap-3 justify-center">
               <img
                 src="/woman-in-pink-dress.jpg"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
+                alt="Portrait photo — remove background from image sample"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
                 onClick={() => handleSampleClick("/woman-in-pink-dress.jpg")}
+                loading="lazy"
               />
               <img
                 src="/iphone-product.jpg"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
+                alt="Product image — AI background remover example"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
                 onClick={() => handleSampleClick("/iphone-product.jpg")}
+                loading="lazy"
               />
               <img
                 src="/silver-sports-car.jpg"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
+                alt="Car photo — transparent background example"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
                 onClick={() => handleSampleClick("/silver-sports-car.jpg")}
+                loading="lazy"
               />
               <img
                 src="/watch-closeup.jpg"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
+                alt="Watch image — erase background cleanly"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
                 onClick={() => handleSampleClick("/watch-closeup.jpg")}
+                loading="lazy"
               />
             </div>
           </div>
 
-          {/* TERMS */}
+          {/* Terms */}
           <p className="mt-8 md:mt-12 max-w-2xl text-xs text-gray-600">
             By uploading an image you agree to our{" "}
             <Link href="/legal" className="underline hover:text-gray-800">
@@ -166,13 +245,14 @@ export default function Home() {
             </Link>.
           </p>
 
-          {/* CONTACT */}
+          {/* Contact */}
           <p className="mt-2 max-w-2xl text-xs text-gray-600">
             Need help?{" "}
             <Link href="/contact" className="underline hover:text-gray-800 font-medium">
               Contact Us
             </Link>
           </p>
+
         </div>
       </main>
     </div>

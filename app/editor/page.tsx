@@ -8,10 +8,10 @@ import { useSession } from "next-auth/react";
 
 type BgStyle = "none" | "white" | "black";
 
-function EditorContent() {
+export default function EditorContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const img = params.get("img");
   const cleanParam = params.get("clean");
@@ -24,14 +24,21 @@ function EditorContent() {
 
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
 
+  // SEO: add invisible H1 for clarity
+  const invisibleH1 = (
+    <h1 className="sr-only">
+      Online Background Removal Editor – Remove Background from Image Using AI
+    </h1>
+  );
+
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
-  /* ----------------------------
-     DOWNLOAD ENGINE
-  ----------------------------- */
+  /* ----------------------------------
+        DOWNLOAD ENGINE
+  ----------------------------------- */
   async function downloadWithBackground(
     sourceUrl: string,
     filename: string,
@@ -59,7 +66,6 @@ function EditorContent() {
       else if (background === "black") ctx.fillStyle = "#000000";
 
       if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       ctx.drawImage(image, 0, 0);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
@@ -77,12 +83,12 @@ function EditorContent() {
     }
   }
 
-  /* ----------------------------
-     DOWNLOAD BUTTONS
-  ----------------------------- */
+  /* ----------------------------------
+        DOWNLOAD BUTTONS
+  ----------------------------------- */
   const handleDownloadWatermarked = () => {
     if (!watermarkedImage) return;
-    downloadWithBackground(watermarkedImage, "with-watermark.png", bgStyle);
+    downloadWithBackground(watermarkedImage, "background-removed-preview.png", bgStyle);
   };
 
   const handleDownloadClean = async () => {
@@ -104,7 +110,7 @@ function EditorContent() {
         return router.push("/pricing");
       }
 
-      await downloadWithBackground(cleanImage, "clean-no-background.png", bgStyle);
+      await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
     } catch {
       alert("Network error.");
     }
@@ -112,9 +118,9 @@ function EditorContent() {
     setLoadingClean(false);
   };
 
-  /* ----------------------------
-     DELETE / NEW UPLOAD
-  ----------------------------- */
+  /* ----------------------------------
+        DELETE / NEW UPLOAD
+  ----------------------------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
     setCleanImage(null);
@@ -153,9 +159,9 @@ function EditorContent() {
     setLoadingNewUpload(false);
   }
 
-  /* ----------------------------
-     PREVIEW BACKGROUND
-  ----------------------------- */
+  /* ----------------------------------
+        PREVIEW BACKGROUND
+  ----------------------------------- */
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -163,12 +169,46 @@ function EditorContent() {
       ? "bg-white"
       : "bg-black";
 
+  /* ----------------------------------
+            RENDER
+  ----------------------------------- */
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
+
+      {invisibleH1}
+
+      {/* FAQ Schema for SEO richness */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Can I preview background removal online?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, the online editor allows you to preview background removal instantly using AI and switch between white, black, or transparent backgrounds."
+                }
+              }
+            ]
+          })
+        }}
+      />
+
       {/* Toolbar */}
       <div className="border-b bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
-          <span className="bg-gray-100 px-4 py-2 rounded-lg">Background</span>
+
+          <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
+            Background Preview
+          </span>
+
+          <p className="text-xs text-gray-500">
+            AI background remover · Transparent / White / Black preview
+          </p>
 
           <div className="flex gap-3">
             {!session?.user && (
@@ -177,7 +217,7 @@ function EditorContent() {
                 onClick={handleDownloadWatermarked}
                 disabled={!watermarkedImage}
               >
-                <Download className="mr-2 size-4" /> With watermark
+                <Download className="mr-2 size-4" /> Preview Image
               </Button>
             )}
 
@@ -187,33 +227,37 @@ function EditorContent() {
               className="bg-blue-600 text-white hover:bg-blue-700"
             >
               <Download className="mr-2 size-4" />
-              {loadingClean ? "Processing…" : "No watermark"}
+              {loadingClean ? "Processing…" : "Download Clean Image"}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Main layout: image + right sidebar */}
+      {/* Main layout */}
       <div className="flex justify-center px-4 py-6">
         <div className="flex gap-8 w-full max-w-6xl">
 
           {/* LEFT: IMAGE AREA */}
           <div className="flex flex-col flex-1 items-center">
+
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
             >
               {loadingNewUpload ? (
                 <div className="text-gray-600 flex flex-col items-center">
                   <Loader2 className="animate-spin h-8 w-8 mb-2" />
-                  Processing...
+                  Processing…
                 </div>
               ) : watermarkedImage ? (
                 <img
                   src={watermarkedImage}
+                  alt="AI background removal preview"
                   className="object-contain max-w-full max-h-full"
                 />
               ) : (
-                <div className="text-gray-400 text-lg">Upload an image to begin</div>
+                <div className="text-gray-400 text-lg">
+                  Upload an image to start background removal
+                </div>
               )}
             </div>
 
@@ -241,37 +285,36 @@ function EditorContent() {
             </div>
           </div>
 
-          {/* RIGHT: BACKGROUND SELECTOR (VERTICAL) */}
+          {/* RIGHT: BACKGROUND SELECTOR */}
           <div className="flex flex-col gap-6 pt-4">
+
             <button
               onClick={() => setBgStyle("none")}
+              aria-label="Transparent background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${
                 bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
+
             <button
               onClick={() => setBgStyle("white")}
+              aria-label="White background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
+
             <button
               onClick={() => setBgStyle("black")}
+              aria-label="Black background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-black ${
                 bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
+
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function EditorPage() {
-  return (
-    <Suspense fallback={<div className="text-center p-20">Loading editor…</div>}>
-      <EditorContent />
-    </Suspense>
   );
 }

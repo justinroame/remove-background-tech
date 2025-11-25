@@ -1,15 +1,49 @@
-// app/auth/signup/page.tsx — LIGHT MODE + FREE CREDIT MESSAGE
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
+// SEO metadata (App Router compliant)
+export const metadata = {
+  title: "Sign Up – Create Your Account | remove-background.tech",
+  description:
+    "Create your free account to remove backgrounds from images using AI. Get 3 free credits instantly. No card required.",
+  keywords: [
+    "sign up remove background",
+    "create account background remover",
+    "ai background remover signup",
+    "remove background tech account",
+    "free image background removal credits",
+  ],
+  alternates: {
+    canonical: "https://remove-background.tech/auth/signup",
+  },
+  openGraph: {
+    title: "Sign Up – Background Remover Account",
+    description:
+      "Create your free account and start removing backgrounds instantly. Get 3 free credits.",
+    url: "https://remove-background.tech/auth/signup",
+    siteName: "remove-background.tech",
+    images: [
+      {
+        url: "/og-signup.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Create account – background remover",
+      },
+    ],
+    type: "website",
+  },
+  robots: "index, follow",
+};
+
 export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -35,7 +69,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Login automatically
+    // Auto-login
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -48,63 +82,94 @@ export default function SignupPage() {
       return;
     }
 
-    // ✅ FIXED — redirect to homepage instead of pricing
     router.push("/");
     router.refresh();
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 border border-gray-200">
-        
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
-          Create your account
-        </h1>
+    <>
+      {/* Invisible H1 for SEO */}
+      <h1 className="sr-only">
+        Create Account – Sign Up for Free AI Background Remover
+      </h1>
 
-        <p className="text-center text-blue-600 font-medium mb-6">
-          Sign up and get <span className="font-bold">3 free credits</span> 🎉
-        </p>
+      {/* FAQ Schema for signup-related rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "Is the AI background remover free to use?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes, signing up gives you 3 free credits to remove backgrounds from images using AI.",
+                },
+              },
+            ],
+          }),
+        }}
+      />
 
-        {error && (
-          <p className="text-red-600 text-center mb-4 bg-red-100 px-4 py-3 rounded-lg border border-red-300">
-            {error}
+      <div className="min-h-screen bg-white flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 border border-gray-200">
+          
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-2">
+            Create your account
+          </h2>
+
+          <p className="text-center text-blue-600 font-medium mb-6">
+            Sign up and get <span className="font-bold">3 free credits</span> 🎉
           </p>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="Email"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
-          />
+          {error && (
+            <p className="text-red-600 text-center mb-4 bg-red-100 px-4 py-3 rounded-lg border border-red-300">
+              {error}
+            </p>
+          )}
 
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            placeholder="Password"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
-          />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="Email"
+              aria-label="Email"
+              autoComplete="email"
+              className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
+            />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-4 rounded-lg font-semibold text-white transition"
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
-        </form>
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={6}
+              placeholder="Password"
+              aria-label="Password"
+              autoComplete="new-password"
+              className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-800"
+            />
 
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-600 font-medium hover:underline">
-            Log in
-          </a>
-        </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-4 rounded-lg font-semibold text-white transition"
+            >
+              {loading ? "Creating Account..." : "Sign Up"}
+            </button>
+          </form>
+
+          <p className="text-center text-gray-600 mt-6">
+            Already have an account?{" "}
+            <a href="/auth/login" className="text-blue-600 font-medium hover:underline">
+              Log in
+            </a>
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
