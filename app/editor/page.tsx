@@ -41,13 +41,12 @@ function EditorContent() {
       const image = new Image();
       image.crossOrigin = "anonymous";
 
-      const loaded = new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => reject(new Error("Image failed to load"));
+        image.onerror = () => reject("Load failed");
       });
 
       image.src = sourceUrl;
-      await loaded;
 
       const canvas = document.createElement("canvas");
       canvas.width = image.naturalWidth;
@@ -56,17 +55,15 @@ function EditorContent() {
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas not supported");
 
-      if (background === "white") ctx.fillStyle = "#fff";
-      else if (background === "black") ctx.fillStyle = "#000";
+      if (background === "white") ctx.fillStyle = "#ffffff";
+      else if (background === "black") ctx.fillStyle = "#000000";
 
-      if (background !== "none") {
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
+      if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.drawImage(image, 0, 0);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => (b ? resolve(b) : reject("Failed blob")));
+        canvas.toBlob((b) => (b ? resolve(b) : reject("Blob failed")));
       });
 
       const url = URL.createObjectURL(blob);
@@ -89,7 +86,6 @@ function EditorContent() {
   };
 
   const handleDownloadClean = async () => {
-    if (status === "loading") return;
     if (!session?.user) return router.push("/auth/signup");
     if (!cleanImage) return alert("Clean image not ready");
 
@@ -104,13 +100,9 @@ function EditorContent() {
 
       const data = await res.json();
 
-      if (res.status === 402 || String(data.error).includes("not enough")) {
+      if (res.status === 402 || data.error?.includes("not enough")) {
         return router.push("/pricing");
       }
-
-      if (!res.ok) return alert(data.error);
-
-      window.dispatchEvent(new CustomEvent("credits-updated"));
 
       await downloadWithBackground(cleanImage, "clean-no-background.png", bgStyle);
     } catch {
@@ -121,7 +113,7 @@ function EditorContent() {
   };
 
   /* ----------------------------
-     DELETE + NEW UPLOAD
+     DELETE / NEW UPLOAD
   ----------------------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
@@ -144,7 +136,6 @@ function EditorContent() {
     });
 
     const data = await res.json();
-
     if (!res.ok) {
       setLoadingNewUpload(false);
       return alert(data.error);
@@ -163,7 +154,7 @@ function EditorContent() {
   }
 
   /* ----------------------------
-     BACKGROUND PREVIEW STYLE
+     PREVIEW BACKGROUND
   ----------------------------- */
   const previewBackgroundClass =
     bgStyle === "none"
@@ -174,17 +165,12 @@ function EditorContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
-
       {/* Toolbar */}
       <div className="border-b bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 md:px-6 py-4 flex justify-between items-center">
-
+        <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
           <span className="bg-gray-100 px-4 py-2 rounded-lg">Background</span>
 
-          {/* Toolbar Buttons */}
           <div className="flex gap-3">
-
-            {/* Logged out → show both buttons */}
             {!session?.user && (
               <Button
                 variant="outline"
@@ -195,7 +181,6 @@ function EditorContent() {
               </Button>
             )}
 
-            {/* Always show No Watermark */}
             <Button
               onClick={handleDownloadClean}
               disabled={loadingClean}
@@ -208,82 +193,75 @@ function EditorContent() {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div className="flex justify-center py-6 px-4 md:px-0">
+      {/* Main layout: image + right sidebar */}
+      <div className="flex justify-center px-4 py-6">
+        <div className="flex gap-8 w-full max-w-6xl">
 
-        <div className="w-full max-w-3xl flex flex-col items-center">
+          {/* LEFT: IMAGE AREA */}
+          <div className="flex flex-col flex-1 items-center">
+            <div
+              className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
+            >
+              {loadingNewUpload ? (
+                <div className="text-gray-600 flex flex-col items-center">
+                  <Loader2 className="animate-spin h-8 w-8 mb-2" />
+                  Processing...
+                </div>
+              ) : watermarkedImage ? (
+                <img
+                  src={watermarkedImage}
+                  className="object-contain max-w-full max-h-full"
+                />
+              ) : (
+                <div className="text-gray-400 text-lg">Upload an image to begin</div>
+              )}
+            </div>
 
-          {/* IMAGE PREVIEW */}
-          <div
-            className={`rounded-xl shadow-lg w-full max-w-full aspect-square flex items-center justify-center p-4 ${previewBackgroundClass}`}
-          >
-            {loadingNewUpload ? (
-              <div className="text-gray-600 flex flex-col items-center">
-                <Loader2 className="animate-spin h-8 w-8 mb-2" />
-                Processing new image…
-              </div>
-            ) : watermarkedImage ? (
-              <img
-                src={watermarkedImage}
-                className="rounded max-w-full max-h-full object-contain"
+            {/* Upload / Delete */}
+            <div className="flex gap-6 mt-6">
+              <label htmlFor="image-upload" className="cursor-pointer">
+                <div className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl text-gray-700">
+                  +
+                </div>
+              </label>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUpload}
               />
-            ) : (
-              <div className="text-gray-400 text-lg p-20">
-                Upload an image to begin
-              </div>
-            )}
+
+              <button
+                onClick={handleDeleteImage}
+                className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl text-gray-700"
+              >
+                –
+              </button>
+            </div>
           </div>
 
-          {/* BACKGROUND BUTTONS */}
-          <div className="flex gap-4 mt-6">
-
+          {/* RIGHT: BACKGROUND SELECTOR (VERTICAL) */}
+          <div className="flex flex-col gap-6 pt-4">
             <button
               onClick={() => setBgStyle("none")}
-              className={`h-16 w-16 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat transition-all ${
+              className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${
                 bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
-
             <button
               onClick={() => setBgStyle("white")}
-              className={`h-16 w-16 rounded-xl border-4 bg-white transition-all ${
+              className={`h-20 w-20 rounded-xl border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
-
             <button
               onClick={() => setBgStyle("black")}
-              className={`h-16 w-16 rounded-xl border-4 bg-black transition-all ${
+              className={`h-20 w-20 rounded-xl border-4 bg-black ${
                 bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
           </div>
-
-          {/* UPLOAD + DELETE BUTTONS */}
-          <div className="flex gap-6 mt-8">
-
-            <label htmlFor="image-upload" className="cursor-pointer">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow text-3xl text-gray-700 hover:bg-gray-50">
-                +
-              </div>
-            </label>
-
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleUpload}
-            />
-
-            <button
-              onClick={handleDeleteImage}
-              className="flex h-16 w-16 items-center justify-center rounded-xl bg-white border border-gray-300 shadow text-3xl text-gray-700 hover:bg-gray-50"
-            >
-              –
-            </button>
-          </div>
-
         </div>
       </div>
     </div>
