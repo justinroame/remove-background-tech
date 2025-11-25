@@ -79,20 +79,24 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
       {/* Main */}
-      <main className="mx-auto max-w-4xl px-6 py-20">
+      <main className="mx-auto max-w-4xl px-6 py-10 md:py-20">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-8 flex justify-end w-full">
-            <Sparkles className="size-10 text-yellow-500" />
+
+          {/* Sparkle Icon */}
+          <div className="mb-4 md:mb-8 flex justify-end w-full">
+            <Sparkles className="size-8 md:size-10 text-yellow-500" />
           </div>
 
-          <h1 className="mb-8 text-4xl font-bold text-gray-800 md:text-5xl">
+          {/* HERO TEXT */}
+          <h1 className="mb-6 md:mb-8 text-3xl md:text-5xl font-bold text-gray-800 leading-tight">
             Upload an image to
             <br />
             remove the background
           </h1>
 
+          {/* UPLOAD BOX */}
           <div
-            className="relative border-2 border-dashed border-gray-300 rounded-2xl p-10 mb-10 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
+            className="relative border-2 border-dashed border-gray-300 rounded-2xl p-6 md:p-10 mb-6 md:mb-10 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
             onDrop={onDrop}
             onDragOver={allowDrop}
           >
@@ -104,7 +108,7 @@ export default function Home() {
             />
 
             <Button
-              className="rounded-full bg-blue-600 px-12 py-6 text-lg font-medium text-white hover:bg-blue-700"
+              className="rounded-full bg-blue-600 px-10 py-5 md:px-12 md:py-6 text-lg font-medium text-white hover:bg-blue-700"
               size="lg"
               disabled={loading}
             >
@@ -119,47 +123,51 @@ export default function Home() {
             </Button>
           </div>
 
-          <p className="mb-2 text-base font-medium text-gray-700">or drag an image here</p>
+          {/* DRAG TEXT */}
+          <p className="mb-2 text-sm md:text-base font-medium text-gray-700">
+            or drag an image here
+          </p>
 
-          {error && <p className="text-red-600 mt-6">{error}</p>}
+          {error && <p className="text-red-600 mt-4 md:mt-6">{error}</p>}
 
-          <div className="space-y-4 mt-16">
+          {/* SAMPLE IMAGES SECTION */}
+          <div className="space-y-3 md:space-y-4 mt-10 md:mt-16">
             <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
 
             <div className="flex gap-3 justify-center">
               <img
                 src="/woman-in-pink-dress.jpg"
-                className="size-20 rounded-xl object-cover cursor-pointer"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
                 onClick={() => handleSampleClick("/woman-in-pink-dress.jpg")}
               />
               <img
                 src="/iphone-product.jpg"
-                className="size-20 rounded-xl object-cover cursor-pointer"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
                 onClick={() => handleSampleClick("/iphone-product.jpg")}
               />
               <img
                 src="/silver-sports-car.jpg"
-                className="size-20 rounded-xl object-cover cursor-pointer"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
                 onClick={() => handleSampleClick("/silver-sports-car.jpg")}
               />
               <img
                 src="/watch-closeup.jpg"
-                className="size-20 rounded-xl object-cover cursor-pointer"
+                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer"
                 onClick={() => handleSampleClick("/watch-closeup.jpg")}
               />
             </div>
           </div>
 
-          {/* Terms */}
-          <p className="mt-12 max-w-2xl text-xs text-gray-600">
+          {/* TERMS */}
+          <p className="mt-8 md:mt-12 max-w-2xl text-xs text-gray-600">
             By uploading an image you agree to our{" "}
             <Link href="/legal" className="underline hover:text-gray-800">
               Terms & Privacy
             </Link>.
           </p>
 
-          {/* Contact Us link */}
-          <p className="mt-3 max-w-2xl text-xs text-gray-600">
+          {/* CONTACT */}
+          <p className="mt-2 max-w-2xl text-xs text-gray-600">
             Need help?{" "}
             <Link href="/contact" className="underline hover:text-gray-800 font-medium">
               Contact Us
