@@ -45,18 +45,27 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
+  /** 
+   * ⭐ EXTENDED SESSION + JWT LIFETIME
+   * Default was 1 hour → now 30 days
+   * Fixes the “still looks logged in but isn’t” bug 
+   */
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 DAYS
+  },
+
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 DAYS
   },
 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.totalCredits = user.totalCredits ?? 3;
-        token.pro = user.pro ?? false;
-        token.email = user.email;
+      token.id = user.id;
+      token.totalCredits = user.totalCredits ?? 3;
+      token.pro = user.pro ?? false;
+      token.email = user.email;
       }
       return token;
     },
@@ -72,7 +81,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    // 🔥 FIX: ALWAYS redirect login/signup → homepage
+    // 🔥 Always redirect login/signup → homepage
     async redirect({ baseUrl }) {
       return baseUrl + "/";
     },
