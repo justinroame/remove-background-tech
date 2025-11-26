@@ -85,7 +85,6 @@ export default function EditorContent() {
     }
   }
 
-  /* ---------------- Preview Download ---------------- */
   const handleDownloadWatermarked = async () => {
     if (!watermarkedImage) return;
     await downloadWithBackground(
@@ -95,7 +94,6 @@ export default function EditorContent() {
     );
   };
 
-  /* ---------------- Clean Download ---------------- */
   const handleDownloadClean = async () => {
     if (!session?.user) return router.push("/auth/signup");
     if (!cleanImage) return alert("Your clean image is not ready.");
@@ -126,7 +124,6 @@ export default function EditorContent() {
     }
   };
 
-  /* ---------------- Delete image ---------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
     setCleanImage(null);
@@ -134,12 +131,10 @@ export default function EditorContent() {
     window.scrollTo({ top: 0, behavior: "instant" as any });
   };
 
-  /* ---------------- Upload New ---------------- */
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Guest upload limit
     if (!session?.user) {
       const count = getGuestUploadCount();
       if (count >= MAX_GUEST_UPLOADS) {
@@ -153,12 +148,9 @@ export default function EditorContent() {
     const form = new FormData();
     form.append("image", file);
 
-    const res = await fetch("/api/remove-background", {
-      method: "POST",
-      body: form,
-    });
-
+    const res = await fetch("/api/remove-background", { method: "POST", body: form });
     const data = await res.json();
+
     if (!res.ok) {
       alert(data.error || "Processing failed");
       setLoadingNewUpload(false);
@@ -175,7 +167,6 @@ export default function EditorContent() {
     );
 
     setLoadingNewUpload(false);
-
     window.scrollTo({ top: 0, behavior: "instant" as any });
   }
 
@@ -197,13 +188,17 @@ export default function EditorContent() {
           </span>
 
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleDownloadWatermarked}
-              disabled={!watermarkedImage}
-            >
-              <Download className="mr-2 size-4" /> Preview Image
-            </Button>
+
+            {/* 🟦 LOGGED-IN FIX — Only show preview button when NOT logged in */}
+            {!session?.user && (
+              <Button
+                variant="outline"
+                onClick={handleDownloadWatermarked}
+                disabled={!watermarkedImage}
+              >
+                <Download className="mr-2 size-4" /> Preview Image
+              </Button>
+            )}
 
             <Button
               onClick={handleDownloadClean}
@@ -217,11 +212,10 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* Main layout */}
+      {/* Main */}
       <div className="flex justify-center px-4 py-6 pt-4">
         <div className="flex gap-8 w-full max-w-6xl">
 
-          {/* Image */}
           <div className="flex flex-col flex-1 items-center">
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
@@ -268,7 +262,6 @@ export default function EditorContent() {
             </div>
           </div>
 
-          {/* Background selector */}
           <div className="flex flex-col gap-6 pt-4">
             <button
               onClick={() => setBgStyle("none")}
@@ -276,14 +269,12 @@ export default function EditorContent() {
                 bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
-
             <button
               onClick={() => setBgStyle("white")}
               className={`h-20 w-20 rounded-xl border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
-
             <button
               onClick={() => setBgStyle("black")}
               className={`h-20 w-20 rounded-xl border-4 bg-black ${
