@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
@@ -24,20 +24,14 @@ export default function EditorContent() {
 
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
 
-  // SEO: add invisible H1 for clarity
-  const invisibleH1 = (
-    <h1 className="sr-only">
-      Online Background Removal Editor – Remove Background from Image Using AI
-    </h1>
-  );
-
+  // load images when URL params change
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
   /* ----------------------------------
-        DOWNLOAD ENGINE
+        FIXED DOWNLOAD ENGINE
   ----------------------------------- */
   async function downloadWithBackground(
     sourceUrl: string,
@@ -48,12 +42,12 @@ export default function EditorContent() {
       const image = new Image();
       image.crossOrigin = "anonymous";
 
+      image.src = sourceUrl; // IMPORTANT: set source BEFORE onload setup
+
       await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => reject("Load failed");
+        image.onerror = () => reject("Image load failed");
       });
-
-      image.src = sourceUrl;
 
       const canvas = document.createElement("canvas");
       canvas.width = image.naturalWidth;
@@ -68,32 +62,46 @@ export default function EditorContent() {
       if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(image, 0, 0);
 
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => (b ? resolve(b) : reject("Blob failed")));
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b as Blob), "image/png");
       });
 
       const url = URL.createObjectURL(blob);
+
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       a.click();
+
       URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to download.");
+    } catch (err) {
+      console.error(err);
+      alert("Download failed — please try again.");
     }
   }
 
   /* ----------------------------------
-        DOWNLOAD BUTTONS
+        FIX PREVIEW DOWNLOAD BUTTON
   ----------------------------------- */
-  const handleDownloadWatermarked = () => {
+  const handleDownloadWatermarked = async () => {
     if (!watermarkedImage) return;
-    downloadWithBackground(watermarkedImage, "background-removed-preview.png", bgStyle);
+    await downloadWithBackground(
+      watermarkedImage,
+      "background-removed-preview.png",
+      bgStyle
+    );
   };
 
+  /* ----------------------------------
+        FIX CLEAN DOWNLOAD & CREDIT CHECK
+  ----------------------------------- */
   const handleDownloadClean = async () => {
     if (!session?.user) return router.push("/auth/signup");
-    if (!cleanImage) return alert("Clean image not ready");
+
+    if (!cleanImage) {
+      alert("Your clean image is not ready yet.");
+      return;
+    }
 
     setLoadingClean(true);
 
@@ -106,20 +114,23 @@ export default function EditorContent() {
 
       const data = await res.json();
 
-      if (res.status === 402 || data.error?.includes("not enough")) {
+      // detect credit failure
+      if (!res.ok || data.error) {
         return router.push("/pricing");
       }
 
+      // SUCCESS — download clean image
       await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
-    } catch {
-      alert("Network error.");
+    } catch (err) {
+      console.error(err);
+      alert("Network error — try again.");
+    } finally {
+      setLoadingClean(false);
     }
-
-    setLoadingClean(false);
   };
 
   /* ----------------------------------
-        DELETE / NEW UPLOAD
+              NEW UPLOAD
   ----------------------------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
@@ -143,8 +154,9 @@ export default function EditorContent() {
 
     const data = await res.json();
     if (!res.ok) {
+      alert(data.error || "Processing failed");
       setLoadingNewUpload(false);
-      return alert(data.error);
+      return;
     }
 
     setWatermarkedImage(data.processed);
@@ -152,16 +164,14 @@ export default function EditorContent() {
 
     router.replace(
       `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
-        data.clean || ""
+        data.clean
       )}`
     );
 
     setLoadingNewUpload(false);
   }
 
-  /* ----------------------------------
-        PREVIEW BACKGROUND
-  ----------------------------------- */
+  // preview backgrounds
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -170,33 +180,11 @@ export default function EditorContent() {
       : "bg-black";
 
   /* ----------------------------------
-            RENDER
+                  VIEW
   ----------------------------------- */
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
-
-      {invisibleH1}
-
-      {/* FAQ Schema for SEO richness */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "Can I preview background removal online?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes, the online editor allows you to preview background removal instantly using AI and switch between white, black, or transparent backgrounds."
-                }
-              }
-            ]
-          })
-        }}
-      />
+      <h1 className="sr-only">AI Background Removal Editor</h1>
 
       {/* Toolbar */}
       <div className="border-b bg-white shadow-sm">
@@ -205,10 +193,6 @@ export default function EditorContent() {
           <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
             Background Preview
           </span>
-
-          <p className="text-xs text-gray-500">
-            AI background remover · Transparent / White / Black preview
-          </p>
 
           <div className="flex gap-3">
             {!session?.user && (
@@ -221,14 +205,16 @@ export default function EditorContent() {
               </Button>
             )}
 
-            <Button
-              onClick={handleDownloadClean}
-              disabled={loadingClean}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              <Download className="mr-2 size-4" />
-              {loadingClean ? "Processing…" : "Download Clean Image"}
-            </Button>
+            {session?.user && (
+              <Button
+                onClick={handleDownloadClean}
+                disabled={loadingClean || !cleanImage}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <Download className="mr-2 size-4" />
+                {loadingClean ? "Processing…" : "Download Clean Image"}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -268,6 +254,7 @@ export default function EditorContent() {
                   +
                 </div>
               </label>
+
               <input
                 id="image-upload"
                 type="file"
@@ -290,7 +277,6 @@ export default function EditorContent() {
 
             <button
               onClick={() => setBgStyle("none")}
-              aria-label="Transparent background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${
                 bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
@@ -298,7 +284,6 @@ export default function EditorContent() {
 
             <button
               onClick={() => setBgStyle("white")}
-              aria-label="White background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
@@ -306,7 +291,6 @@ export default function EditorContent() {
 
             <button
               onClick={() => setBgStyle("black")}
-              aria-label="Black background preview"
               className={`h-20 w-20 rounded-xl border-4 bg-black ${
                 bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
