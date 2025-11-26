@@ -27,6 +27,9 @@ export default function EditorContent() {
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
+
+    // 🟦 FIX — Prevent scroll jump after router.replace()
+    window.scrollTo({ top: 0, behavior: "instant" as any });
   }, [img, cleanParam]);
 
   /* ----------------------------------
@@ -65,7 +68,6 @@ export default function EditorContent() {
       );
 
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -78,9 +80,7 @@ export default function EditorContent() {
     }
   }
 
-  /* ----------------------------------
-      PREVIEW DOWNLOAD (WATERMARKED)
-  ----------------------------------- */
+  /* ---------------- Preview Download ---------------- */
   const handleDownloadWatermarked = async () => {
     if (!watermarkedImage) return;
     await downloadWithBackground(
@@ -90,9 +90,7 @@ export default function EditorContent() {
     );
   };
 
-  /* ----------------------------------
-      CLEAN DOWNLOAD + CREDIT DEDUCTION
-  ----------------------------------- */
+  /* ---------------- Clean Download ---------------- */
   const handleDownloadClean = async () => {
     if (!session?.user) return router.push("/auth/signup");
     if (!cleanImage) return alert("Your clean image is not ready.");
@@ -112,7 +110,6 @@ export default function EditorContent() {
         return router.push("/pricing");
       }
 
-      // ⭐ NEW — REAL-TIME CREDIT UPDATE EVENT ⭐
       window.dispatchEvent(new Event("credits-updated"));
 
       await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
@@ -124,13 +121,12 @@ export default function EditorContent() {
     }
   };
 
-  /* ----------------------------------
-      DELETE / NEW UPLOAD
-  ----------------------------------- */
+  /* ---------------- Delete / Upload New ---------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
     setCleanImage(null);
     router.replace("/editor");
+    window.scrollTo({ top: 0, behavior: "instant" as any });
   };
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -164,11 +160,12 @@ export default function EditorContent() {
     );
 
     setLoadingNewUpload(false);
+
+    // 🟩 FIX — Ensure toolbar visible after navigation
+    window.scrollTo({ top: 0, behavior: "instant" as any });
   }
 
-  /* ----------------------------------
-      PREVIEW BACKGROUND STYLES
-  ----------------------------------- */
+  /* ---------------- UI ---------------- */
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -176,15 +173,11 @@ export default function EditorContent() {
       ? "bg-white"
       : "bg-black";
 
-  /* ----------------------------------
-                UI
-  ----------------------------------- */
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
-      <h1 className="sr-only">AI Background Removal Editor</h1>
+    <div className="flex flex-col min-h-screen bg-[#F4F5F6] scroll-mt-0">
 
-      {/* Toolbar */}
-      <div className="border-b bg-white shadow-sm">
+      {/* Toolbar — always fully visible quickly */}
+      <div className="border-b bg-white shadow-sm sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
           <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
             Background Preview
@@ -211,11 +204,11 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* MAIN LAYOUT */}
-      <div className="flex justify-center px-4 py-6">
+      {/* MAIN CONTENT */}
+      <div className="flex justify-center px-4 py-6 pt-4">
         <div className="flex gap-8 w-full max-w-6xl">
 
-          {/* IMAGE */}
+          {/* Left side: Image */}
           <div className="flex flex-col flex-1 items-center">
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
@@ -263,7 +256,7 @@ export default function EditorContent() {
             </div>
           </div>
 
-          {/* BACKGROUND SELECTOR */}
+          {/* Background selector */}
           <div className="flex flex-col gap-6 pt-4">
             <button
               onClick={() => setBgStyle("none")}
