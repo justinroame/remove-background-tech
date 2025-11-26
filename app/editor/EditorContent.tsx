@@ -30,7 +30,7 @@ export default function EditorContent() {
   }, [img, cleanParam]);
 
   /* ----------------------------------
-      FIXED DOWNLOAD ENGINE
+      DOWNLOAD ENGINE
   ----------------------------------- */
   async function downloadWithBackground(
     sourceUrl: string,
@@ -56,8 +56,8 @@ export default function EditorContent() {
 
       if (background === "white") ctx.fillStyle = "#ffffff";
       else if (background === "black") ctx.fillStyle = "#000000";
-      if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(image, 0, 0);
 
       const blob = await new Promise<Blob>((resolve) =>
@@ -79,7 +79,7 @@ export default function EditorContent() {
   }
 
   /* ----------------------------------
-      FIXED PREVIEW DOWNLOAD BUTTON
+      PREVIEW DOWNLOAD (WATERMARKED)
   ----------------------------------- */
   const handleDownloadWatermarked = async () => {
     if (!watermarkedImage) return;
@@ -91,19 +91,11 @@ export default function EditorContent() {
   };
 
   /* ----------------------------------
-      FIXED CLEAN DOWNLOAD + CREDIT CHECK
+      CLEAN DOWNLOAD + CREDIT DEDUCTION
   ----------------------------------- */
   const handleDownloadClean = async () => {
-    // 🔥 Always visible, but logged-out → redirect to signup
-    if (!session?.user) {
-      router.push("/auth/signup");
-      return;
-    }
-
-    if (!cleanImage) {
-      alert("Your clean image is not ready yet.");
-      return;
-    }
+    if (!session?.user) return router.push("/auth/signup");
+    if (!cleanImage) return alert("Your clean image is not ready.");
 
     setLoadingClean(true);
 
@@ -116,16 +108,17 @@ export default function EditorContent() {
 
       const data = await res.json();
 
-      // ❌ Not enough credits
       if (data.error || res.status === 402) {
         return router.push("/pricing");
       }
 
-      // ✅ SUCCESS – credit deducted
+      // ⭐ NEW — REAL-TIME CREDIT UPDATE EVENT ⭐
+      window.dispatchEvent(new Event("credits-updated"));
+
       await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
     } catch (err) {
       console.error(err);
-      alert("Network error — try again.");
+      alert("Network error — please try again.");
     } finally {
       setLoadingClean(false);
     }
@@ -174,7 +167,7 @@ export default function EditorContent() {
   }
 
   /* ----------------------------------
-      PREVIEW BACKGROUND
+      PREVIEW BACKGROUND STYLES
   ----------------------------------- */
   const previewBackgroundClass =
     bgStyle === "none"
@@ -193,14 +186,11 @@ export default function EditorContent() {
       {/* Toolbar */}
       <div className="border-b bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
-
           <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
             Background Preview
           </span>
 
           <div className="flex gap-3">
-
-            {/* Always show BOTH buttons */}
             <Button
               variant="outline"
               onClick={handleDownloadWatermarked}
@@ -221,18 +211,17 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* Main layout */}
+      {/* MAIN LAYOUT */}
       <div className="flex justify-center px-4 py-6">
         <div className="flex gap-8 w-full max-w-6xl">
 
-          {/* LEFT */}
+          {/* IMAGE */}
           <div className="flex flex-col flex-1 items-center">
-
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
             >
               {loadingNewUpload ? (
-                <div className="text-gray-600 flex flex-col items-center">
+                <div className="flex flex-col items-center text-gray-600">
                   <Loader2 className="animate-spin h-8 w-8 mb-2" />
                   Processing…
                 </div>
@@ -274,9 +263,8 @@ export default function EditorContent() {
             </div>
           </div>
 
-          {/* RIGHT */}
+          {/* BACKGROUND SELECTOR */}
           <div className="flex flex-col gap-6 pt-4">
-
             <button
               onClick={() => setBgStyle("none")}
               className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${
@@ -297,8 +285,8 @@ export default function EditorContent() {
                 bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"
               }`}
             />
-
           </div>
+
         </div>
       </div>
     </div>
