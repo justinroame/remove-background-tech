@@ -8,33 +8,41 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
+//
+// USERS TABLE
+//
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
-  password: text("password"), // null for Google users
+  password: text("password"), // null for Google OAuth users
   stripeCustomerId: text("stripe_customer_id"),
   totalCredits: integer("total_credits").default(3).notNull(),
   pro: boolean("pro").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+//
+// CREDITS TABLE
+//
 export const credits = pgTable("credits", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   amount: integer("amount").notNull(),
   source: text("source").notNull(), // "signup", "stripe", "promo"
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// -------------------------
-// NEW: PASSWORD RESET TOKENS
-// -------------------------
+//
+// PASSWORD RESET TOKENS TABLE
+//
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
 });
