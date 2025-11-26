@@ -1,9 +1,24 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// Fetch user helper — uses your existing API route /api/user/get
+async function getUserByEmail(email: string) {
+  try {
+    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/get`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      cache: "no-store",
+    });
+
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.error("Fetch user failed:", e);
+    return null;
+  }
+}
 
 export const authOptions = {
   providers: [
@@ -17,10 +32,7 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
+        const user = await getUserByEmail(credentials.email);
         if (!user) return null;
 
         const valid = await compare(credentials.password, user.password);
@@ -34,13 +46,13 @@ export const authOptions = {
     }),
   ],
 
-  // ⭐ EXTENDED SESSION (fixes your issue!)
+  // ⭐ FIX: Extend session to 1 YEAR
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 365, // 1 year
+    maxAge: 60 * 60 * 24 * 365,
   },
 
-  // ⭐ Extend JWT token life too
+  // ⭐ FIX: Extend JWT lifetime to 1 YEAR
   jwt: {
     maxAge: 60 * 60 * 24 * 365,
   },
@@ -50,22 +62,22 @@ export const authOptions = {
   },
 
   callbacks: {
-    async session({ session, token }) {
-      if (token?.sub) {
-        session.user = { id: token.sub, email: token.email };
-      }
-      return session;
-    },
-
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.email = user.email;
       }
       return token;
+    },
+
+    async session({ session, token }) {
+      if (token?.id) {
+        session.user = { id: token.id, email: token.email };
+      }
+      return session;
     },
   },
 };
 
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };
