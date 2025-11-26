@@ -7,9 +7,17 @@ export async function POST(req: Request) {
   try {
     const { name, email, message } = await req.json();
 
-    await resend.emails.send({
-      from: "Contact Form <noreply@yourdomain.com>",
-      to: "your-email@gmail.com",
+    if (!name || !email || !message) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // ⭐ IMPORTANT: Must be a verified domain sender
+    const sendResult = await resend.emails.send({
+      from: "Contact Form <contact@remove-background.tech>",
+      to: "justinroame@gmail.com", // <-- CHANGE TO YOUR REAL DESTINATION
       subject: "New Contact Form Message",
       html: `
         <h2>New Message</h2>
@@ -19,6 +27,14 @@ export async function POST(req: Request) {
         <p>${message}</p>
       `
     });
+
+    if (sendResult.error) {
+      console.error("Resend Error:", sendResult.error);
+      return NextResponse.json(
+        { error: "Failed to send email" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
