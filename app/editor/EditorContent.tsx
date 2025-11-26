@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
+import {
+  getGuestUploadCount,
+  incrementGuestUpload,
+  MAX_GUEST_UPLOADS,
+} from "@/lib/guestLimit";
+
 type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
@@ -28,7 +34,6 @@ export default function EditorContent() {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
 
-    // 🟦 FIX — Prevent scroll jump after router.replace()
     window.scrollTo({ top: 0, behavior: "instant" as any });
   }, [img, cleanParam]);
 
@@ -121,7 +126,7 @@ export default function EditorContent() {
     }
   };
 
-  /* ---------------- Delete / Upload New ---------------- */
+  /* ---------------- Delete image ---------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
     setCleanImage(null);
@@ -129,9 +134,19 @@ export default function EditorContent() {
     window.scrollTo({ top: 0, behavior: "instant" as any });
   };
 
+  /* ---------------- Upload New ---------------- */
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Guest upload limit
+    if (!session?.user) {
+      const count = getGuestUploadCount();
+      if (count >= MAX_GUEST_UPLOADS) {
+        return router.push("/auth/signup");
+      }
+      incrementGuestUpload();
+    }
 
     setLoadingNewUpload(true);
 
@@ -161,11 +176,9 @@ export default function EditorContent() {
 
     setLoadingNewUpload(false);
 
-    // 🟩 FIX — Ensure toolbar visible after navigation
     window.scrollTo({ top: 0, behavior: "instant" as any });
   }
 
-  /* ---------------- UI ---------------- */
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -176,7 +189,7 @@ export default function EditorContent() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6] scroll-mt-0">
 
-      {/* Toolbar — always fully visible quickly */}
+      {/* Toolbar */}
       <div className="border-b bg-white shadow-sm sticky top-0 z-20">
         <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
           <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
@@ -204,11 +217,11 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
+      {/* Main layout */}
       <div className="flex justify-center px-4 py-6 pt-4">
         <div className="flex gap-8 w-full max-w-6xl">
 
-          {/* Left side: Image */}
+          {/* Image */}
           <div className="flex flex-col flex-1 items-center">
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
@@ -231,7 +244,6 @@ export default function EditorContent() {
               )}
             </div>
 
-            {/* Upload / Delete */}
             <div className="flex gap-6 mt-6">
               <label htmlFor="image-upload" className="cursor-pointer">
                 <div className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl text-gray-700">
