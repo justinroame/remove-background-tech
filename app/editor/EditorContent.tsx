@@ -24,14 +24,13 @@ export default function EditorContent() {
 
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
 
-  // load images when URL params change
   useEffect(() => {
     if (img) setWatermarkedImage(img);
     if (cleanParam) setCleanImage(cleanParam);
   }, [img, cleanParam]);
 
   /* ----------------------------------
-        FIXED DOWNLOAD ENGINE
+      FIXED DOWNLOAD ENGINE
   ----------------------------------- */
   async function downloadWithBackground(
     sourceUrl: string,
@@ -41,8 +40,7 @@ export default function EditorContent() {
     try {
       const image = new Image();
       image.crossOrigin = "anonymous";
-
-      image.src = sourceUrl; // IMPORTANT: set source BEFORE onload setup
+      image.src = sourceUrl;
 
       await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
@@ -58,13 +56,13 @@ export default function EditorContent() {
 
       if (background === "white") ctx.fillStyle = "#ffffff";
       else if (background === "black") ctx.fillStyle = "#000000";
-
       if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       ctx.drawImage(image, 0, 0);
 
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((b) => resolve(b as Blob), "image/png");
-      });
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((b) => resolve(b as Blob), "image/png")
+      );
 
       const url = URL.createObjectURL(blob);
 
@@ -81,7 +79,7 @@ export default function EditorContent() {
   }
 
   /* ----------------------------------
-        FIX PREVIEW DOWNLOAD BUTTON
+      FIXED PREVIEW DOWNLOAD BUTTON
   ----------------------------------- */
   const handleDownloadWatermarked = async () => {
     if (!watermarkedImage) return;
@@ -93,10 +91,14 @@ export default function EditorContent() {
   };
 
   /* ----------------------------------
-        FIX CLEAN DOWNLOAD & CREDIT CHECK
+      FIXED CLEAN DOWNLOAD + CREDIT CHECK
   ----------------------------------- */
   const handleDownloadClean = async () => {
-    if (!session?.user) return router.push("/auth/signup");
+    // 🔥 Always visible, but logged-out → redirect to signup
+    if (!session?.user) {
+      router.push("/auth/signup");
+      return;
+    }
 
     if (!cleanImage) {
       alert("Your clean image is not ready yet.");
@@ -114,12 +116,12 @@ export default function EditorContent() {
 
       const data = await res.json();
 
-      // detect credit failure
-      if (!res.ok || data.error) {
+      // ❌ Not enough credits
+      if (data.error || res.status === 402) {
         return router.push("/pricing");
       }
 
-      // SUCCESS — download clean image
+      // ✅ SUCCESS – credit deducted
       await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
     } catch (err) {
       console.error(err);
@@ -130,7 +132,7 @@ export default function EditorContent() {
   };
 
   /* ----------------------------------
-              NEW UPLOAD
+      DELETE / NEW UPLOAD
   ----------------------------------- */
   const handleDeleteImage = () => {
     setWatermarkedImage(null);
@@ -171,7 +173,9 @@ export default function EditorContent() {
     setLoadingNewUpload(false);
   }
 
-  // preview backgrounds
+  /* ----------------------------------
+      PREVIEW BACKGROUND
+  ----------------------------------- */
   const previewBackgroundClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
@@ -180,7 +184,7 @@ export default function EditorContent() {
       : "bg-black";
 
   /* ----------------------------------
-                  VIEW
+                UI
   ----------------------------------- */
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
@@ -195,26 +199,24 @@ export default function EditorContent() {
           </span>
 
           <div className="flex gap-3">
-            {!session?.user && (
-              <Button
-                variant="outline"
-                onClick={handleDownloadWatermarked}
-                disabled={!watermarkedImage}
-              >
-                <Download className="mr-2 size-4" /> Preview Image
-              </Button>
-            )}
 
-            {session?.user && (
-              <Button
-                onClick={handleDownloadClean}
-                disabled={loadingClean || !cleanImage}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                <Download className="mr-2 size-4" />
-                {loadingClean ? "Processing…" : "Download Clean Image"}
-              </Button>
-            )}
+            {/* Always show BOTH buttons */}
+            <Button
+              variant="outline"
+              onClick={handleDownloadWatermarked}
+              disabled={!watermarkedImage}
+            >
+              <Download className="mr-2 size-4" /> Preview Image
+            </Button>
+
+            <Button
+              onClick={handleDownloadClean}
+              disabled={loadingClean || !cleanImage}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              <Download className="mr-2 size-4" />
+              {loadingClean ? "Processing…" : "Download Clean Image"}
+            </Button>
           </div>
         </div>
       </div>
@@ -223,7 +225,7 @@ export default function EditorContent() {
       <div className="flex justify-center px-4 py-6">
         <div className="flex gap-8 w-full max-w-6xl">
 
-          {/* LEFT: IMAGE AREA */}
+          {/* LEFT */}
           <div className="flex flex-col flex-1 items-center">
 
             <div
@@ -272,7 +274,7 @@ export default function EditorContent() {
             </div>
           </div>
 
-          {/* RIGHT: BACKGROUND SELECTOR */}
+          {/* RIGHT */}
           <div className="flex flex-col gap-6 pt-4">
 
             <button
