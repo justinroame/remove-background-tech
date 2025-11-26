@@ -7,47 +7,8 @@ import { Sparkles, Loader2 } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { useRouter } from "next/navigation";
 
-/* ──────────────────────────────
-   MAIN PAGE + METADATA (SEO)
-──────────────────────────────── */
-export const metadata = {
-  title: "Remove Background from Image – Free AI Background Remover",
-  description:
-    "Upload an image to remove the background instantly using free AI. Download a clean transparent PNG in seconds. Perfect for product photos, portraits, and social images.",
-  keywords: [
-    "remove background",
-    "remove background from image",
-    "background remover",
-    "ai background remover",
-    "remove bg",
-    "transparent background",
-    "erase image background",
-    "image background removal tool",
-  ],
-  alternates: {
-    canonical: "https://remove-background.tech",
-  },
-  openGraph: {
-    title: "Free AI Background Remover – Remove Background from Image",
-    description:
-      "Upload any photo → AI removes the background → download a transparent PNG instantly. 100% free, no signup required.",
-    url: "https://remove-background.tech",
-    siteName: "Remove Background Tech",
-    images: [
-      {
-        url: "/og-preview.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Remove background from image using AI",
-      },
-    ],
-    type: "website",
-  },
-  robots: "index, follow",
-};
-
 export default function Home() {
-  /* state + router unchanged */
+  // state + router unchanged
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -118,7 +79,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
 
-      {/* Tiny FAQ schema (SEO gold) */}
+      {/* Tiny FAQ schema (SEO booster) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -158,7 +119,7 @@ export default function Home() {
             <span className="text-blue-600">remove the background</span>
           </h2>
 
-          {/* Tiny semantic booster paragraph */}
+          {/* Microcopy semantic SEO booster */}
           <p className="text-gray-600 text-sm md:text-base max-w-xl mb-6">
             Instantly remove background from any image using free AI. Upload a photo and download a clean transparent PNG in seconds.
           </p>

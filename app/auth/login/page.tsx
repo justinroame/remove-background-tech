@@ -4,40 +4,6 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-// SEO metadata (App Router compliant)
-export const metadata = {
-  title: "Log In – Access Your Account | remove-background.tech",
-  description:
-    "Log in to your remove-background.tech account to download clean images, manage credits, and edit photos with AI background removal.",
-  keywords: [
-    "login background remover",
-    "sign in remove background",
-    "ai background remover login",
-    "remove background account",
-    "image editor login",
-  ],
-  alternates: {
-    canonical: "https://remove-background.tech/auth/login",
-  },
-  openGraph: {
-    title: "Log In – Background Remover Account",
-    description:
-      "Sign in to continue removing backgrounds from images with AI. Secure login for all users.",
-    url: "https://remove-background.tech/auth/login",
-    siteName: "remove-background.tech",
-    images: [
-      {
-        url: "/og-login.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Login page – background remover",
-      },
-    ],
-    type: "website",
-  },
-  robots: "index, follow",
-};
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,12 +29,12 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Invisible H1 for SEO */}
+      {/* SEO-visible H1 but visually hidden */}
       <h1 className="sr-only">
         Log In – Access Your AI Background Remover Account
       </h1>
 
-      {/* FAQ Schema for improved SERP */}
+      {/* Minimal SEO schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -81,11 +47,12 @@ export default function LoginPage() {
                 "name": "What can I do after logging in?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Logging in allows you to download clean images without watermarks, manage credits, and access the full AI background remover editor."
+                  "text":
+                    "Logging in allows you to download clean images without watermarks, manage credits, and use the full AI background removal editor."
                 }
               }
             ]
-          })
+          }),
         }}
       />
 
@@ -146,10 +113,14 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-sm text-gray-600">
             Don’t have an account?{" "}
-            <Link href="/auth/signup" className="text-blue-600 font-medium hover:underline">
+            <Link
+              href="/auth/signup"
+              className="text-blue-600 font-medium hover:underline"
+            >
               Sign up
             </Link>
           </p>
+
         </div>
       </div>
     </>

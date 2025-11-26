@@ -4,40 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
-// SEO metadata (App Router compliant)
-export const metadata = {
-  title: "Sign Up – Create Your Account | remove-background.tech",
-  description:
-    "Create your free account to remove backgrounds from images using AI. Get 3 free credits instantly. No card required.",
-  keywords: [
-    "sign up remove background",
-    "create account background remover",
-    "ai background remover signup",
-    "remove background tech account",
-    "free image background removal credits",
-  ],
-  alternates: {
-    canonical: "https://remove-background.tech/auth/signup",
-  },
-  openGraph: {
-    title: "Sign Up – Background Remover Account",
-    description:
-      "Create your free account and start removing backgrounds instantly. Get 3 free credits.",
-    url: "https://remove-background.tech/auth/signup",
-    siteName: "remove-background.tech",
-    images: [
-      {
-        url: "/og-signup.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Create account – background remover",
-      },
-    ],
-    type: "website",
-  },
-  robots: "index, follow",
-};
-
 export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,12 +54,12 @@ export default function SignupPage() {
 
   return (
     <>
-      {/* Invisible H1 for SEO */}
+      {/* Invisible SEO H1 */}
       <h1 className="sr-only">
         Create Account – Sign Up for Free AI Background Remover
       </h1>
 
-      {/* FAQ Schema for signup-related rich results */}
+      {/* Structured Data (FAQ Schema) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
