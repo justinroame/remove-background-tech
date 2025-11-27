@@ -1,4 +1,5 @@
 // db/schema.ts
+
 import {
   pgTable,
   serial,
@@ -36,7 +37,7 @@ export const credits = pgTable("credits", {
 });
 
 //
-// PASSWORD RESET TOKENS TABLE
+// PASSWORD RESET TOKENS TABLE (IMPORTANT: TIMESTAMPTZ)
 //
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
@@ -44,5 +45,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
+
+  // FIX: matches Neon column EXACTLY (TIMESTAMPTZ)
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
