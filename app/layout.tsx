@@ -1,9 +1,13 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
 import ClientProviders from "@/components/ClientProviders";
 import GlobalHeader from "@/components/GlobalHeader";
+
+// Enable Vercel Analytics — this is the only new line you need
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,7 +18,11 @@ export const metadata: Metadata = {
   robots: "index, follow",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -22,6 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GlobalHeader />
           <main className="pt-20">{children}</main>
         </ClientProviders>
+
+        {/* This single line turns on real-time + full analytics */}
+        <Analytics />
       </body>
     </html>
   );
