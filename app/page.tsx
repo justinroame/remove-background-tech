@@ -185,9 +185,9 @@ export default function Home() {
                 Contact Us
               </Link>
               {" • "}
-              <Link href="/blog/how-to-remove-background-from-image" className="underline hover:text-gray-800 font-medium">
-                Blog
-              </Link>
+              <Link href="/blog" className="underline hover:text-gray-800 font-medium">
+  Blog
+</Link>
               {" • "}
               <Link href="/pricing" className="underline hover:text-gray-800 font-medium">
                 Pricing
