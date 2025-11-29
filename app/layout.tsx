@@ -2,11 +2,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-
 import ClientProviders from "@/components/ClientProviders";
 import GlobalHeader from "@/components/GlobalHeader";
-
-// Enable Vercel Analytics — this is the only new line you need
 import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,13 +22,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* GOOGLE ADS CONVERSION TAG — PASTE YOURS BELOW THIS LINE */}
+        {/* ←←← REPLACE EVERYTHING BELOW WITH THE CODE FROM GOOGLE ADS ←←← */}
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-1002767964"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-1002767964');
+            `,
+          }}
+        />
+        {/* ←←← END OF GOOGLE TAG — DO NOT DELETE THE LINE ABOVE ←←← */}
+      </head>
       <body className={inter.className}>
         <ClientProviders>
           <GlobalHeader />
           <main className="pt-20">{children}</main>
         </ClientProviders>
-
-        {/* This single line turns on real-time + full analytics */}
         <Analytics />
       </body>
     </html>
