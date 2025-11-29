@@ -1,3 +1,4 @@
+// app/blog/page.tsx
 import Link from "next/link";
 
 const blogPosts = [
@@ -18,6 +19,24 @@ const blogPosts = [
     title: "remove.bg vs Photoroom vs Remove-Background.Tech – 2025 Real Test",
     description: "Side-by-side speed, quality & price comparison on the same 20 images.",
     date: "November 28, 2025",
+  },
+  {
+    slug: "remove-background-product-photos-etsy-shopify",
+    title: "Remove Background from Product Photos – Etsy & Shopify Guide 2025",
+    description: "Best ways to get clean product photos for Etsy and Shopify. Free AI tool + step-by-step.",
+    date: "November 29, 2025",
+  },
+  {
+    slug: "remove-background-from-logo",
+    title: "Remove Background from Logo – Free AI Tool 2025",
+    description: "Get transparent logo PNG in seconds. Perfect for Canva, websites, merch.",
+    date: "November 29, 2025",
+  },
+  {
+    slug: "remove-background-from-portrait-headshot",
+    title: "Remove Background from Portrait & Headshot – Free AI 2025",
+    description: "Perfect hair edges on portraits and headshots. Free AI tool.",
+    date: "November 29, 2025",
   },
 ];
 
