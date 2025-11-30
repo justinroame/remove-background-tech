@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import sharp from "sharp";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -25,43 +26,43 @@ export const POST = async (req: NextRequest) => {
 
     const form = await req.formData();
     const file = form.get("image") as File | null;
+
     if (!file) {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Convert ANY format → clean JPEG buffer (handles HEIC, WebP, AVIF, TIFF, etc.)
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Upload original
+    const jpegBuffer = await sharp(buffer)
+      .rotate() // Fix orientation from EXIF
+      .jpeg({ quality: 95 })
+      .toBuffer();
+
+    // Upload original (for storage)
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "remove-bg/original", resource_type: "image" },
         (err, result) => (err ? reject(err) : resolve(result))
       );
-      stream.end(buffer);
+      stream.end(jpegBuffer);
     });
 
-    const originalUrl = original.secure_url;
-
-    //
-    // RUN REPLICATE
-    //
+    // Run Replicate
     const result = await replicate.run(
       "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
-      { input: { image: originalUrl } }
+      {
+        input: {
+          image: `data:image/jpeg;base64,${jpegBuffer.toString("base64")}`,
+        },
+      }
     );
 
     let outputUrl: string | null = null;
-
-    if (typeof result === "string") {
-      outputUrl = result;
-    } else if (Array.isArray(result)) {
-      outputUrl = result[0];
-    } else {
-      outputUrl =
-        (result as any)?.output ||
-        (result as any)?.url ||
-        Object.values(result as any)[0];
-    }
+    if (typeof result === "string") outputUrl = result;
+    else if (Array.isArray(result)) outputUrl = result[0];
+    else outputUrl = (result as any)?.output || Object.values(result as any)[0];
 
     if (!outputUrl || typeof outputUrl !== "string") {
       throw new Error("Replicate returned invalid output");
@@ -70,9 +71,7 @@ export const POST = async (req: NextRequest) => {
     const resp = await fetch(outputUrl);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
-    //
-    // ALWAYS GENERATE WATERMARKED VERSION FOR UI
-    //
+    // Watermarked version
     const watermarkedUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -93,55 +92,42 @@ export const POST = async (req: NextRequest) => {
             },
           ],
         },
-        (err, result) =>
-          err ? reject(err) : resolve(result!.secure_url)
+        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
       );
       stream.end(cleanBuf);
     });
 
-    //
-    // ALWAYS GENERATE CLEAN VERSION (store it)
-    //
+    // Clean version
     const cleanUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "remove-bg/clean", format: "png" },
-        (err, result) =>
-          err ? reject(err) : resolve(result!.secure_url)
+        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
       );
       stream.end(cleanBuf);
     });
 
-    //
-    // Logged in? Check if user has credits
-    //
+    // Credit check
     let hasCredits = false;
-
     if (userId) {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId));
-
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
       hasCredits = (user?.totalCredits ?? 0) >= 1;
     }
 
-    //
-    // RESPONSE
-    // cleanUrl IS ALWAYS RETURNED (button should always be enabled)
-    //
     return NextResponse.json({
-      original: originalUrl,
+      original: original.secure_url,
       processed: watermarkedUrl,
       clean: cleanUrl,
       hasCredits,
     });
-
   } catch (err: any) {
     console.error("REMOVE_BG_ERROR:", err);
-
     return NextResponse.json(
       { error: "Failed to process image", details: err.message },
       { status: 500 }
     );
   }
+};
+
+export const config = {
+  api: { bodyParser: false },
 };
