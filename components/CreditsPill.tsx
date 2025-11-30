@@ -9,9 +9,9 @@ export default function CreditsPill() {
 
   async function refreshCredits() {
     try {
-      const res = await fetch("/api/credits/summary", {
-        cache: "no-store",
-        headers: { "X-Force-Refresh": "1" }, // bypass any cache
+      const res = await fetch("/api/credits/summary?t=" + Date.now(), {
+        cache: "no-store",           // ← disables all caching
+        next: { revalidate: 0 },     // ← forces fresh data on every request
       });
       const data = await res.json();
       if (res.ok && data.total !== undefined) {
@@ -28,21 +28,23 @@ export default function CreditsPill() {
     if (session?.user) refreshCredits();
   }, [session?.user]);
 
-  // This catches the admin header AND download events
+  // Refresh when anyone adds credits (admin or download)
   useEffect(() => {
-    const handler = () => {
-      setLoading(true);
-      refreshCredits();
-    };
+    const handler = () => refreshCredits();
     window.addEventListener("credits-updated", handler);
-    return () => window.removeEventListener("credits-updated", handler);
+    window.addEventListener("focus", refreshCredits); // also refresh when tab gets focus
+    return () => {
+      window.removeEventListener("credits-updated", handler);
+      window.removeEventListener("focus", refreshCredits);
+    };
   }, []);
 
   if (!session?.user) return null;
 
   return (
     <div className="bg-black text-white px-4 py-2 rounded-full text-sm shadow-md">
-      <span className="font-semibold">Credits:</span> {loading ? "…" : credits}
+      <span className="font-semibold">Credits:</span>{" "}
+      {loading ? "…" : credits}
     </div>
   );
 }
