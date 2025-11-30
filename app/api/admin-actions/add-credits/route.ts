@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid amount", { status: 400 });
   }
 
-  // This is the ONLY correct way in Drizzle ORM
+  // Add credits
   await db
     .update(users)
     .set({
@@ -29,5 +29,12 @@ export async function POST(req: NextRequest) {
     })
     .where(eq(users.email, email));
 
-  return new Response(`Added ${amount} credits to ${email}`, { status: 200 });
+  // This single header forces every open tab to refresh credits on next fetch
+  return new Response(`Added ${amount} credits to ${email}`, {
+    status: 200,
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Credits-Updated": Date.now().toString(),
+    },
+  });
 }
