@@ -13,28 +13,29 @@ const nextConfig = {
     ],
   },
 
-  // ADD THIS BLOCK — this is the fix
   async headers() {
     return [
+      // Google Search Console verification file
       {
-        // Make sure the Google verification file (and any other static file) is served with correct content-type and no interference
         source: "/googlecf7d10ee7021f8e8.html",
         headers: [
           { key: "Content-Type", value: "text/html" },
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
         ],
       },
+      // HSTS — forces HTTPS forever and prevents downgrade attacks
       {
-        // Optional: protect all static files in /public from being redirected
-        source: "/:path((?!api/|remove|editor|pricing|login|signup).*)",
+        source: "/(.*)",
         headers: [
-          { key: "X-Static-File", value: "true" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
         ],
       },
     ];
   },
 
-  // OPTIONAL but recommended — prevent Next.js from treating unknown static-looking paths as app routes
   skipTrailingSlashRedirect: true,
 };
 
