@@ -10,7 +10,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Remove Background from Image – Free AI Background Remover",
-  description: "Instant free AI background remover. Upload an image and download a transparent PNG in seconds.",
+  description:
+    "Instant free AI background remover. Upload an image and download a transparent PNG in seconds.",
   metadataBase: new URL("https://remove-background.tech"),
   robots: "index, follow",
 };
@@ -23,9 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* GOOGLE ADS CONVERSION TAG — PASTE YOURS BELOW THIS LINE */}
-        {/* ←←← REPLACE EVERYTHING BELOW WITH THE CODE FROM GOOGLE ADS ←←← */}
-        {/* Google tag (gtag.js) */}
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+
+        {/* GOOGLE ADS CONVERSION TAG */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-1002767964"></script>
         <script
           dangerouslySetInnerHTML={{
@@ -37,7 +41,6 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* ←←← END OF GOOGLE TAG — DO NOT DELETE THE LINE ABOVE ←←← */}
       </head>
       <body className={inter.className}>
         <ClientProviders>
