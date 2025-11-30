@@ -31,16 +31,16 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
     }
 
-    // Convert ANY format → clean JPEG buffer (handles HEIC, WebP, AVIF, TIFF, etc.)
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Convert ANY format → JPEG that Replicate accepts perfectly
     const jpegBuffer = await sharp(buffer)
-      .rotate() // Fix orientation from EXIF
+      .rotate()
       .jpeg({ quality: 95 })
       .toBuffer();
 
-    // Upload original (for storage)
+    // Upload original
     const original = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "remove-bg/original", resource_type: "image" },
@@ -71,7 +71,7 @@ export const POST = async (req: NextRequest) => {
     const resp = await fetch(outputUrl);
     const cleanBuf = Buffer.from(await resp.arrayBuffer());
 
-    // Watermarked version
+    // Watermarked
     const watermarkedUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -97,7 +97,7 @@ export const POST = async (req: NextRequest) => {
       stream.end(cleanBuf);
     });
 
-    // Clean version
+    // Clean HD
     const cleanUrl = await new Promise<string>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "remove-bg/clean", format: "png" },
@@ -106,7 +106,6 @@ export const POST = async (req: NextRequest) => {
       stream.end(cleanBuf);
     });
 
-    // Credit check
     let hasCredits = false;
     if (userId) {
       const [user] = await db.select().from(users).where(eq(users.id, userId));
@@ -128,6 +127,7 @@ export const POST = async (req: NextRequest) => {
   }
 };
 
-export const config = {
-  api: { bodyParser: false },
-};
+// DELETE THIS ENTIRE BLOCK — it breaks Vercel builds in Next.js 14+
+// export const config = {
+//   api: { bodyParser: false },
+// };
