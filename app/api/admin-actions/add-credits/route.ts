@@ -21,27 +21,20 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid amount", { status: 400 });
   }
 
-  // Update credits
+  // Update DB
   await db
     .update(users)
     .set({ totalCredits: sql`${users.totalCredits} + ${amount}` })
     .where(eq(users.email, email));
 
-  // BULLETPROOF URL — works on Vercel, localhost, preview URLs, everywhere
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.startsWith("http")
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : `https://${process.env.NEXT_PUBLIC_SITE_URL || "remove-background.tech"}`;
+  // THIS IS THE WINNING LINE — sets the cookie your CreditsPill is waiting for
+  const headers = new Headers();
+  headers.append("Set-Cookie", `credits-updated=true; Path=/; Max-Age=5; SameSite=Lax`);
 
-  // Trigger instant UI refresh in all open tabs
-  await fetch(`${baseUrl}/api/revalidate-credits`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  }).catch(() => {}); // fire-and-forget — we don't care if it fails
-
-  return new Response(`Added ${amount} credits to ${email}`, { status: 200 });
+  return new Response(`Added ${amount} credits to ${email}`, {
+    status: 200,
+    headers,
+  });
 }
 
-// Prevent any caching of this endpoint
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
