@@ -88,7 +88,7 @@ export default function SignupPage() {
           </h2>
 
           <p className="text-center text-blue-600 font-medium mb-6">
-            Sign up and get <span className="font-bold">3 free credits</span> 🎉
+            Create an account and get started
           </p>
 
           {error && (
