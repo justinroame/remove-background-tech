@@ -1,133 +1,35 @@
-// /app/api/remove-background/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import Replicate from "replicate";
-import { v2 as cloudinary } from "cloudinary";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import sharp from "sharp";
+import { NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/serverAuth";
+import { processImage } from "@/lib/removeBackground"; // keep your existing logic
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+export async function POST(req: Request) {
+  const user = await getUserFromRequest();
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
+  // Guests ARE allowed here — your UI logic already limits them
+  const formData = await req.formData();
+  const file = formData.get("image") as File | null;
 
-export const POST = async (req: NextRequest) => {
-  try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id ? Number(session.user.id) : null;
-
-    const form = await req.formData();
-    const file = form.get("image") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Convert ANY format → JPEG that Replicate accepts perfectly
-    const jpegBuffer = await sharp(buffer)
-      .rotate()
-      .jpeg({ quality: 95 })
-      .toBuffer();
-
-    // Upload original
-    const original = await new Promise<any>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "remove-bg/original", resource_type: "image" },
-        (err, result) => (err ? reject(err) : resolve(result))
-      );
-      stream.end(jpegBuffer);
-    });
-
-    // Run Replicate
-    const result = await replicate.run(
-      "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
-      {
-        input: {
-          image: `data:image/jpeg;base64,${jpegBuffer.toString("base64")}`,
-        },
-      }
+  if (!file) {
+    return NextResponse.json(
+      { error: "No image provided" },
+      { status: 400 }
     );
+  }
 
-    let outputUrl: string | null = null;
-    if (typeof result === "string") outputUrl = result;
-    else if (Array.isArray(result)) outputUrl = result[0];
-    else outputUrl = (result as any)?.output || Object.values(result as any)[0];
-
-    if (!outputUrl || typeof outputUrl !== "string") {
-      throw new Error("Replicate returned invalid output");
-    }
-
-    const resp = await fetch(outputUrl);
-    const cleanBuf = Buffer.from(await resp.arrayBuffer());
-
-    // Watermarked
-    const watermarkedUrl = await new Promise<string>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "remove-bg/processed",
-          format: "png",
-          transformation: [
-            { width: 1024, crop: "limit" },
-            {
-              overlay: {
-                font_family: "Arial",
-                font_size: 50,
-                font_weight: "bold",
-                text: "remove-background.tech",
-                opacity: 70,
-              },
-              gravity: "center",
-              y: 20,
-            },
-          ],
-        },
-        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
-      );
-      stream.end(cleanBuf);
+  try {
+    const result = await processImage(file, {
+      watermark: !user, // guests get watermark
     });
-
-    // Clean HD
-    const cleanUrl = await new Promise<string>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "remove-bg/clean", format: "png" },
-        (err, result) => (err ? reject(err) : resolve(result!.secure_url))
-      );
-      stream.end(cleanBuf);
-    });
-
-    let hasCredits = false;
-    if (userId) {
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-      hasCredits = (user?.totalCredits ?? 0) >= 1;
-    }
 
     return NextResponse.json({
-      original: original.secure_url,
-      processed: watermarkedUrl,
-      clean: cleanUrl,
-      hasCredits,
+      processed: result.watermarked,
+      clean: result.clean,
     });
-  } catch (err: any) {
-    console.error("REMOVE_BG_ERROR:", err);
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
-      { error: "Failed to process image", details: err.message },
+      { error: "Image processing failed" },
       { status: 500 }
     );
   }
-};
-
-// DELETE THIS ENTIRE BLOCK — it breaks Vercel builds in Next.js 14+
-// export const config = {
-//   api: { bodyParser: false },
-// };
+}
