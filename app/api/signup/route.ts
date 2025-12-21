@@ -1,32 +1,32 @@
 import { NextResponse } from "next/server";
-import { findUserByEmail, createUserByEmail } from "@/lib/user";
-import { cookies } from "next/headers";
+import { createUserByEmail } from "@/lib/user";
 
 export async function POST(req: Request) {
+  const { email } = await req.json();
+
+  if (!email || typeof email !== "string") {
+    return NextResponse.json(
+      { error: "Email required" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { email } = await req.json();
-
-    if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-    }
-
-    // find or create user
-    let user = await findUserByEmail(email);
-    if (!user) {
-      user = await createUserByEmail(email);
-    }
-
-    // set signed cookie (simple identity)
-    cookies().set("uid", String(user.id), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
+    // Create user if they don't exist.
+    // If they already exist, this should NO-OP via unique email constraint.
+    await createUserByEmail(email.toLowerCase().trim());
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("signup error", err);
-    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
+  } catch (err: any) {
+    // If email already exists, treat as success
+    if (err?.code === "SQLITE_CONSTRAINT" || err?.message?.includes("unique")) {
+      return NextResponse.json({ success: true });
+    }
+
+    console.error("Signup error:", err);
+    return NextResponse.json(
+      { error: "Signup failed" },
+      { status: 500 }
+    );
   }
 }
