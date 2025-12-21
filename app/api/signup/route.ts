@@ -1,32 +1,32 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail, createUserByEmail } from "@/lib/user";
+import { findUserByEmail, createUserByEmail } from "@/lib/user";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
     if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { error: "Invalid email" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    let user = await getUserByEmail(normalizedEmail);
-
+    // find or create user
+    let user = await findUserByEmail(email);
     if (!user) {
-      user = await createUserByEmail(normalizedEmail);
+      user = await createUserByEmail(email);
     }
 
-    // 🚫 NO credits here. Signup is identity-only.
+    // set signed cookie (simple identity)
+    cookies().set("uid", String(user.id), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Signup error:", err);
-    return NextResponse.json(
-      { error: "Signup failed" },
-      { status: 500 }
-    );
+    console.error("signup error", err);
+    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
   }
 }
