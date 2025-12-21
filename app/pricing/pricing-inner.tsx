@@ -1,30 +1,29 @@
-// app/pricing/pricing-inner.tsx
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useUser } from "@/lib/useUser";
 
 /* =========================
-   STRIPE PRICE IDS — ONLY CHANGE THE 20-CREDIT LINE
+   STRIPE PRICE IDS
    ========================= */
 
 const PAYG_PRICE_IDS: Record<string, string> = {
-  "5":    "price_1SSrc4C7SdJDqSQL9Zl6ZSPz",
-  "15":   "price_1ST76xC7SdJDqSQLwGjqxRmt",
-  "50":   "price_1ST7EIC7SdJDqSQLarYb4WgE",
-  "100":  "price_1ST7EIC7SdJDqSQLa34lWIMK",
-  "500":  "price_1ST7EIC7SdJDqSQLRLfW3Lbh",
+  "5": "price_1SSrc4C7SdJDqSQL9Zl6ZSPz",
+  "15": "price_1ST76xC7SdJDqSQLwGjqxRmt",
+  "50": "price_1ST7EIC7SdJDqSQLarYb4WgE",
+  "100": "price_1ST7EIC7SdJDqSQLa34lWIMK",
+  "500": "price_1ST7EIC7SdJDqSQLRLfW3Lbh",
   "1000": "price_1ST7EIC7SdJDqSQL8RFOBHvs",
-  "20":   "price_1SczVNC7SdJDqSQLfhP2q6u8", // ← REPLACE THIS ONE LINE
+  "20": "price_1SczVNC7SdJDqSQLfhP2q6u8", // urgent offer
 };
 
 const PRO_PRICE_IDS: Record<string, string> = {
-  "50":   "price_1ST85YC7SdJDqSQLl9BDMF9i",
-  "250":  "price_1ST85YC7SdJDqSQLmyewfZya",
-  "500":  "price_1ST85YC7SdJDqSQL2iAc6jQN",
+  "50": "price_1ST85YC7SdJDqSQLl9BDMF9i",
+  "250": "price_1ST85YC7SdJDqSQLmyewfZya",
+  "500": "price_1ST85YC7SdJDqSQL2iAc6jQN",
   "1000": "price_1ST85YC7SdJDqSQLYsOqCYBO",
   "2500": "price_1ST85YC7SdJDqSQLdSUGJhXJ",
   "5000": "price_1ST85YC7SdJDqSQLAKFbT9fN",
@@ -34,7 +33,10 @@ const PRO_PRICE_IDS: Record<string, string> = {
    CHECKOUT HELPER
    ========================= */
 
-async function startCheckout(priceId: string, mode: "payment" | "subscription") {
+async function startCheckout(
+  priceId: string,
+  mode: "payment" | "subscription"
+) {
   try {
     const res = await fetch("/api/create-checkout-session", {
       method: "POST",
@@ -60,7 +62,7 @@ async function startCheckout(priceId: string, mode: "payment" | "subscription") 
    ========================= */
 
 export default function PricingInner() {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const params = useSearchParams();
 
   const success = params.get("success");
@@ -70,21 +72,26 @@ export default function PricingInner() {
   const [paygOption, setPaygOption] = useState(fromPaywall ? "20" : "5");
   const [proOption, setProOption] = useState("50");
 
-  const buy = (priceId: string | undefined, mode: "payment" | "subscription") => {
+  const buy = (
+    priceId: string | undefined,
+    mode: "payment" | "subscription"
+  ) => {
     if (!priceId) {
       alert("Pricing error — please refresh.");
       return;
     }
-    if (!session?.user) {
+
+    if (!user) {
       window.location.href = "/auth/signup";
       return;
     }
+
     startCheckout(priceId, mode);
   };
 
   return (
     <>
-      {/* VALID JSON-LD */}
+      {/* SEO Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -97,7 +104,8 @@ export default function PricingInner() {
                 name: "How much does it cost to remove a background from an image?",
                 acceptedAnswer: {
                   "@type": "Answer",
-                  text: "You can buy credits starting at $3 or choose a Pro subscription starting at $9/month.",
+                  text:
+                    "You can buy credits starting at $3 or choose a Pro subscription starting at $9/month.",
                 },
               },
             ],
@@ -110,6 +118,7 @@ export default function PricingInner() {
           Payment successful! Credits added.
         </div>
       )}
+
       {cancel && (
         <div className="w-full bg-yellow-600 text-white p-4 text-center font-bold text-lg">
           Payment cancelled — try again anytime.
@@ -141,10 +150,14 @@ export default function PricingInner() {
           {/* PAY-AS-YOU-GO */}
           <Card
             className={`flex flex-col rounded-2xl bg-white p-8 shadow-lg ${
-              fromPaywall && paygOption === "20" ? "ring-4 ring-green-500 ring-offset-4" : ""
+              fromPaywall && paygOption === "20"
+                ? "ring-4 ring-green-500 ring-offset-4"
+                : ""
             }`}
           >
-            <h3 className="text-3xl font-bold mb-2">Pay-as-you-go Credits</h3>
+            <h3 className="text-3xl font-bold mb-2">
+              Pay-as-you-go Credits
+            </h3>
 
             <select
               className="w-full rounded-lg border px-4 py-3 mb-6"
@@ -162,7 +175,9 @@ export default function PricingInner() {
 
             <Button
               className="rounded-full bg-blue-600 py-6 text-white hover:bg-blue-700"
-              onClick={() => buy(PAYG_PRICE_IDS[paygOption], "payment")}
+              onClick={() =>
+                buy(PAYG_PRICE_IDS[paygOption], "payment")
+              }
             >
               Buy Credits
             </Button>
@@ -174,7 +189,9 @@ export default function PricingInner() {
               Most Popular
             </div>
 
-            <h3 className="text-3xl font-bold mb-2">Pro Subscription</h3>
+            <h3 className="text-3xl font-bold mb-2">
+              Pro Subscription
+            </h3>
 
             <select
               className="w-full rounded-lg border px-4 py-3 mb-6"
@@ -191,7 +208,9 @@ export default function PricingInner() {
 
             <Button
               className="rounded-full bg-blue-600 py-6 text-white hover:bg-blue-700"
-              onClick={() => buy(PRO_PRICE_IDS[proOption], "subscription")}
+              onClick={() =>
+                buy(PRO_PRICE_IDS[proOption], "subscription")
+              }
             >
               Subscribe
             </Button>
