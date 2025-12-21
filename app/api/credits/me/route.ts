@@ -1,27 +1,18 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getUserFromRequest } from "@/lib/serverAuth";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const user = await getUserFromRequest();
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ user: null });
   }
 
-  const userId = Number(session.user.id);
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, userId));
-
   return NextResponse.json({
-    total: user?.totalCredits ?? 0
+    user: {
+      email: user.email,
+      totalCredits: user.totalCredits ?? 0,
+      pro: user.pro ?? false,
+    },
   });
 }
