@@ -1,8 +1,9 @@
+// lib/useUser.ts
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-export type User = {
+export type AppUser = {
   id: string;
   email: string;
   totalCredits: number;
@@ -10,18 +11,39 @@ export type User = {
 };
 
 export function useUser() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/me")
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        setUser(data?.user ?? null);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/me?_=" + Date.now(), { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      setUser(data?.user ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { user, loading };
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } finally {
+      setUser(null);
+      // let other components refetch if they want
+      window.dispatchEvent(new Event("auth-changed"));
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+
+    const onAuth = () => refresh();
+    window.addEventListener("auth-changed", onAuth);
+    return () => window.removeEventListener("auth-changed", onAuth);
+  }, [refresh]);
+
+  return { user, loading, refresh, logout };
 }
