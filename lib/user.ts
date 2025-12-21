@@ -1,19 +1,31 @@
+// lib/user.ts
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
 
-export async function findUserByEmail(email: string) {
-  return db
+/**
+ * Find a user by email
+ */
+export async function getUserByEmail(email: string) {
+  const result = await db
     .select()
     .from(users)
-    .where(eq(users.email, email))
+    .where(eq(users.email, email.toLowerCase()))
     .limit(1);
+
+  return result[0] ?? null;
 }
 
-export async function verifyPassword(
-  plainPassword: string,
-  hashedPassword: string
-) {
-  return bcrypt.compare(plainPassword, hashedPassword);
+/**
+ * Create a user by email (NO credits added here)
+ */
+export async function createUserByEmail(email: string) {
+  const result = await db
+    .insert(users)
+    .values({
+      email: email.toLowerCase(),
+    })
+    .returning();
+
+  return result[0];
 }
