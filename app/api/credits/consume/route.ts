@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { users } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { getUserFromRequest } from "@/lib/serverAuth";
 
@@ -11,24 +11,13 @@ export async function POST(req: Request) {
   }
 
   const { count } = await req.json();
-  const creditsToConsume = Number(count || 1);
-
-  // 🔑 CRITICAL FIX: ensure numeric ID for Drizzle
-  const userId = Number(user.id);
-
-  if (!Number.isFinite(userId)) {
-    return NextResponse.json(
-      { error: "INVALID_USER_ID" },
-      { status: 400 }
-    );
-  }
 
   await db
     .update(users)
     .set({
-      totalCredits: sql`${users.totalCredits} - ${creditsToConsume}`,
+      totalCredits: sql`${users.totalCredits} - ${count}`,
     })
-    .where(eq(users.id, userId));
+    .where(eq(users.id, Number(user.id)));
 
   return NextResponse.json({ success: true });
 }

@@ -1,25 +1,42 @@
-// app/api/stripe/subscribe/route.ts
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { getStripe } from "@/lib/stripe";
+import { getUserFromRequest } from "@/lib/serverAuth";
 
 export async function POST(req: Request) {
-  const { userId } = await req.json();
+  try {
+    const stripe = getStripe(); // ✅ runtime only
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price: process.env.STRIPE_SUBSCRIPTION_PRICE_ID!,
-        quantity: 1,
-      },
-    ],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
-    metadata: { userId },
-  });
+    const user = await getUserFromRequest();
+    if (!user) {
+      return NextResponse.json(
+        { error: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
 
-  return NextResponse.json({ url: session.url });
+    const { priceId } = await req.json();
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: "Missing priceId" },
+        { status: 400 }
+      );
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer_email: user.email,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing?success=1`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing?cancel=1`,
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error("stripe/subscribe error:", err);
+    return NextResponse.json(
+      { error: "Subscription failed" },
+      { status: 500 }
+    );
+  }
 }

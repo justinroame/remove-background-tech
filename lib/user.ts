@@ -30,10 +30,9 @@ export async function createUserByEmail(email: string) {
     .values({
       email: normalized,
       // If your schema has these fields, great. If not, they will be ignored by drizzle types.
-      // @ts-expect-error - optional columns may exist depending on your schema
-      totalCredits: 0,
-      // @ts-expect-error
-      pro: false,
+    totalCredits: 0,
+pro: false,
+
     })
     .returning();
 
