@@ -11,15 +11,15 @@ const replicate = new Replicate({
 
 /**
  * Remove background using Replicate rembg model.
- * Expects a PUBLIC HTTPS image URL (NOT base64).
+ * Expects a PUBLIC HTTPS image URL.
  */
 export async function removeBackground(imageUrl: string) {
   try {
-    // Stable, known-good rembg version
-    const model =
-      "cjwbw/rembg:a93868b281a0e433b15c77b7c3539d5f0e2c2ed9be5a3727d2a6b1189d88b4f1";
+    // ✅ CONFIRMED working public rembg model
+    const MODEL =
+      "cjwbw/rembg:fb8af171cfa5504d5ceafdba8c0fe0c84b4c8b2ce1a42a7b1c304af22aa32b3a";
 
-    const output = await replicate.run(model, {
+    const output = await replicate.run(MODEL, {
       input: {
         image: imageUrl,
       },
@@ -41,7 +41,7 @@ export async function removeBackground(imageUrl: string) {
       clean: url,
     };
   } catch (err: any) {
-    console.error("Replicate error:", err);
+    console.error("[removeBackground] Replicate error:", err);
     throw new Error(err?.message || "Replicate processing failed");
   }
 }
