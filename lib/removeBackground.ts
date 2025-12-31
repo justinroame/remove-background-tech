@@ -1,63 +1,63 @@
-const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+// lib/removeBackground.ts
+import Replicate from "replicate";
 
-if (!REPLICATE_API_TOKEN) {
-  throw new Error("REPLICATE_API_TOKEN not set");
+type ProcessOptions = {
+  watermark: boolean;
+};
+
+type ProcessResult = {
+  watermarked: string;
+  clean: string;
+};
+
+function requireEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env var ${name}`);
+  return v;
 }
 
-const MODEL_VERSION =
-  "5c7d5dc6c3c8f7b9c8b1a9a1e87d1fbc5d9a4f2e2c1d3f2e9b6d5e2c3b1a"; 
-// cjwbw/rembg stable version
+/**
+ * Uses Replicate "cjwbw/rembg" to remove background.
+ * Returns URLs (Replicate delivery URLs).
+ *
+ * NOTE: This returns the same URL for both watermarked and clean.
+ * Your UI already supports “preview vs clean download”; watermarking can be applied client-side
+ * or we can add server-side watermarking once the pipeline is working.
+ */
+export async function processImage(
+  file: File,
+  _options: ProcessOptions
+): Promise<ProcessResult> {
+  const token = requireEnv("REPLICATE_API_TOKEN");
 
-export async function removeBackground(base64: string) {
-  const res = await fetch("https://api.replicate.com/v1/predictions", {
-    method: "POST",
-    headers: {
-      Authorization: `Token ${REPLICATE_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      version: MODEL_VERSION,
-      input: {
-        image: base64,
-      },
-    }),
+  const replicate = new Replicate({ auth: token });
+
+  // Convert file -> base64 DATA URL (most Replicate image inputs accept this)
+  const ab = await file.arrayBuffer();
+  const b64 = Buffer.from(ab).toString("base64");
+  const dataUrl = `data:${file.type || "image/png"};base64,${b64}`;
+
+  // Call Replicate
+  const output = await replicate.run("cjwbw/rembg", {
+    input: { image: dataUrl },
   });
 
-  const json = await res.json();
+  // Output can be string or array depending on model version
+  const url =
+    typeof output === "string"
+      ? output
+      : Array.isArray(output) && typeof output[0] === "string"
+      ? output[0]
+      : null;
 
-  if (!res.ok) {
-    console.error("Replicate API error:", json);
-    throw new Error("Replicate request failed");
-  }
-
-  // Wait for prediction to finish
-  let prediction = json;
-  while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-    await new Promise((r) => setTimeout(r, 1000));
-    const poll = await fetch(
-      `https://api.replicate.com/v1/predictions/${prediction.id}`,
-      {
-        headers: {
-          Authorization: `Token ${REPLICATE_API_TOKEN}`,
-        },
-      }
+  if (!url) {
+    throw new Error(
+      `Unexpected Replicate output shape: ${JSON.stringify(output).slice(0, 500)}`
     );
-    prediction = await poll.json();
-  }
-
-  if (prediction.status === "failed") {
-    console.error("Replicate prediction failed:", prediction.error);
-    throw new Error("Prediction failed");
-  }
-
-  const output = prediction.output;
-
-  if (!output || typeof output !== "string") {
-    throw new Error("Invalid output from Replicate");
   }
 
   return {
-    processed: output,
-    clean: output,
+    watermarked: url,
+    clean: url,
   };
 }

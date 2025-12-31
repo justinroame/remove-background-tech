@@ -1,31 +1,43 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { removeBackground } from "@/lib/removeBackground";
+import { processImage } from "@/lib/removeBackground";
 
 export async function POST(req: Request) {
   try {
-    const form = await req.formData();
-    const file = form.get("image") as File | null;
-
-    if (!file) {
+    // Hard fail with an explicit message if env missing (this is VERY likely on Vercel prod)
+    if (!process.env.REPLICATE_API_TOKEN) {
       return NextResponse.json(
-        { error: "No image uploaded" },
-        { status: 400 }
+        {
+          error:
+            "Server misconfigured: REPLICATE_API_TOKEN is missing (check Vercel Env Vars for Production).",
+        },
+        { status: 500 }
       );
     }
 
-    // Convert file → raw base64
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const base64 = buffer.toString("base64");
+    const formData = await req.formData();
+    const file = formData.get("image") as File | null;
 
-    const result = await removeBackground(base64);
+    if (!file) {
+      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+    }
 
-    return NextResponse.json(result);
+    const result = await processImage(file, { watermark: true });
+
+    return NextResponse.json({
+      processed: result.watermarked,
+      clean: result.clean,
+    });
   } catch (err: any) {
+    // IMPORTANT: surface the real error (so we stop guessing)
     console.error("remove-background error:", err);
+
     return NextResponse.json(
-      { error: "Background removal failed", detail: err?.message },
+      {
+        error: "Background removal failed",
+        detail: err?.message || String(err),
+      },
       { status: 500 }
     );
   }
