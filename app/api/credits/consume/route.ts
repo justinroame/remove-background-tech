@@ -1,23 +1,23 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
-import { getUserFromRequest } from "@/lib/serverAuth";
+export const runtime = "nodejs";
 
-export async function POST(req: Request) {
-  const user = await getUserFromRequest();
+import { NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/serverAuth";
+import { db } from "@/lib/db";
+import { credits } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
+
+export async function POST() {
+  const user = getUserFromRequest();
   if (!user) {
-    return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { count } = await req.json();
-
   await db
-    .update(users)
+    .update(credits)
     .set({
-      totalCredits: sql`${users.totalCredits} - ${count}`,
+      amount: sql`${credits.amount} - 1`,
     })
-    .where(eq(users.id, Number(user.id)));
+    .where(eq(credits.userId, user.id));
 
   return NextResponse.json({ success: true });
 }

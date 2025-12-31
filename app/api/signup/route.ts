@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
       id: user.id,
       email: user.email,
     });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json(
       { error: "Account already exists" },
       { status: 409 }
