@@ -1,16 +1,36 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/serverAuth";
+import { removeBackground } from "@/lib/removeBackground";
 
-export async function POST() {
-  const user = getUserFromRequest();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(req: Request) {
+  try {
+    const form = await req.formData();
+    const file = form.get("image") as File | null;
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "No image uploaded" },
+        { status: 400 }
+      );
+    }
+
+    // Convert file → base64
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+
+    const result = await removeBackground(base64);
+
+    return NextResponse.json({
+      processed: result.processed,
+      clean: result.clean,
+    });
+  } catch (err) {
+    console.error("remove-background failed:", err);
+    return NextResponse.json(
+      { error: "Background removal failed" },
+      { status: 500 }
+    );
   }
-
-  // your existing remove background logic runs here
-  // make sure credit consumption happens AFTER auth
-
-  return NextResponse.json({ success: true });
 }

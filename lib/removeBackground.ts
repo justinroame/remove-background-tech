@@ -1,38 +1,34 @@
-// lib/removeBackground.ts
+import Replicate from "replicate";
 
-type ProcessOptions = {
-  watermark: boolean;
-};
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN!,
+});
 
-export async function processImage(
-  file: File,
-  options: ProcessOptions
-): Promise<{
-  watermarked: string;
-  clean: string;
-}> {
-  // Convert File → Buffer
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+if (!process.env.REPLICATE_API_TOKEN) {
+  throw new Error("REPLICATE_API_TOKEN not set");
+}
 
-  /**
-   * 🔥 IMPORTANT
-   * Replace this section with your EXISTING background-removal logic.
-   * If you already had working logic before, paste it here.
-   *
-   * The function MUST return:
-   * {
-   *   watermarked: string (URL),
-   *   clean: string (URL)
-   * }
-   */
+/**
+ * Runs background removal via Replicate
+ * Returns a public image URL
+ */
+export async function removeBackground(imageBase64: string) {
+  const output = await replicate.run(
+    "cjwbw/rembg:latest",
+    {
+      input: {
+        image: imageBase64,
+      },
+    }
+  );
 
-  // TEMP SAFE FALLBACK (prevents build failure)
-  // This lets the site build while keeping API contract correct
-  const dummyUrl = "https://example.com/placeholder.png";
+  // rembg returns a single image URL
+  if (typeof output !== "string") {
+    throw new Error("Unexpected Replicate output");
+  }
 
   return {
-    watermarked: dummyUrl,
-    clean: dummyUrl,
+    processed: output,
+    clean: output,
   };
 }
