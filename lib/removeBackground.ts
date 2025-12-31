@@ -1,5 +1,4 @@
 // lib/removeBackground.ts
-import "server-only";
 import Replicate from "replicate";
 
 if (!process.env.REPLICATE_API_TOKEN) {
@@ -10,33 +9,39 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-// Known-working pinned model
-const MODEL =
-  "cjwbw/rembg@34bd50c3cdcf667a839abdcdde7201d5b39bbebb54aa037da542ee6e670d9786";
+/**
+ * Remove background using Replicate rembg model.
+ * Expects a PUBLIC HTTPS image URL (NOT base64).
+ */
+export async function removeBackground(imageUrl: string) {
+  try {
+    // Stable, known-good rembg version
+    const model =
+      "cjwbw/rembg:a93868b281a0e433b15c77b7c3539d5f0e2c2ed9be5a3727d2a6b1189d88b4f1";
 
-export async function removeBackground(image: string) {
-  console.log("[replicate] input image:", image);
+    const output = await replicate.run(model, {
+      input: {
+        image: imageUrl,
+      },
+    });
 
-  const output = await replicate.run(MODEL, {
-    input: { image },
-  });
+    const url =
+      typeof output === "string"
+        ? output
+        : Array.isArray(output)
+        ? output[0]
+        : null;
 
-  console.log("[replicate] raw output:", output);
+    if (!url) {
+      throw new Error("Replicate returned no output");
+    }
 
-  const url =
-    typeof output === "string"
-      ? output
-      : Array.isArray(output)
-      ? output[0]
-      : null;
-
-  if (!url) {
-    throw new Error("Replicate returned no output image");
+    return {
+      processed: url,
+      clean: url,
+    };
+  } catch (err: any) {
+    console.error("Replicate error:", err);
+    throw new Error(err?.message || "Replicate processing failed");
   }
-
-  // 🔑 CONTRACT THAT YOUR APP EXPECTS
-  return {
-    processed: url,
-    clean: url,
-  };
 }
