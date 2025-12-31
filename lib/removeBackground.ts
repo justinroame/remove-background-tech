@@ -1,36 +1,49 @@
 import Replicate from "replicate";
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN!,
-});
+const hasReplicate =
+  typeof process.env.REPLICATE_API_TOKEN === "string" &&
+  process.env.REPLICATE_API_TOKEN.length > 10;
 
-if (!process.env.REPLICATE_API_TOKEN) {
-  throw new Error("REPLICATE_API_TOKEN not set");
+let replicate: Replicate | null = null;
+
+if (hasReplicate) {
+  replicate = new Replicate({
+    auth: process.env.REPLICATE_API_TOKEN!,
+  });
 }
 
 /**
- * Accepts:
- * - public image URL
- * - data:image/... base64
+ * Attempts background removal.
+ * If Replicate fails, returns original image so the editor still works.
  */
 export async function removeBackground(image: string) {
-  const output = await replicate.run("cjwbw/rembg", {
-    input: { image },
-  });
+  if (replicate) {
+    try {
+      const output = await replicate.run("cjwbw/rembg", {
+        input: { image },
+      });
 
-  const url =
-    typeof output === "string"
-      ? output
-      : Array.isArray(output)
-      ? output[0]
-      : null;
+      const url =
+        typeof output === "string"
+          ? output
+          : Array.isArray(output)
+          ? output[0]
+          : null;
 
-  if (!url) {
-    throw new Error("Invalid Replicate output");
+      if (url) {
+        return {
+          processed: url,
+          clean: url,
+        };
+      }
+    } catch (err) {
+      console.error("Replicate failed, falling back:", err);
+    }
   }
 
+  // Fallback: return original image
   return {
-    processed: url,
-    clean: url,
+    processed: image,
+    clean: image,
   };
 }
