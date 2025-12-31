@@ -1,79 +1,66 @@
 "use client";
 
-import { useUser } from "@/lib/useUser";
-import Link from "next/link";
+import Stripe from "stripe";
 
-export default function PricingInner() {
-  const { user, loading } = useUser();
+type Props = {
+  prices: Stripe.Price[];
+};
 
-  if (loading) {
+export default function PricingInner({ prices }: Props) {
+  if (!prices.length) {
     return (
-      <div className="py-20 text-center text-gray-500">
-        Loading pricing…
+      <div className="p-8 text-center text-gray-500">
+        No pricing plans available.
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-20 text-center">
-      <h1 className="text-4xl font-bold mb-8">Pricing</h1>
+    <div className="max-w-4xl mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Pricing</h1>
 
-      {/* Logged OUT */}
-      {!user && (
-        <Link
-          href="/auth/signup"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg"
-        >
-          Create free account
-        </Link>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {prices.map((price) => {
+          const product = price.product as Stripe.Product;
 
-      {/* Logged IN */}
-      {user && (
-        <div className="space-y-10">
-          <div className="text-lg">
-            You have{" "}
-            <span className="font-semibold">
-              {user.totalCredits}
-            </span>{" "}
-            credits
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Credits */}
-            <div className="border rounded-xl p-6">
-              <h2 className="text-xl font-semibold mb-2">
-                Pay per credit
+          return (
+            <div
+              key={price.id}
+              className="border rounded-lg p-6"
+            >
+              <h2 className="text-xl font-semibold">
+                {product.name}
               </h2>
-              <p className="mb-4 text-gray-600">
-                Buy credits as you need them
-              </p>
-              <Link
-                href="/pricing#credits"
-                className="inline-block bg-black text-white px-5 py-2 rounded"
-              >
-                Buy credits
-              </Link>
-            </div>
 
-            {/* Subscription */}
-            <div className="border rounded-xl p-6">
-              <h2 className="text-xl font-semibold mb-2">
-                Pro subscription
-              </h2>
-              <p className="mb-4 text-gray-600">
-                Unlimited background removals
+              <p className="text-gray-600 mb-4">
+                {product.description}
               </p>
-              <Link
-                href="/pricing#pro"
-                className="inline-block bg-blue-600 text-white px-5 py-2 rounded"
+
+              <p className="text-2xl font-bold mb-4">
+                ${(price.unit_amount ?? 0) / 100}
+                {price.recurring ? "/mo" : ""}
+              </p>
+
+              <form
+                action="/api/create-checkout-session"
+                method="POST"
               >
-                Upgrade to Pro
-              </Link>
+                <input
+                  type="hidden"
+                  name="priceId"
+                  value={price.id}
+                />
+                <button
+                  type="submit"
+                  className="bg-black text-white px-4 py-2 rounded"
+                >
+                  Buy
+                </button>
+              </form>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

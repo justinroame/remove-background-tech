@@ -1,8 +1,23 @@
-// app/api/me/route.ts
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/serverAuth";
+import { COOKIE_NAME, verifyToken } from "@/lib/serverAuth";
 
 export async function GET() {
-  const user = await getUserFromRequest();
-  return NextResponse.json({ user: user ?? null });
+  const token = cookies().get(COOKIE_NAME)?.value;
+
+  if (!token) {
+    return NextResponse.json({ user: null });
+  }
+
+  try {
+    const payload = verifyToken(token);
+    return NextResponse.json({
+      user: {
+        id: payload.uid,
+        email: payload.email,
+      },
+    });
+  } catch {
+    return NextResponse.json({ user: null });
+  }
 }

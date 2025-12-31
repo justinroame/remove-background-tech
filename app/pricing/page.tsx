@@ -1,16 +1,23 @@
-"use client";
+import Stripe from "stripe";
+import PricingInner from "./pricing-inner";
 
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
-
-const PricingInner = dynamic(() => import("./pricing-inner"), {
-  ssr: false,
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16",
 });
 
-export default function PricingPage() {
-  return (
-    <Suspense fallback={<div className="p-10 text-center">Loading…</div>}>
-      <PricingInner />
-    </Suspense>
-  );
+export default async function PricingPage() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return (
+      <div className="p-8 text-red-600">
+        STRIPE_SECRET_KEY is not set
+      </div>
+    );
+  }
+
+  const prices = await stripe.prices.list({
+    expand: ["data.product"],
+    active: true,
+  });
+
+  return <PricingInner prices={prices.data} />;
 }
