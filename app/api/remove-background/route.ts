@@ -1,43 +1,50 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { processImage } from "@/lib/removeBackground";
+import { removeBackground } from "@/lib/removeBackground";
 
 export async function POST(req: Request) {
   try {
-    // Hard fail with an explicit message if env missing (this is VERY likely on Vercel prod)
-    if (!process.env.REPLICATE_API_TOKEN) {
+    let imageInput: string | null = null;
+
+    // Try FormData first (file upload)
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const form = await req.formData();
+      const file = form.get("image") as File | null;
+
+      if (file) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        imageInput = `data:${file.type};base64,${buffer.toString("base64")}`;
+      }
+    }
+
+    // Fallback: JSON body with image URL (test images)
+    if (!imageInput) {
+      const body = await req.json().catch(() => null);
+      if (body?.image && typeof body.image === "string") {
+        imageInput = body.image;
+      }
+    }
+
+    if (!imageInput) {
       return NextResponse.json(
-        {
-          error:
-            "Server misconfigured: REPLICATE_API_TOKEN is missing (check Vercel Env Vars for Production).",
-        },
-        { status: 500 }
+        { error: "No image provided" },
+        { status: 400 }
       );
     }
 
-    const formData = await req.formData();
-    const file = formData.get("image") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
-    }
-
-    const result = await processImage(file, { watermark: true });
+    const result = await removeBackground(imageInput);
 
     return NextResponse.json({
-      processed: result.watermarked,
+      processed: result.processed,
       clean: result.clean,
     });
-  } catch (err: any) {
-    // IMPORTANT: surface the real error (so we stop guessing)
-    console.error("remove-background error:", err);
-
+  } catch (err) {
+    console.error("remove-background failed:", err);
     return NextResponse.json(
-      {
-        error: "Background removal failed",
-        detail: err?.message || String(err),
-      },
+      { error: "Background removal failed" },
       { status: 500 }
     );
   }
