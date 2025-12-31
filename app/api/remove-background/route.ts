@@ -8,22 +8,22 @@ export async function POST(req: Request) {
     const contentType = req.headers.get("content-type") || "";
     let image: string | null = null;
 
-    // JSON → test image URL
-    if (contentType.includes("application/json")) {
-      const body = await req.json();
-      if (typeof body?.image === "string") {
-        image = body.image;
-      }
-    }
-
     // Multipart → file upload
-    if (!image && contentType.includes("multipart/form-data")) {
+    if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
       const file = form.get("image") as File | null;
 
       if (file) {
         const buffer = Buffer.from(await file.arrayBuffer());
         image = `data:${file.type};base64,${buffer.toString("base64")}`;
+      }
+    }
+
+    // JSON → image URL (samples)
+    if (!image && contentType.includes("application/json")) {
+      const body = await req.json();
+      if (typeof body?.image === "string") {
+        image = body.image;
       }
     }
 
@@ -40,17 +40,15 @@ export async function POST(req: Request) {
       processed: result.processed,
       clean: result.clean,
     });
-  } catch (err) {
-    console.error("remove-background fatal:", err);
+  } catch (err: any) {
+    console.error("remove-background failed:", err);
 
-    // LAST-RESORT fallback so UI never bricks
     return NextResponse.json(
       {
-        processed: null,
-        clean: null,
-        error: "Image processed with fallback",
+        error: "Background removal failed",
+        detail: err?.message || String(err),
       },
-      { status: 200 }
+      { status: 500 }
     );
   }
 }

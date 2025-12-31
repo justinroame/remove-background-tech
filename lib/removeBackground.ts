@@ -1,49 +1,51 @@
 import Replicate from "replicate";
 
-const hasReplicate =
-  typeof process.env.REPLICATE_API_TOKEN === "string" &&
-  process.env.REPLICATE_API_TOKEN.length > 10;
+const token = process.env.REPLICATE_API_TOKEN;
 
-let replicate: Replicate | null = null;
-
-if (hasReplicate) {
-  replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN!,
-  });
+if (!token) {
+  throw new Error("REPLICATE_API_TOKEN not set");
 }
 
-/**
- * Attempts background removal.
- * If Replicate fails, returns original image so the editor still works.
- */
+const replicate = new Replicate({ auth: token });
+
+// ✅ Pinned working rembg model version
+const REMBG_VERSION =
+  "5c7d5dc6c3c8f7b9c8b1a9a1e87d1fbc5d9a4f2e2c1d3f2e9b6d5e2c3b1a";
+
 export async function removeBackground(image: string) {
-  if (replicate) {
-    try {
-      const output = await replicate.run("cjwbw/rembg", {
-        input: { image },
-      });
+  const prediction = await replicate.predictions.create({
+    version: REMBG_VERSION,
+    input: {
+      image,
+    },
+  });
 
-      const url =
-        typeof output === "string"
-          ? output
-          : Array.isArray(output)
-          ? output[0]
-          : null;
-
-      if (url) {
-        return {
-          processed: url,
-          clean: url,
-        };
-      }
-    } catch (err) {
-      console.error("Replicate failed, falling back:", err);
-    }
+  // Poll until finished
+  let result = prediction;
+  while (result.status !== "succeeded" && result.status !== "failed") {
+    await new Promise((r) => setTimeout(r, 1000));
+    result = await replicate.predictions.get(result.id);
   }
 
-  // Fallback: return original image
+  if (result.status === "failed") {
+    throw new Error(`Replicate failed: ${result.error}`);
+  }
+
+  const output = result.output;
+
+  const url =
+    typeof output === "string"
+      ? output
+      : Array.isArray(output)
+      ? output[0]
+      : null;
+
+  if (!url) {
+    throw new Error("Replicate returned no image");
+  }
+
   return {
-    processed: image,
-    clean: image,
+    processed: url,
+    clean: url,
   };
 }
