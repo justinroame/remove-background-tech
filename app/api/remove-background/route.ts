@@ -15,21 +15,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convert File → raw base64 (NO data: prefix)
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    // Convert file → raw base64
+    const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = buffer.toString("base64");
 
     const result = await removeBackground(base64);
 
-    return NextResponse.json({
-      processed: result.processed,
-      clean: result.clean,
-    });
-  } catch (err) {
-    console.error("remove-background failed:", err);
+    return NextResponse.json(result);
+  } catch (err: any) {
+    console.error("remove-background error:", err);
     return NextResponse.json(
-      { error: "Background removal failed" },
+      { error: "Background removal failed", detail: err?.message },
       { status: 500 }
     );
   }
