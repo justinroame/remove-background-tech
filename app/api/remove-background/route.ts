@@ -15,10 +15,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convert file → base64
+    // Convert File → raw base64 (NO data: prefix)
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const base64 = buffer.toString("base64");
 
     const result = await removeBackground(base64);
 

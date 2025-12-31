@@ -9,20 +9,19 @@ if (!process.env.REPLICATE_API_TOKEN) {
 }
 
 /**
- * Runs background removal via Replicate
- * Returns a public image URL
+ * Runs background removal using Replicate rembg
+ * Accepts RAW base64 (no data: prefix)
  */
-export async function removeBackground(imageBase64: string) {
+export async function removeBackground(base64Image: string) {
   const output = await replicate.run(
     "cjwbw/rembg:latest",
     {
       input: {
-        image: imageBase64,
+        image: base64Image,
       },
     }
   );
 
-  // rembg returns a single image URL
   if (typeof output !== "string") {
     throw new Error("Unexpected Replicate output");
   }
