@@ -3,10 +3,18 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { removeBackground } from "@/lib/removeBackground";
 
+/**
+ * Convert File → temporary object URL Replicate can consume
+ */
+async function fileToDataUrl(file: File) {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return `data:${file.type};base64,${buffer.toString("base64")}`;
+}
+
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
-    let image: string | null = null;
+    let imageUrl: string | null = null;
 
     // Multipart upload
     if (contentType.includes("multipart/form-data")) {
@@ -14,27 +22,26 @@ export async function POST(req: Request) {
       const file = form.get("image") as File | null;
 
       if (file) {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        image = `data:${file.type};base64,${buffer.toString("base64")}`;
+        imageUrl = await fileToDataUrl(file);
       }
     }
 
     // JSON (sample images)
-    if (!image && contentType.includes("application/json")) {
+    if (!imageUrl && contentType.includes("application/json")) {
       const body = await req.json();
       if (typeof body?.image === "string") {
-        image = body.image;
+        imageUrl = body.image;
       }
     }
 
-    if (!image) {
+    if (!imageUrl) {
       return NextResponse.json(
         { error: "No image provided" },
         { status: 400 }
       );
     }
 
-    const result = await removeBackground(image);
+    const result = await removeBackground(imageUrl);
 
     return NextResponse.json({
       processed: result.processed,
@@ -42,7 +49,6 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("remove-background failed:", err);
-
     return NextResponse.json(
       {
         error: "Background removal failed",
