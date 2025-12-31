@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const contentType = req.headers.get("content-type") || "";
     let image: string | null = null;
 
-    // Multipart → file upload
+    // Multipart upload
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
       const file = form.get("image") as File | null;
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // JSON → image URL (samples)
+    // JSON (sample images)
     if (!image && contentType.includes("application/json")) {
       const body = await req.json();
       if (typeof body?.image === "string") {
