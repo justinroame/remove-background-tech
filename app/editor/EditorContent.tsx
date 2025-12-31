@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Download, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
@@ -14,20 +14,8 @@ import {
 type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useUser();
-
-  // 🔒 Defensive param reads (support multiple names)
-  const imgParam =
-    searchParams.get("img") ||
-    searchParams.get("image") ||
-    null;
-
-  const cleanParam =
-    searchParams.get("clean") ||
-    searchParams.get("cleanImage") ||
-    null;
 
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
   const [cleanImage, setCleanImage] = useState<string | null>(null);
@@ -36,17 +24,16 @@ export default function EditorContent() {
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // ✅ Robust hydration from URL
+  // ✅ LOAD IMAGE FROM SESSION STORAGE (NOT URL)
   useEffect(() => {
-    if (imgParam) {
-      setWatermarkedImage(decodeURIComponent(imgParam));
-    }
-    if (cleanParam) {
-      setCleanImage(decodeURIComponent(cleanParam));
-    }
+    const img = sessionStorage.getItem("editor-image");
+    const clean = sessionStorage.getItem("editor-clean");
 
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  }, [imgParam, cleanParam]);
+    if (img) setWatermarkedImage(img);
+    if (clean) setCleanImage(clean);
+
+    window.scrollTo({ top: 0 });
+  }, []);
 
   async function downloadWithBackground(
     sourceUrl: string,
@@ -122,6 +109,8 @@ export default function EditorContent() {
   };
 
   const handleDeleteImage = () => {
+    sessionStorage.removeItem("editor-image");
+    sessionStorage.removeItem("editor-clean");
     setWatermarkedImage(null);
     setCleanImage(null);
     router.replace("/editor");
@@ -149,22 +138,19 @@ export default function EditorContent() {
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok || !data?.processed) {
       alert(data?.error || "Processing failed");
       setLoadingNewUpload(false);
       return;
     }
 
-    const processed = data.processed;
-    const clean = data.clean;
+    sessionStorage.setItem("editor-image", data.processed);
+    sessionStorage.setItem("editor-clean", data.clean);
 
-    setWatermarkedImage(processed);
-    setCleanImage(clean);
+    setWatermarkedImage(data.processed);
+    setCleanImage(data.clean);
 
-    router.replace(
-      `/editor?img=${encodeURIComponent(processed)}&clean=${encodeURIComponent(clean)}`
-    );
-
+    router.replace("/editor");
     setLoadingNewUpload(false);
   }
 
