@@ -1,4 +1,3 @@
-// app/editor/EditorContent.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,12 +14,20 @@ import {
 type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
-  const params = useSearchParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useUser();
 
-  const img = params.get("img");
-  const cleanParam = params.get("clean");
+  // 🔒 Defensive param reads (support multiple names)
+  const imgParam =
+    searchParams.get("img") ||
+    searchParams.get("image") ||
+    null;
+
+  const cleanParam =
+    searchParams.get("clean") ||
+    searchParams.get("cleanImage") ||
+    null;
 
   const [watermarkedImage, setWatermarkedImage] = useState<string | null>(null);
   const [cleanImage, setCleanImage] = useState<string | null>(null);
@@ -29,11 +36,17 @@ export default function EditorContent() {
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
   const [showPaywall, setShowPaywall] = useState(false);
 
+  // ✅ Robust hydration from URL
   useEffect(() => {
-    if (img) setWatermarkedImage(img);
-    if (cleanParam) setCleanImage(cleanParam);
-    window.scrollTo({ top: 0, behavior: "instant" as any });
-  }, [img, cleanParam]);
+    if (imgParam) {
+      setWatermarkedImage(decodeURIComponent(imgParam));
+    }
+    if (cleanParam) {
+      setCleanImage(decodeURIComponent(cleanParam));
+    }
+
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [imgParam, cleanParam]);
 
   async function downloadWithBackground(
     sourceUrl: string,
@@ -44,6 +57,7 @@ export default function EditorContent() {
       const image = new Image();
       image.crossOrigin = "anonymous";
       image.src = sourceUrl;
+
       await new Promise<void>((resolve, reject) => {
         image.onload = () => resolve();
         image.onerror = () => reject();
@@ -79,23 +93,13 @@ export default function EditorContent() {
     }
   }
 
-  const handleDownloadWatermarked = async () => {
-    if (!watermarkedImage) return;
-    await downloadWithBackground(watermarkedImage, "background-removed-preview.png", bgStyle);
-  };
-
   const handleDownloadClean = async () => {
     if (!user) return router.push("/auth/signup");
     if (!cleanImage) return;
 
     setLoadingClean(true);
     try {
-      const res = await fetch("/api/credits/consume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 }),
-      });
-
+      const res = await fetch("/api/credits/consume", { method: "POST" });
       const data = await res.json().catch(() => ({}));
 
       if (res.status === 402 || data?.error === "NO_CREDITS") {
@@ -134,23 +138,33 @@ export default function EditorContent() {
     }
 
     setLoadingNewUpload(true);
+
     const form = new FormData();
     form.append("image", file);
 
-    const res = await fetch("/api/remove-background", { method: "POST", body: form });
+    const res = await fetch("/api/remove-background", {
+      method: "POST",
+      body: form,
+    });
+
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || "Processing failed");
+      alert(data?.error || "Processing failed");
       setLoadingNewUpload(false);
       return;
     }
 
-    setWatermarkedImage(data.processed);
-    setCleanImage(data.clean);
+    const processed = data.processed;
+    const clean = data.clean;
+
+    setWatermarkedImage(processed);
+    setCleanImage(clean);
+
     router.replace(
-      `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(data.clean)}`
+      `/editor?img=${encodeURIComponent(processed)}&clean=${encodeURIComponent(clean)}`
     );
+
     setLoadingNewUpload(false);
   }
 
@@ -169,93 +183,91 @@ export default function EditorContent() {
           <span className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700">
             Background Preview
           </span>
-          <div className="flex gap-3">
-            {!user && (
-              <Button variant="outline" onClick={handleDownloadWatermarked} disabled={!watermarkedImage}>
-                <Download className="mr-2 size-4" /> Preview Image
-              </Button>
-            )}
-            <Button
-              onClick={handleDownloadClean}
-              disabled={loadingClean || !cleanImage}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              <Download className="mr-2 size-4" />
-              {loadingClean ? "Processing…" : "Download Clean Image"}
-            </Button>
-          </div>
+          <Button
+            onClick={handleDownloadClean}
+            disabled={loadingClean || !cleanImage}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Download className="mr-2 size-4" />
+            {loadingClean ? "Processing…" : "Download Clean Image"}
+          </Button>
         </div>
       </div>
 
-      {/* Main Editor */}
-      <div className="flex justify-center px-4 py-6 pt-4">
+      {/* Main */}
+      <div className="flex justify-center px-4 py-6">
         <div className="flex gap-8 w-full max-w-6xl">
           <div className="flex flex-col flex-1 items-center">
-            <div className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}>
+            <div
+              className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
+            >
               {loadingNewUpload ? (
-                <div className="flex flex-col items-center text-gray-600">
-                  <Loader2 className="animate-spin h-8 w-8 mb-2" />
-                  Processing…
-                </div>
+                <Loader2 className="animate-spin h-8 w-8 text-gray-500" />
               ) : watermarkedImage ? (
-                <img src={watermarkedImage} alt="Preview" className="object-contain max-w-full max-h-full" />
+                <img
+                  src={watermarkedImage}
+                  alt="Preview"
+                  className="object-contain max-w-full max-h-full"
+                />
               ) : (
-                <div className="text-gray-400 text-lg">Upload an image to start</div>
+                <div className="text-gray-400 text-lg">
+                  Upload an image to start
+                </div>
               )}
             </div>
 
             <div className="flex gap-6 mt-6">
               <label htmlFor="image-upload" className="cursor-pointer">
-                <div className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl text-gray-700">+</div>
+                <div className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl">
+                  +
+                </div>
               </label>
-              <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-              <button onClick={handleDeleteImage} className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl text-gray-700">–</button>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUpload}
+              />
+              <button
+                onClick={handleDeleteImage}
+                className="h-16 w-16 flex items-center justify-center rounded-xl bg-white border shadow text-3xl"
+              >
+                –
+              </button>
             </div>
           </div>
 
           <div className="flex flex-col gap-6 pt-4">
-            <button onClick={() => setBgStyle("none")} className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"}`} />
-            <button onClick={() => setBgStyle("white")} className={`h-20 w-20 rounded-xl border-4 bg-white ${bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"}`} />
-            <button onClick={() => setBgStyle("black")} className={`h-20 w-20 rounded-xl border-4 bg-black ${bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"}`} />
+            <button onClick={() => setBgStyle("none")} className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] ${bgStyle === "none" ? "border-blue-500" : "border-gray-300"}`} />
+            <button onClick={() => setBgStyle("white")} className={`h-20 w-20 rounded-xl border-4 bg-white ${bgStyle === "white" ? "border-blue-500" : "border-gray-300"}`} />
+            <button onClick={() => setBgStyle("black")} className={`h-20 w-20 rounded-xl border-4 bg-black ${bgStyle === "black" ? "border-blue-500" : "border-gray-300"}`} />
           </div>
         </div>
       </div>
 
-      {/* PAYWALL MODAL */}
+      {/* Paywall */}
       {showPaywall && watermarkedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="relative max-w-md w-full overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="absolute inset-0 -z-10">
-              <img src={watermarkedImage} className="h-full w-full object-cover blur-xl scale-110" />
-              <div className="absolute inset-0 bg-white/85" />
-            </div>
-
-            <button onClick={() => setShowPaywall(false)} className="absolute right-4 top-4 text-gray-500 hover:text-gray-700">
-              <X className="size-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-md w-full">
+            <button
+              onClick={() => setShowPaywall(false)}
+              className="absolute right-4 top-4"
+            >
+              <X />
             </button>
-
-            <div className="p-8 text-center">
-              <h2 className="mb-3 text-2xl font-bold text-gray-900">Your image is ready!</h2>
-              <p className="mb-7 text-gray-600">Remove the watermark and download the clean HD version</p>
-
-              <div className="mb-7 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
-                <div className="text-4xl font-black">$2.99</div>
-                <div className="mt-1 text-sm opacity-90">20 removals • one-time</div>
-                <div className="mt-2 text-xs">Most popular</div>
-              </div>
-
-              <Button
-                size="lg"
-                className="w-full bg-blue-600 py-6 text-lg font-semibold text-white hover:bg-blue-700"
-                onClick={() => router.push("/pricing?from=paywall")}
-              >
-                Unlock now → $2.99
-              </Button>
-
-              <button onClick={() => setShowPaywall(false)} className="mt-5 text-sm text-gray-500 hover:text-gray-700">
-                maybe later
-              </button>
-            </div>
+            <h2 className="text-2xl font-bold mb-3">
+              Your image is ready!
+            </h2>
+            <p className="mb-6 text-gray-600">
+              Remove the watermark and download the clean version
+            </p>
+            <Button
+              className="w-full bg-blue-600 py-6 text-lg"
+              onClick={() => router.push("/pricing?from=paywall")}
+            >
+              Unlock now
+            </Button>
           </div>
         </div>
       )}
