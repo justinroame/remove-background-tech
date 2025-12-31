@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"app/pricing/page.tsx -> ./pricing-inner":{"id":5917,"files":["static/chunks/972-74274f90118139e5.js","static/chunks/541.dab66be67928b1a0.js"]}}';

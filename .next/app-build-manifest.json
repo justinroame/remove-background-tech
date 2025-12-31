@@ -1,3 +1,158 @@
 {
-  "pages": {}
+  "pages": {
+    "/not-found": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/not-found-60925d742ace6356.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/_not-found/page-c4afbe7f0f43b298.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/css/061fba98c69b7bd6.css",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/layout-5ca642b83473fabe.js"
+    ],
+    "/auth/login/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/auth/login/page-48ef3fd5e7335070.js"
+    ],
+    "/auth/forgot-password/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/auth/forgot-password/page-e4dfef405f9dbe4c.js"
+    ],
+    "/auth/signup/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/auth/signup/page-099b724ab366da2c.js"
+    ],
+    "/contact/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/contact/page-7c728f1ecad087d9.js"
+    ],
+    "/editor/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/939-b1d62318ee921a6c.js",
+      "static/chunks/app/editor/page-d945990af6ca80cd.js"
+    ],
+    "/legal/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/legal/page-6189fa616b9bc9de.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/939-b1d62318ee921a6c.js",
+      "static/chunks/654-e73ee50ab85e3ebf.js",
+      "static/chunks/app/page-34d552f9bf697e46.js"
+    ],
+    "/pricing/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/pricing/page-23a7942e2b371c85.js"
+    ],
+    "/admin/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/admin/page-6b0df4de1ef5de3a.js"
+    ],
+    "/blog/best-background-remover-2025/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/best-background-remover-2025/page-78a9ce029794e609.js"
+    ],
+    "/blog/how-to-remove-background-from-image/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/how-to-remove-background-from-image/page-b308e889d57f183c.js"
+    ],
+    "/blog/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/page-78b6b4ffea97af81.js"
+    ],
+    "/blog/remove-background-from-portrait-headshot/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/remove-background-from-portrait-headshot/page-c2d8245a04b74eda.js"
+    ],
+    "/auth/reset-password/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/app/auth/reset-password/page-d4c560b44bfe1510.js"
+    ],
+    "/blog/remove-bg-vs-photoroom-vs-remove-background-tech/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/remove-bg-vs-photoroom-vs-remove-background-tech/page-ddcfc9e3ccfcad69.js"
+    ],
+    "/blog/remove-background-product-photos-etsy-shopify/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/remove-background-product-photos-etsy-shopify/page-797d3dd15d548b14.js"
+    ],
+    "/blog/remove-background-from-logo/page": [
+      "static/chunks/webpack-3a3f74c404aceb78.js",
+      "static/chunks/fd9d1056-7891ff26126bf322.js",
+      "static/chunks/117-a16b4d4227b6dd91.js",
+      "static/chunks/main-app-15c86ad06d689934.js",
+      "static/chunks/972-74274f90118139e5.js",
+      "static/chunks/app/blog/remove-background-from-logo/page-8bf98d274b280a66.js"
+    ]
+  }
 }
