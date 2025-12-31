@@ -1,32 +1,35 @@
-// app/api/remove-background/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { processImage } from "@/lib/removeBackground";
+import { uploadImage } from "@/lib/uploadImage";
+import { removeBackground } from "@/lib/removeBackground";
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("image") as File | null;
+    const form = await req.formData();
+    const file = form.get("image") as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No image provided" },
+        { status: 400 }
+      );
     }
 
-    const result = await processImage(file, { watermark: true });
+    // 1️⃣ Upload to Cloudinary
+    const imageUrl = await uploadImage(file);
 
-    return NextResponse.json({
-      processed: result.watermarked,
-      clean: result.clean,
-    });
+    // 2️⃣ Send URL to Replicate
+    const result = await removeBackground(imageUrl);
+
+    return NextResponse.json(result);
   } catch (err: any) {
-    console.error("remove-background failed:", err);
+    console.error("remove-background error:", err);
 
-    // IMPORTANT: return detail so your homepage shows WHY it failed
     return NextResponse.json(
       {
         error: "Background removal failed",
-        detail: err?.message || String(err),
+        detail: err.message,
       },
       { status: 500 }
     );
