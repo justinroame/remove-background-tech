@@ -1,40 +1,58 @@
+// lib/removeBackground.ts
 import Replicate from "replicate";
 
-const token = process.env.REPLICATE_API_TOKEN;
-if (!token) {
-  throw new Error("REPLICATE_API_TOKEN not set");
+type ProcessOptions = {
+  watermark: boolean;
+};
+
+const REPLICATE_TOKEN = process.env.REPLICATE_API_TOKEN;
+if (!REPLICATE_TOKEN) {
+  throw new Error("REPLICATE_API_TOKEN is not set");
 }
 
-const replicate = new Replicate({ auth: token });
-
-// ✅ Correct model + version
-const MODEL =
-  "cjwbw/rembg@5c7d5dc6c3c8f7b9c8b1a9a1e87d1fbc5d9a4f2e2c1d3f2e9b6d5e2c3b1a";
+const replicate = new Replicate({ auth: REPLICATE_TOKEN });
 
 /**
- * IMPORTANT:
- * cjwbw/rembg expects `image_url`, NOT `image`
+ * Replicate's cjwbw/rembg example uses an explicit version string like:
+ * "cjwbw/rembg:<version_hash>"
+ * See Replicate's model examples/docs. :contentReference[oaicite:0]{index=0}
  */
-export async function removeBackground(imageUrl: string) {
-  const output = await replicate.run(MODEL, {
+const REMBG_MODEL =
+  "cjwbw/rembg:34bd50c3cdcf667a839abdcdde7201d5b39bbebb54aa037da542ee6e670d9786";
+
+export async function processImage(
+  file: File,
+  options: ProcessOptions
+): Promise<{ watermarked: string; clean: string }> {
+  // Convert File → base64 data URL
+  const arrayBuffer = await file.arrayBuffer();
+  const b64 = Buffer.from(arrayBuffer).toString("base64");
+  const mime = file.type || "image/png";
+  const dataUrl = `data:${mime};base64,${b64}`;
+
+  // Run Replicate
+  const output = await replicate.run(REMBG_MODEL, {
     input: {
-      image_url: imageUrl,
+      // cjwbw/rembg "Input image" is called "image" in the Node examples. :contentReference[oaicite:1]{index=1}
+      image: dataUrl,
     },
   });
 
-  const url =
+  const cleanUrl =
     typeof output === "string"
       ? output
       : Array.isArray(output)
       ? output[0]
       : null;
 
-  if (!url) {
-    throw new Error("Replicate returned no output");
+  if (!cleanUrl) {
+    throw new Error("Replicate returned no output image URL");
   }
 
+  // If you want watermarking later, we can add a proper /api/watermark route
+  // For now, keep the contract: watermarked + clean
   return {
-    processed: url,
-    clean: url,
+    watermarked: cleanUrl,
+    clean: cleanUrl,
   };
 }
