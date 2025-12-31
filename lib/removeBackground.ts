@@ -9,15 +9,13 @@ if (!process.env.REPLICATE_API_TOKEN) {
 }
 
 /**
- * Accepts either:
+ * Accepts:
  * - public image URL
  * - data:image/... base64
  */
 export async function removeBackground(image: string) {
   const output = await replicate.run("cjwbw/rembg", {
-    input: {
-      image,
-    },
+    input: { image },
   });
 
   const url =
@@ -28,7 +26,7 @@ export async function removeBackground(image: string) {
       : null;
 
   if (!url) {
-    throw new Error("Unexpected Replicate output");
+    throw new Error("Invalid Replicate output");
   }
 
   return {
