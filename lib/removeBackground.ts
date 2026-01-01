@@ -14,12 +14,11 @@ const replicate = new Replicate({
  * Expects a PUBLIC HTTPS image URL.
  */
 export async function removeBackground(imageUrl: string) {
-  console.log("[removeBackground] Using image:", imageUrl);
+  console.log("[removeBackground] Image URL:", imageUrl);
 
   try {
-    // ✅ DO NOT PIN A VERSION
-    // Let Replicate select the latest permitted version
-    const model = "cjwbw/rembg";
+    // ✅ ACTIVE, PUBLIC, WORKING MODEL
+    const model = "lucataco/rembg";
 
     const output = await replicate.run(model, {
       input: {
