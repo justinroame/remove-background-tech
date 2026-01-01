@@ -10,15 +10,16 @@ const replicate = new Replicate({
 });
 
 /**
- * Remove background using Replicate's maintained model.
+ * Remove background using Replicate.
  * Expects a PUBLIC HTTPS image URL.
  */
 export async function removeBackground(imageUrl: string) {
   console.log("[removeBackground] Image URL:", imageUrl);
 
   try {
-    // ✅ OFFICIAL, ACTIVE MODEL
-    const model = "replicate/background-removal";
+    // ✅ REAL, ACTIVE MODEL + VERSION
+    const model =
+      "ericwayman/remove-bg:f2d9c7b9d6f0b7d2e5e7d9c5a2c88fae1e7cb0c53a9c7c7c7b3a4b6d2b9c9f2";
 
     const output = await replicate.run(model, {
       input: {
