@@ -1,41 +1,26 @@
 // lib/removeBackground.ts
-import Replicate from "replicate";
+import { v2 as cloudinary } from "cloudinary";
 
-if (!process.env.REPLICATE_API_TOKEN) {
-  throw new Error("REPLICATE_API_TOKEN is not set");
-}
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export async function removeBackground(imageUrl: string) {
-  console.log("[removeBackground] Image URL:", imageUrl);
+  console.log("[removeBackground] Removing background via Cloudinary");
 
-  const output = await replicate.run(
-    "meta/rembg",
-    {
-      input: {
-        image: imageUrl,
-      },
-    }
-  );
+  const result = await cloudinary.uploader.upload(imageUrl, {
+    background_removal: "cloudinary_ai",
+    format: "png",
+  });
 
-  console.log("[removeBackground] Output:", output);
-
-  const url =
-    typeof output === "string"
-      ? output
-      : Array.isArray(output)
-      ? output[0]
-      : null;
-
-  if (!url) {
-    throw new Error("Replicate returned no output");
+  if (!result.secure_url) {
+    throw new Error("Cloudinary background removal failed");
   }
 
   return {
-    processed: url,
-    clean: url,
+    processed: result.secure_url,
+    clean: result.secure_url,
   };
 }
