@@ -1,3 +1,4 @@
+// app/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -55,20 +56,22 @@ export default function Home() {
         body: form,
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data?.processed) {
-        throw new Error(data?.error || "Background removal failed");
+      if (!res.ok || !data?.processed || !data?.clean) {
+        const msg = data?.detail
+          ? `${data?.error || "Failed"} — ${data.detail}`
+          : data?.error || "Background removal failed";
+        throw new Error(msg);
       }
 
-      // ✅ STORE IMAGE DATA SAFELY (NOT IN URL)
-      sessionStorage.setItem("editor-image", data.processed);
-      sessionStorage.setItem("editor-clean", data.clean);
-
-      // ✅ CLEAN NAVIGATION (NO PARAMS)
-      router.push("/editor");
+      router.push(
+        `/editor?img=${encodeURIComponent(data.processed)}&clean=${encodeURIComponent(
+          data.clean
+        )}`
+      );
     } catch (err: any) {
-      setError(err.message || "Background removal failed");
+      setError(err?.message || "Background removal failed");
     } finally {
       setLoading(false);
     }
@@ -104,32 +107,38 @@ export default function Home() {
     <div className="min-h-screen bg-[#F4F5F6]">
       <main className="mx-auto max-w-4xl px-6 py-10 md:py-20">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex justify-end w-full">
-            <Sparkles className="size-8 text-yellow-500" />
+          <h1 className="sr-only">Remove Background from Image – Free AI Tool Online</h1>
+
+          <div className="mb-4 md:mb-8 flex justify-end w-full">
+            <Sparkles className="size-8 md:size-10 text-yellow-500" />
           </div>
 
-          <h2 className="mb-6 text-3xl md:text-5xl font-bold text-gray-800">
+          <h2 className="mb-6 md:mb-8 text-3xl md:text-5xl font-bold text-gray-800 leading-tight">
             Upload an image to<br />
             <span className="text-blue-600">remove the background</span>
           </h2>
 
-          <p className="text-gray-600 max-w-xl mb-6">
-            Instantly remove background from any image using free AI.
+          <p className="text-gray-600 text-sm md:text-base max-w-xl mb-6">
+            Instantly remove background from any image using free AI. Upload a photo
+            and download a clean transparent PNG in seconds.
           </p>
 
           <div
-            className="relative border-2 border-dashed border-gray-300 rounded-2xl p-10 mb-8 w-full max-w-lg bg-white hover:border-blue-500 cursor-pointer"
+            className="relative border-2 border-dashed border-gray-300 rounded-2xl p-6 md:p-10 mb-6 md:mb-10 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
             onDrop={onDrop}
             onDragOver={allowDrop}
+            aria-label="Upload or drop image to remove background"
           >
             <input
               type="file"
               accept="image/*"
               onChange={onFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
+              aria-label="Select image to remove background"
             />
+
             <Button
-              className="rounded-full bg-blue-600 px-12 py-6 text-lg text-white"
+              className="rounded-full bg-blue-600 px-10 py-5 md:px-12 md:py-6 text-lg font-medium text-white hover:bg-blue-700"
               size="lg"
               disabled={loading}
             >
@@ -144,12 +153,10 @@ export default function Home() {
             </Button>
           </div>
 
-          {error && <p className="text-red-600 mt-4">{error}</p>}
+          {error && <p className="text-red-600 mt-2">{error}</p>}
 
-          <div className="mt-12 space-y-4">
-            <p className="text-sm font-medium text-gray-700">
-              No image? Try one of these:
-            </p>
+          <div className="space-y-3 md:space-y-4 mt-10 md:mt-16">
+            <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
             <div className="flex gap-3 justify-center">
               {[
                 "/woman-in-pink-dress.jpg",
@@ -160,18 +167,23 @@ export default function Home() {
                 <img
                   key={src}
                   src={src}
-                  className="size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300"
+                  alt="Sample"
+                  className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
                   onClick={() => handleSampleClick(src)}
+                  loading="lazy"
                 />
               ))}
             </div>
           </div>
 
-          <div className="mt-12 text-xs text-gray-600">
-            By uploading an image you agree to our{" "}
-            <Link href="/legal" className="underline">
-              Terms & Privacy
-            </Link>
+          <div className="mt-12 pt-8 border-t border-gray-200 w-full max-w-2xl text-center text-xs text-gray-600 space-y-2">
+            <p>
+              By uploading an image you agree to our{" "}
+              <Link href="/legal" className="underline hover:text-gray-800">
+                Terms & Privacy
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </main>
