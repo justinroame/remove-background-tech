@@ -9,15 +9,11 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-/**
- * Uses Replicate's OFFICIAL background removal model.
- * This avoids deprecated community models entirely.
- */
 export async function removeBackground(imageUrl: string) {
   console.log("[removeBackground] Image URL:", imageUrl);
 
   const output = await replicate.run(
-    "replicate/background-removal",
+    "meta/rembg",
     {
       input: {
         image: imageUrl,
