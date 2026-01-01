@@ -10,42 +10,36 @@ const replicate = new Replicate({
 });
 
 /**
- * Remove background using Replicate.
- * Expects a PUBLIC HTTPS image URL.
+ * Uses Replicate's OFFICIAL background removal model.
+ * This avoids deprecated community models entirely.
  */
 export async function removeBackground(imageUrl: string) {
   console.log("[removeBackground] Image URL:", imageUrl);
 
-  try {
-    // ✅ DO NOT PIN A VERSION
-    const output = await replicate.run(
-      "cjwbw/rembg",
-      {
-        input: {
-          image: imageUrl,
-        },
-      }
-    );
-
-    console.log("[removeBackground] Replicate output:", output);
-
-    const url =
-      typeof output === "string"
-        ? output
-        : Array.isArray(output)
-        ? output[0]
-        : null;
-
-    if (!url) {
-      throw new Error("Replicate returned no output");
+  const output = await replicate.run(
+    "replicate/background-removal",
+    {
+      input: {
+        image: imageUrl,
+      },
     }
+  );
 
-    return {
-      processed: url,
-      clean: url,
-    };
-  } catch (err: any) {
-    console.error("[removeBackground] Replicate error:", err);
-    throw err;
+  console.log("[removeBackground] Output:", output);
+
+  const url =
+    typeof output === "string"
+      ? output
+      : Array.isArray(output)
+      ? output[0]
+      : null;
+
+  if (!url) {
+    throw new Error("Replicate returned no output");
   }
+
+  return {
+    processed: url,
+    clean: url,
+  };
 }
