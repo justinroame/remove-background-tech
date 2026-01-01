@@ -1,26 +1,51 @@
 // lib/removeBackground.ts
-import { v2 as cloudinary } from "cloudinary";
+import Replicate from "replicate";
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const token = process.env.REPLICATE_API_TOKEN;
+if (!token) {
+  throw new Error("REPLICATE_API_TOKEN is not set");
+}
+
+const replicate = new Replicate({ auth: token });
+
+/**
+ * NOTE:
+ * Use a known-valid version hash from Replicate's cjwbw/rembg versions page.
+ * If you still get 422 "not permitted", that is almost always billing/account permission.
+ */
+const MODEL = "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003";
 
 export async function removeBackground(imageUrl: string) {
-  console.log("[removeBackground] Removing background via Cloudinary");
+  console.log("[removeBackground] input url:", imageUrl);
 
-  const result = await cloudinary.uploader.upload(imageUrl, {
-    background_removal: "cloudinary_ai",
-    format: "png",
-  });
+  try {
+    const output = await replicate.run(MODEL, {
+      input: { image: imageUrl },
+    });
 
-  if (!result.secure_url) {
-    throw new Error("Cloudinary background removal failed");
+    console.log("[removeBackground] raw output:", output);
+
+    const url =
+      typeof output === "string"
+        ? output
+        : Array.isArray(output)
+        ? output[0]
+        : null;
+
+    if (!url) {
+      throw new Error("Replicate returned no output image URL");
+    }
+
+    return { clean: url };
+  } catch (err: any) {
+    // Replicate JS SDK errors often carry useful fields
+    const detail =
+      err?.response?.data?.detail ||
+      err?.response?.data?.title ||
+      err?.message ||
+      String(err);
+
+    console.error("[removeBackground] ERROR:", detail);
+    throw new Error(detail);
   }
-
-  return {
-    processed: result.secure_url,
-    clean: result.secure_url,
-  };
 }
