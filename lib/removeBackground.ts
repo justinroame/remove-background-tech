@@ -4,24 +4,22 @@
  * Remove background using Replicate (851 Labs background remover).
  *
  * IMPORTANT:
- * - This file is SERVER-ONLY
- * - Do NOT add any top-level import of "replicate"
- * - Replicate must be dynamically imported inside the function
+ * - Server-only
+ * - No static import of "replicate"
+ * - Uses implicit latest model version (correct for Replicate)
  */
 
 import "server-only";
 
-const MODEL = "851-labs/background-remover:latest";
+const MODEL = "851-labs/background-remover";
 
 export async function removeBackground(imageUrl: string) {
   if (!process.env.REPLICATE_API_TOKEN) {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
 
-  console.log("[removeBackground] input:", imageUrl);
-
   try {
-    // 🔑 Dynamic import — required for Next.js + Vercel
+    // Dynamic import prevents Next.js build failure
     const { default: Replicate } = await import("replicate");
 
     const replicate = new Replicate({
@@ -34,12 +32,12 @@ export async function removeBackground(imageUrl: string) {
       },
     });
 
-    console.log("[removeBackground] raw output:", output);
-
     // 851 Labs returns an array of URLs
     const url =
       Array.isArray(output) && typeof output[0] === "string"
         ? output[0]
+        : typeof output === "string"
+        ? output
         : null;
 
     if (!url) {
@@ -48,13 +46,13 @@ export async function removeBackground(imageUrl: string) {
 
     return { clean: url };
   } catch (err: any) {
-    const detail =
+    const message =
       err?.response?.data?.detail ||
       err?.response?.data?.title ||
       err?.message ||
       String(err);
 
-    console.error("[removeBackground] ERROR:", detail);
-    throw new Error(detail);
+    console.error("[removeBackground] ERROR:", message);
+    throw new Error(message);
   }
 }
