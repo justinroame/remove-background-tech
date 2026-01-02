@@ -1,8 +1,6 @@
-// app/api/remove-background/route.ts
-
-export const runtime = "nodejs"; // REQUIRED for Replicate SDK
-
 import { removeBackground } from "@/lib/removeBackground";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -14,12 +12,18 @@ export async function POST(req: Request) {
 
     if (!file) {
       return Response.json(
-        { error: "No file uploaded" },
+        { error: "No image uploaded" },
         { status: 400 }
       );
     }
 
-    const result = await removeBackground(file);
+    // ✅ Convert File → base64 data URL
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const base64 = buffer.toString("base64");
+    const base64DataUrl = `data:${file.type};base64,${base64}`;
+
+    // ✅ Call Replicate
+    const result = await removeBackground(base64DataUrl);
 
     return Response.json({ clean: result.clean });
   } catch (err: any) {
