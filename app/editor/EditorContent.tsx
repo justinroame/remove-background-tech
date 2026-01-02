@@ -20,10 +20,9 @@ export default function EditorContent() {
   const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
-    // Always rehydrate from storage on mount
     try {
-      const wm = sessionStorage.getItem("editor-image");
-      const cl = sessionStorage.getItem("editor-clean");
+      const wm = sessionStorage.getItem("editor-image"); // original
+      const cl = sessionStorage.getItem("editor-clean"); // background-removed
       setWatermarkedImage(wm || null);
       setCleanImage(cl || null);
     } catch {
@@ -57,7 +56,9 @@ export default function EditorContent() {
     if (background === "white") ctx.fillStyle = "#ffffff";
     else if (background === "black") ctx.fillStyle = "#000000";
 
-    if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (background !== "none") {
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     ctx.drawImage(image, 0, 0);
 
@@ -74,10 +75,12 @@ export default function EditorContent() {
   }
 
   const handleDownloadPreview = async () => {
-    if (!watermarkedImage) return;
+    const preview = cleanImage || watermarkedImage;
+    if (!preview) return;
+
     try {
       await downloadWithBackground(
-        watermarkedImage,
+        preview,
         "background-removed-preview.png",
         bgStyle
       );
@@ -111,7 +114,11 @@ export default function EditorContent() {
       }
 
       window.dispatchEvent(new Event("credits-updated"));
-      await downloadWithBackground(cleanImage, "background-removed.png", bgStyle);
+      await downloadWithBackground(
+        cleanImage,
+        "background-removed.png",
+        bgStyle
+      );
     } catch {
       alert("Network error.");
     } finally {
@@ -136,6 +143,8 @@ export default function EditorContent() {
       ? "bg-white"
       : "bg-black";
 
+  const displayImage = cleanImage || watermarkedImage;
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F4F5F6]">
       <div className="border-b bg-white shadow-sm sticky top-0 z-20">
@@ -148,7 +157,7 @@ export default function EditorContent() {
             <Button
               variant="outline"
               onClick={handleDownloadPreview}
-              disabled={!watermarkedImage}
+              disabled={!displayImage}
             >
               <Download className="mr-2 size-4" /> Preview
             </Button>
@@ -175,9 +184,9 @@ export default function EditorContent() {
             <div
               className={`rounded-xl shadow-lg w-full max-h-[70vh] flex items-center justify-center p-4 ${previewBackgroundClass}`}
             >
-              {watermarkedImage ? (
+              {displayImage ? (
                 <img
-                  src={watermarkedImage}
+                  src={displayImage}
                   alt="Preview"
                   className="object-contain max-w-full max-h-full"
                 />
@@ -193,19 +202,25 @@ export default function EditorContent() {
             <button
               onClick={() => setBgStyle("none")}
               className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] bg-repeat ${
-                bgStyle === "none" ? "border-blue-500 shadow-xl" : "border-gray-300"
+                bgStyle === "none"
+                  ? "border-blue-500 shadow-xl"
+                  : "border-gray-300"
               }`}
             />
             <button
               onClick={() => setBgStyle("white")}
               className={`h-20 w-20 rounded-xl border-4 bg-white ${
-                bgStyle === "white" ? "border-blue-500 shadow-xl" : "border-gray-300"
+                bgStyle === "white"
+                  ? "border-blue-500 shadow-xl"
+                  : "border-gray-300"
               }`}
             />
             <button
               onClick={() => setBgStyle("black")}
               className={`h-20 w-20 rounded-xl border-4 bg-black ${
-                bgStyle === "black" ? "border-blue-500 shadow-xl" : "border-gray-300"
+                bgStyle === "black"
+                  ? "border-blue-500 shadow-xl"
+                  : "border-gray-300"
               }`}
             />
           </div>
@@ -223,7 +238,9 @@ export default function EditorContent() {
             </button>
 
             <div className="p-8 text-center">
-              <h2 className="mb-3 text-2xl font-bold text-gray-900">Your image is ready!</h2>
+              <h2 className="mb-3 text-2xl font-bold text-gray-900">
+                Your image is ready!
+              </h2>
               <p className="mb-7 text-gray-600">Unlock clean downloads</p>
 
               <Button
