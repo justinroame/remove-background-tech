@@ -4,12 +4,11 @@ import Stripe from "stripe";
 import { getUserFromRequest } from "@/lib/serverAuth";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-10-29.clover", // ✅ REQUIRED by Stripe typings
 });
 
 export async function POST(req: Request) {
   try {
-    // ✅ FIX: await the user
     const user = await getUserFromRequest(req);
 
     if (!user) {
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?success=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing`,
       metadata: {
-        userId: String(user.id), // ✅ SAFE
+        userId: String(user.id),
       },
     });
 
