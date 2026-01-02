@@ -1,5 +1,7 @@
 // app/api/remove-background/route.ts
 
+export const runtime = "nodejs"; // 🔑 REQUIRED for Replicate SDK
+
 import { removeBackground } from "@/lib/removeBackground";
 import { uploadImage } from "@/lib/uploadImage";
 
@@ -7,10 +9,8 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    // 🔍 DEBUG: remove after confirming key
     console.log("FormData keys received:", [...formData.keys()]);
 
-    // Accept common field names (safe + flexible)
     const file =
       (formData.get("file") as File | null) ||
       (formData.get("image") as File | null) ||
@@ -23,19 +23,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upload image to storage → get public URL
+    // Upload image → get public URL
     const imageUrl = await uploadImage(file);
 
-    // Remove background via Replicate
+    // Replicate background removal (Node runtime required)
     const result = await removeBackground(imageUrl);
 
     return Response.json(result);
   } catch (err: any) {
+    console.error("[remove-background route] ERROR:", err);
     return Response.json(
       {
-        error:
-          err?.message ||
-          "Background removal failed",
+        error: err?.message || "Background removal failed",
       },
       { status: 500 }
     );
