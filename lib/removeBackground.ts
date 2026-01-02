@@ -5,24 +5,59 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
 });
 
-const MODEL =
-  "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
+const MODEL = "851-labs/background-remover";
+
+async function streamToString(stream: ReadableStream): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+
+  return Buffer.concat(chunks).toString("utf-8");
+}
 
 export async function removeBackground(file: File) {
+  if (!process.env.REPLICATE_API_TOKEN) {
+    throw new Error("REPLICATE_API_TOKEN is not set");
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
-  const base64Image = `data:${file.type};base64,${buffer.toString("base64")}`;
+  const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
   const output = await replicate.run(MODEL, {
     input: {
-      image: base64Image,
+      image: base64,
     },
   });
 
-  // 🔍 TEMP DEBUG — DO NOT PARSE
-  console.log("REPLICATE RAW OUTPUT:", output);
+  let url: string | null = null;
 
-  return {
-    // send raw output to client so we can inspect
-    debug: output,
-  };
+  // ✅ Handle ALL possible Replicate outputs
+  if (typeof output === "string") {
+    url = output;
+  } else if (Array.isArray(output)) {
+    url = output.find((v) => typeof v === "string") ?? null;
+  } else if (output instanceof ReadableStream) {
+    const text = await streamToString(output);
+    try {
+      const parsed = JSON.parse(text);
+      url =
+        parsed?.output ??
+        parsed?.image ??
+        (Array.isArray(parsed) ? parsed[0] : null);
+    } catch {
+      url = text.startsWith("http") ? text : null;
+    }
+  }
+
+  if (!url) {
+    console.error("❌ Unusable Replicate output:", output);
+    throw new Error("Replicate returned no usable image");
+  }
+
+  return { clean: url };
 }
