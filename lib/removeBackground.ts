@@ -5,20 +5,9 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
 });
 
-const MODEL = "851-labs/background-remover";
-
-async function streamToString(stream: ReadableStream): Promise<string> {
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) chunks.push(value);
-  }
-
-  return Buffer.concat(chunks).toString("utf-8");
-}
+// ✅ MUST include version — fixes the 404 permanently
+const MODEL_VERSION =
+  "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
 
 export async function removeBackground(file: File) {
   if (!process.env.REPLICATE_API_TOKEN) {
@@ -28,34 +17,22 @@ export async function removeBackground(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-  const output = await replicate.run(MODEL, {
+  const output = await replicate.run(MODEL_VERSION, {
     input: {
-      image: base64,
+      image: base64, // correct for this model
     },
   });
 
   let url: string | null = null;
 
-  // ✅ Handle ALL possible Replicate outputs
   if (typeof output === "string") {
     url = output;
-  } else if (Array.isArray(output)) {
-    url = output.find((v) => typeof v === "string") ?? null;
-  } else if (output instanceof ReadableStream) {
-    const text = await streamToString(output);
-    try {
-      const parsed = JSON.parse(text);
-      url =
-        parsed?.output ??
-        parsed?.image ??
-        (Array.isArray(parsed) ? parsed[0] : null);
-    } catch {
-      url = text.startsWith("http") ? text : null;
-    }
+  } else if (Array.isArray(output) && typeof output[0] === "string") {
+    url = output[0];
   }
 
   if (!url) {
-    console.error("❌ Unusable Replicate output:", output);
+    console.error("Replicate output:", output);
     throw new Error("Replicate returned no usable image");
   }
 
