@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Loader2, X } from "lucide-react";
+import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
+import {
+  getGuestPreviewDownloadCount,
+  incrementGuestPreviewDownloadCount,
+  MAX_GUEST_PREVIEW_DOWNLOADS,
+} from "@/lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
@@ -36,22 +41,20 @@ export default function EditorContent() {
 
     await new Promise<void>((res, rej) => {
       img.onload = () => res();
-      img.onerror = () => rej();
+      img.onerror = () => rej(new Error("Image failed to load"));
     });
 
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
     const ctx = canvas.getContext("2d")!;
-
-    // Background fill
+    
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
     if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(img, 0, 0);
 
-    // WATERMARK
     if (withWatermark) {
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -62,12 +65,10 @@ export default function EditorContent() {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // White outline
       ctx.lineWidth = Math.max(6, fontSize / 12);
       ctx.strokeStyle = "#ffffff";
       ctx.strokeText("remove-background.tech", 0, 0);
 
-      // Solid black fill
       ctx.fillStyle = "#000000";
       ctx.fillText("remove-background.tech", 0, 0);
 
@@ -86,18 +87,35 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
+  // 🔐 GUEST PREVIEW LIMIT
   const handlePreview = async () => {
     if (!cleanImage) return;
-    await drawAndDownload(
-      cleanImage,
-      "preview-watermarked.png",
-      bgStyle,
-      true
-    );
+
+    if (!user) {
+      const count = getGuestPreviewDownloadCount();
+      if (count >= MAX_GUEST_PREVIEW_DOWNLOADS) {
+        setShowPaywall(true);
+        return;
+      }
+      incrementGuestPreviewDownloadCount();
+    }
+
+    await drawAndDownload(cleanImage, "preview-watermarked.png", bgStyle, true);
   };
 
+  // 🚫 HARD BLOCK ZERO CREDITS
   const handleClean = async () => {
-    if (!user) return router.push("/auth/signup");
+    if (!user) {
+      router.push("/auth/signup");
+      return;
+    }
+
+    // 🔥 FIX: client-side credit enforcement
+    if ((user as any)?.credits <= 0) {
+      router.push("/pricing");
+      return;
+    }
+
     if (!cleanImage) return;
 
     setLoadingClean(true);
@@ -108,17 +126,20 @@ export default function EditorContent() {
         body: JSON.stringify({ count: 1 }),
       });
 
-      if (!res.ok) {
-        if (res.status === 402) setShowPaywall(true);
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 402 || data?.error === "NO_CREDITS") {
+        router.push("/pricing");
         return;
       }
 
-      await drawAndDownload(
-        cleanImage,
-        "background-removed.png",
-        bgStyle,
-        false
-      );
+      if (!res.ok) {
+        alert(data?.error || "Something went wrong.");
+        return;
+      }
+
+      window.dispatchEvent(new Event("credits-updated"));
+      await drawAndDownload(cleanImage, "background-removed.png", bgStyle, false);
     } finally {
       setLoadingClean(false);
     }
@@ -130,6 +151,12 @@ export default function EditorContent() {
       : bgStyle === "white"
       ? "bg-white"
       : "bg-black";
+
+  const handleUploadNew = () => {
+    sessionStorage.removeItem("editor-image");
+    sessionStorage.removeItem("editor-clean");
+    router.push("/");
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
@@ -155,10 +182,10 @@ export default function EditorContent() {
           {/* IMAGE */}
           <div className="flex-1 flex justify-center">
             <div
-              className={`rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
+              className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
             >
-              {cleanImage && (
-                <div className="relative">
+              {cleanImage ? (
+                <>
                   <img
                     src={cleanImage}
                     className="max-h-[65vh] object-contain"
@@ -168,9 +195,19 @@ export default function EditorContent() {
                       remove-background.tech
                     </span>
                   </div>
-                </div>
+                </>
+              ) : (
+                <div className="text-gray-400">No image loaded</div>
               )}
             </div>
+
+            {/* ➕ Upload new image */}
+            <button
+              onClick={handleUploadNew}
+              className="mt-4 flex items-center gap-2 text-sm text-blue-600 hover:underline"
+            >
+              <Plus className="size-4" /> Upload another image
+            </button>
           </div>
 
           {/* BACKGROUND OPTIONS */}
@@ -197,19 +234,28 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* PAYWALL */}
+      {/* GUEST DEAL MODAL */}
       {showPaywall && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-white rounded-xl p-8 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
             <button
               onClick={() => setShowPaywall(false)}
-              className="absolute top-4 right-4"
+              className="absolute right-4 top-4"
             >
               <X />
             </button>
-            <h2 className="text-xl font-bold mb-4">Unlock clean downloads</h2>
-            <Button onClick={() => router.push("/pricing")}>
-              View Pricing →
+            <h2 className="text-2xl font-bold text-red-600 mb-2">
+              ⚠ Limited-Time Offer
+            </h2>
+            <p className="mb-6">
+              Get <strong>20 credits for $2.99</strong> — today only.
+            </p>
+            <Button
+              size="lg"
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => router.push("/pricing?deal=guest-299")}
+            >
+              Unlock 20 Credits →
             </Button>
           </div>
         </div>
