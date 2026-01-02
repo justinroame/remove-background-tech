@@ -1,91 +1,73 @@
-// app/editor/EditorContent.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 
 type BgStyle = "none" | "white" | "black";
 
-const WATERMARK_TEXT = "remove-background.tech"; // ← CHANGE THIS
-
 export default function EditorContent() {
   const router = useRouter();
   const { user } = useUser();
 
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [cleanImage, setCleanImage] = useState<string | null>(null);
-  const [bgStyle, setBgStyle] = useState<BgStyle>("white");
   const [loadingClean, setLoadingClean] = useState(false);
+  const [bgStyle, setBgStyle] = useState<BgStyle>("white");
   const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     try {
-      setOriginalImage(sessionStorage.getItem("editor-image"));
+      setPreviewImage(sessionStorage.getItem("editor-image"));
       setCleanImage(sessionStorage.getItem("editor-clean"));
     } catch {}
-    window.scrollTo({ top: 0, behavior: "instant" as any });
+    window.scrollTo({ top: 0 });
   }, []);
 
-  const displayImage = cleanImage || originalImage;
-
-  async function drawImageToCanvas(
-    sourceUrl: string,
-    withWatermark: boolean,
-    background: BgStyle
-  ): Promise<Blob> {
+  async function drawAndDownload(
+    imageUrl: string,
+    filename: string,
+    background: BgStyle,
+    withWatermark: boolean
+  ) {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = sourceUrl;
+    img.src = imageUrl;
 
     await new Promise<void>((res, rej) => {
       img.onload = () => res();
-      img.onerror = () => rej(new Error("Image failed to load"));
+      img.onerror = () => rej();
     });
 
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
+
     const ctx = canvas.getContext("2d")!;
-    
-    if (background !== "none") {
-      ctx.fillStyle = background === "white" ? "#fff" : "#000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+    if (background === "white") ctx.fillStyle = "#ffffff";
+    if (background === "black") ctx.fillStyle = "#000000";
+    if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(img, 0, 0);
 
     if (withWatermark) {
-      const fontSize = Math.max(canvas.width / 18, 32);
-      ctx.font = `${fontSize}px sans-serif`;
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "#000000";
+      ctx.font = `${Math.floor(canvas.width / 12)}px sans-serif`;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(-Math.PI / 4);
       ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.rotate((-20 * Math.PI) / 180);
-
-      const spacing = fontSize * 4;
-      for (let y = -canvas.height; y < canvas.height * 2; y += spacing) {
-        for (let x = -canvas.width; x < canvas.width * 2; x += spacing) {
-          ctx.fillText(WATERMARK_TEXT, x, y);
-        }
-      }
-
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillText("remove-background.tech", 0, 0);
+      ctx.restore();
     }
 
-    return await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b as Blob), "image/png")
+    const blob = await new Promise<Blob>((res) =>
+      canvas.toBlob((b) => res(b!), "image/png")
     );
-  }
 
-  async function downloadImage(
-    source: string,
-    filename: string,
-    watermark: boolean
-  ) {
-    const blob = await drawImageToCanvas(source, watermark, bgStyle);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -94,12 +76,17 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  const handlePreviewDownload = async () => {
-    if (!displayImage) return;
-    await downloadImage(displayImage, "preview.png", true);
+  const handlePreview = async () => {
+    if (!previewImage) return;
+    await drawAndDownload(
+      previewImage,
+      "preview-watermarked.png",
+      bgStyle,
+      true
+    );
   };
 
-  const handleCleanDownload = async () => {
+  const handleClean = async () => {
     if (!user) return router.push("/auth/signup");
     if (!cleanImage) return;
 
@@ -112,18 +99,23 @@ export default function EditorContent() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (res.status === 402 || data?.error === "NO_CREDITS") {
-        setShowPaywall(true);
+      if (!res.ok) {
+        if (res.status === 402) setShowPaywall(true);
         return;
       }
 
-      await downloadImage(cleanImage, "background-removed.png", false);
+      await drawAndDownload(
+        cleanImage,
+        "background-removed.png",
+        bgStyle,
+        false
+      );
     } finally {
       setLoadingClean(false);
     }
   };
 
-  const previewBackgroundClass =
+  const previewBgClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
       : bgStyle === "white"
@@ -132,46 +124,74 @@ export default function EditorContent() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      <div className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-between">
-        <Button variant="outline" onClick={handlePreviewDownload}>
+      {/* TOP BAR */}
+      <div className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-end gap-3">
+        <Button variant="outline" onClick={handlePreview}>
           <Download className="mr-2 size-4" /> Preview
         </Button>
 
         <Button
-          onClick={handleCleanDownload}
+          onClick={handleClean}
           disabled={loadingClean || !cleanImage}
-          className="bg-blue-600 text-white"
+          className="bg-blue-600 text-white hover:bg-blue-700"
         >
           <Download className="mr-2 size-4" />
           {loadingClean ? "Processing…" : "Download Clean"}
         </Button>
       </div>
 
-      <div className="flex justify-center py-8">
-        <div
-          className={`relative rounded-xl shadow-lg p-4 ${previewBackgroundClass}`}
-        >
-          {displayImage && (
-            <>
-              <img
-                src={displayImage}
-                alt="Preview"
-                className="max-h-[70vh] object-contain"
-              />
-              {/* Watermark overlay (visual only) */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="rotate-[-20deg] text-white/40 text-5xl font-bold select-none">
-                  {WATERMARK_TEXT}
+      {/* MAIN */}
+      <div className="flex justify-center px-6 py-8">
+        <div className="flex gap-10 max-w-6xl w-full">
+          {/* IMAGE */}
+          <div className="flex-1 flex justify-center">
+            <div
+              className={`rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
+            >
+              {previewImage && (
+                <div className="relative">
+                  <img
+                    src={previewImage}
+                    className="max-h-[65vh] object-contain"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="rotate-[-45deg] text-black/40 text-6xl font-semibold">
+                      remove-background.tech
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </div>
+
+          {/* BACKGROUND OPTIONS */}
+          <div className="flex flex-col gap-4 pt-4">
+            <button
+              onClick={() => setBgStyle("none")}
+              className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] ${
+                bgStyle === "none" ? "border-blue-500" : "border-gray-300"
+              }`}
+            />
+            <button
+              onClick={() => setBgStyle("white")}
+              className={`h-20 w-20 rounded-xl border-4 bg-white ${
+                bgStyle === "white" ? "border-blue-500" : "border-gray-300"
+              }`}
+            />
+            <button
+              onClick={() => setBgStyle("black")}
+              className={`h-20 w-20 rounded-xl border-4 bg-black ${
+                bgStyle === "black" ? "border-blue-500" : "border-gray-300"
+              }`}
+            />
+          </div>
         </div>
       </div>
 
+      {/* PAYWALL */}
       {showPaywall && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-xl text-center relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-white rounded-xl p-8 relative">
             <button
               onClick={() => setShowPaywall(false)}
               className="absolute top-4 right-4"
@@ -180,7 +200,7 @@ export default function EditorContent() {
             </button>
             <h2 className="text-xl font-bold mb-4">Unlock clean downloads</h2>
             <Button onClick={() => router.push("/pricing")}>
-              View pricing →
+              View Pricing →
             </Button>
           </div>
         </div>
