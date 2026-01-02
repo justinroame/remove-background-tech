@@ -6,12 +6,12 @@ import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 
-// 🔑 IMPORTANT: relative import (fixes Vercel build)
+// ✅ FIXED: use alias import (Vercel-safe)
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
   MAX_GUEST_PREVIEW_DOWNLOADS,
-} from "../../lib/guestPreviewLimit";
+} from "@/lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
