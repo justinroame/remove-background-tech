@@ -1,8 +1,11 @@
 import "server-only";
 import Replicate from "replicate";
 
-const MODEL =
-  "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN!,
+});
+
+const MODEL = "851-labs/background-remover";
 
 export async function removeBackground(file: File) {
   if (!process.env.REPLICATE_API_TOKEN) {
@@ -11,39 +14,34 @@ export async function removeBackground(file: File) {
 
   // Convert file → base64 data URL
   const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = buffer.toString("base64");
-  const dataUrl = `data:${file.type};base64,${base64}`;
-
-  const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN,
-  });
+  const base64Image = `data:${file.type};base64,${buffer.toString("base64")}`;
 
   const output = await replicate.run(MODEL, {
     input: {
-      image: dataUrl,
+      image: base64Image, // ✅ THIS is the correct key
     },
   });
 
-  /**
-   * 851-labs returns IMAGE DATA, not a URL
-   * Shape: string (base64) OR string[]
-   */
-  let imageBase64: string | null = null;
+  // Handle all known output shapes
+  let result: string | undefined;
 
   if (typeof output === "string") {
-    imageBase64 = output;
-  } else if (Array.isArray(output) && typeof output[0] === "string") {
-    imageBase64 = output[0];
+    result = output;
+  } else if (Array.isArray(output)) {
+    result = output[0];
+  } else if (output && typeof output === "object") {
+    const obj = output as any;
+    result =
+      obj.image ??
+      obj.output ??
+      (Array.isArray(obj.image) ? obj.image[0] : undefined) ??
+      (Array.isArray(obj.output) ? obj.output[0] : undefined);
   }
 
-  if (!imageBase64) {
-    throw new Error("Replicate returned no image data");
+  if (!result || typeof result !== "string") {
+    console.error("Unexpected Replicate output:", output);
+    throw new Error("Replicate returned no usable image");
   }
 
-  // Ensure browser-usable data URL
-  if (!imageBase64.startsWith("data:image")) {
-    imageBase64 = `data:image/png;base64,${imageBase64}`;
-  }
-
-  return { clean: imageBase64 };
+  return { clean: result };
 }
