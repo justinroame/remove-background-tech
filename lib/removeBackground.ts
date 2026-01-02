@@ -4,7 +4,9 @@ import "server-only";
 
 /**
  * Replicate – 851 Labs Background Remover
- * Uses pinned version + robust output parsing
+ * - Uses pinned model version
+ * - Uses correct input key: `image`
+ * - Handles all known output shapes
  */
 const MODEL =
   "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
@@ -21,9 +23,10 @@ export async function removeBackground(imageUrl: string) {
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
+    // ✅ CORRECT: this model requires `image`
     const output = await replicate.run(MODEL, {
       input: {
-        file: imageUrl,
+        image: imageUrl,
       },
     });
 
@@ -31,6 +34,7 @@ export async function removeBackground(imageUrl: string) {
 
     let url: string | null = null;
 
+    // Handle all common Replicate output formats
     if (typeof output === "string") {
       url = output;
     } else if (Array.isArray(output) && typeof output[0] === "string") {
