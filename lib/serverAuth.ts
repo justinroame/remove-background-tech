@@ -7,7 +7,10 @@ import type { NextResponse } from "next/server";
 
 const SESSION_COOKIE = "session_user_id";
 
-export async function getUserFromRequest(req?: Request) {
+/**
+ * Primary user fetcher (used by most API routes)
+ */
+export async function getUserFromRequest(_req?: Request) {
   const cookieStore = cookies();
   const userId = cookieStore.get(SESSION_COOKIE)?.value;
 
@@ -22,6 +25,16 @@ export async function getUserFromRequest(req?: Request) {
   return user ?? null;
 }
 
+/**
+ * Alias for legacy routes expecting getServerUser
+ */
+export async function getServerUser(req?: Request) {
+  return getUserFromRequest(req);
+}
+
+/**
+ * Attach login session
+ */
 export function attachUserSessionCookie(
   res: NextResponse,
   userId: number
@@ -34,6 +47,9 @@ export function attachUserSessionCookie(
   });
 }
 
+/**
+ * Clear login session
+ */
 export function clearSessionCookie(res: NextResponse) {
   res.cookies.set(SESSION_COOKIE, "", {
     httpOnly: true,
