@@ -2,11 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, X, Plus, Loader2 } from "lucide-react";
+import { Download, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
-
-// ✅ Your file is now here:
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
@@ -21,20 +19,16 @@ export default function EditorContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [cleanImage, setCleanImage] = useState<string | null>(null);
-  const [bgStyle, setBgStyle] = useState<BgStyle>("white");
-
-  const [showPaywall, setShowPaywall] = useState(false);
   const [loadingClean, setLoadingClean] = useState(false);
-  const [loadingNew, setLoadingNew] = useState(false);
+  const [bgStyle, setBgStyle] = useState<BgStyle>("white");
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
-    try {
-      setCleanImage(sessionStorage.getItem("editor-clean"));
-    } catch {
-      setCleanImage(null);
-    }
+    setCleanImage(sessionStorage.getItem("editor-clean"));
     window.scrollTo({ top: 0 });
   }, []);
+
+  /* ---------------- CANVAS DRAW ---------------- */
 
   async function drawAndDownload(
     imageUrl: string,
@@ -54,17 +48,14 @@ export default function EditorContent() {
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas not supported");
+    const ctx = canvas.getContext("2d")!;
 
-    // Background fill
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
     if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(img, 0, 0);
 
-    // WATERMARK (solid black + white outline)
     if (withWatermark) {
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -97,7 +88,8 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  // ✅ Guest preview: watermarked, limited to 3 downloads
+  /* ---------------- PREVIEW (GUEST OK) ---------------- */
+
   const handlePreview = async () => {
     if (!cleanImage) return;
 
@@ -110,18 +102,26 @@ export default function EditorContent() {
       incrementGuestPreviewDownloadCount();
     }
 
-    await drawAndDownload(cleanImage, "preview-watermarked.png", bgStyle, true);
+    await drawAndDownload(
+      cleanImage,
+      "preview-watermarked.png",
+      bgStyle,
+      true
+    );
   };
 
-  // ✅ Clean download: SERVER enforced credits (consume route must return 402)
+  /* ---------------- CLEAN DOWNLOAD (SERVER IS BOSS) ---------------- */
+
   const handleClean = async () => {
     if (!user) {
       router.push("/auth/signup");
       return;
     }
+
     if (!cleanImage) return;
 
     setLoadingClean(true);
+
     try {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
@@ -129,58 +129,34 @@ export default function EditorContent() {
         body: JSON.stringify({ count: 1 }),
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      // ✅ If no credits, redirect immediately
-      if (res.status === 402 || data?.error === "NO_CREDITS") {
+      if (res.status === 402) {
         router.push("/pricing");
         return;
       }
 
       if (!res.ok) {
-        alert(data?.error || "Unable to process credits.");
+        alert("Unable to process credits.");
         return;
       }
 
-      window.dispatchEvent(new Event("credits-updated"));
-      await drawAndDownload(cleanImage, "background-removed.png", bgStyle, false);
+      await drawAndDownload(
+        cleanImage,
+        "background-removed.png",
+        bgStyle,
+        false
+      );
     } finally {
       setLoadingClean(false);
     }
   };
 
-  // ✅ Upload another image IN the editor (no redirect)
-  const uploadNewImage = async (file?: File) => {
+  /* ---------------- UPLOAD NEW IMAGE ---------------- */
+
+  const handleFileChange = (file?: File) => {
     if (!file) return;
-
-    setLoadingNew(true);
-    try {
-      // clear stale
-      sessionStorage.removeItem("editor-image");
-      sessionStorage.removeItem("editor-clean");
-
-      const form = new FormData();
-      form.append("image", file);
-
-      const res = await fetch("/api/remove-background", {
-        method: "POST",
-        body: form,
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data?.clean) {
-        throw new Error(data?.error || "Background removal failed");
-      }
-
-      sessionStorage.setItem("editor-clean", data.clean);
-      setCleanImage(data.clean);
-    } catch (e: any) {
-      alert(e?.message || "Upload failed");
-    } finally {
-      setLoadingNew(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    sessionStorage.clear();
+    sessionStorage.setItem("editor-image", URL.createObjectURL(file));
+    router.push("/");
   };
 
   const previewBgClass =
@@ -194,7 +170,7 @@ export default function EditorContent() {
     <div className="min-h-screen bg-[#F4F5F6]">
       {/* TOP BAR */}
       <div className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-end gap-3">
-        <Button variant="outline" onClick={handlePreview} disabled={!cleanImage}>
+        <Button variant="outline" onClick={handlePreview}>
           <Download className="mr-2 size-4" /> Preview
         </Button>
 
@@ -210,80 +186,70 @@ export default function EditorContent() {
 
       {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
-        <div className="max-w-5xl w-full flex gap-4 items-start">
-          {/* IMAGE COLUMN */}
-          <div className="flex flex-col items-start">
+        <div className="relative max-w-5xl w-full flex gap-4">
+          {/* IMAGE */}
+          <div className="relative">
             <div
               className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
             >
-              {cleanImage ? (
+              {cleanImage && (
                 <>
                   <img
                     src={cleanImage}
                     className="max-h-[65vh] object-contain"
-                    alt="Preview"
                   />
-                  {/* watermark overlay for ON-SCREEN preview */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
                       remove-background.tech
                     </span>
                   </div>
                 </>
-              ) : (
-                <div className="text-gray-400">No image loaded</div>
               )}
             </div>
 
-            {/* + Upload box under image */}
+            {/* ➕ Upload box */}
             <div
               onClick={() => fileInputRef.current?.click()}
               className="mt-3 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
-              title="Upload another image"
             >
-              {loadingNew ? (
-                <Loader2 className="size-6 animate-spin text-gray-500" />
-              ) : (
-                <Plus className="size-6 text-gray-500" />
-              )}
+              <Plus className="size-6 text-gray-500" />
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={(e) => uploadNewImage(e.target.files?.[0])}
+                onChange={(e) =>
+                  handleFileChange(e.target.files?.[0])
+                }
               />
             </div>
           </div>
 
-          {/* BACKGROUND OPTIONS (right side, close to top) */}
+          {/* BACKGROUND OPTIONS */}
           <div className="flex flex-col gap-3 pt-2">
             <button
               onClick={() => setBgStyle("none")}
-              className={`h-14 w-14 rounded-lg border-4 bg-[url('/checkerboard.png')] bg-repeat ${
+              className={`h-14 w-14 rounded-lg border-4 bg-[url('/checkerboard.png')] ${
                 bgStyle === "none" ? "border-blue-500" : "border-gray-300"
               }`}
-              aria-label="Transparent background"
             />
             <button
               onClick={() => setBgStyle("white")}
               className={`h-14 w-14 rounded-lg border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500" : "border-gray-300"
               }`}
-              aria-label="White background"
             />
             <button
               onClick={() => setBgStyle("black")}
               className={`h-14 w-14 rounded-lg border-4 bg-black ${
                 bgStyle === "black" ? "border-blue-500" : "border-gray-300"
               }`}
-              aria-label="Black background"
             />
           </div>
         </div>
       </div>
 
-      {/* GUEST DEAL MODAL */}
+      {/* PAYWALL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
