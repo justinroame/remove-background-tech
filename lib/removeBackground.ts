@@ -10,7 +10,6 @@ export async function removeBackground(file: File) {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
 
-  // Convert file → base64 data URL
   const buffer = Buffer.from(await file.arrayBuffer());
   const base64 = buffer.toString("base64");
   const dataUrl = `data:${file.type};base64,${base64}`;
@@ -21,13 +20,22 @@ export async function removeBackground(file: File) {
 
   const output = await replicate.run(MODEL, {
     input: {
-      image: dataUrl, // ✅ REQUIRED KEY (THIS FIXES 422)
+      image: dataUrl,
     },
   });
 
-  if (typeof output !== "string") {
+  // ✅ FIX: handle array output
+  let url: string | null = null;
+
+  if (typeof output === "string") {
+    url = output;
+  } else if (Array.isArray(output) && typeof output[0] === "string") {
+    url = output[0];
+  }
+
+  if (!url) {
     throw new Error("Replicate returned no valid output URL");
   }
 
-  return { clean: output };
+  return { clean: url };
 }
