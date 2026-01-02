@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
+
+// 🔑 IMPORTANT: relative import (fixes Vercel build)
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
   MAX_GUEST_PREVIEW_DOWNLOADS,
-} from "@/lib/guestPreviewLimit";
+} from "../../lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
@@ -47,8 +49,9 @@ export default function EditorContent() {
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported");
+
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
     if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -76,7 +79,7 @@ export default function EditorContent() {
     }
 
     const blob = await new Promise<Blob>((res) =>
-      canvas.toBlob((b) => res(b!), "image/png")
+      canvas.toBlob((b) => res(b as Blob), "image/png")
     );
 
     const url = URL.createObjectURL(blob);
@@ -87,7 +90,7 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  // 🔐 GUEST PREVIEW LIMIT
+  // 🟡 Guest preview (watermarked)
   const handlePreview = async () => {
     if (!cleanImage) return;
 
@@ -100,17 +103,22 @@ export default function EditorContent() {
       incrementGuestPreviewDownloadCount();
     }
 
-    await drawAndDownload(cleanImage, "preview-watermarked.png", bgStyle, true);
+    await drawAndDownload(
+      cleanImage,
+      "preview-watermarked.png",
+      bgStyle,
+      true
+    );
   };
 
-  // 🚫 HARD BLOCK ZERO CREDITS
+  // 🔴 Clean download (credit enforced)
   const handleClean = async () => {
     if (!user) {
       router.push("/auth/signup");
       return;
     }
 
-    // 🔥 FIX: client-side credit enforcement
+    // 🔥 HARD BLOCK when credits = 0
     if ((user as any)?.credits <= 0) {
       router.push("/pricing");
       return;
@@ -139,7 +147,13 @@ export default function EditorContent() {
       }
 
       window.dispatchEvent(new Event("credits-updated"));
-      await drawAndDownload(cleanImage, "background-removed.png", bgStyle, false);
+
+      await drawAndDownload(
+        cleanImage,
+        "background-removed.png",
+        bgStyle,
+        false
+      );
     } finally {
       setLoadingClean(false);
     }
@@ -201,7 +215,7 @@ export default function EditorContent() {
               )}
             </div>
 
-            {/* ➕ Upload new image */}
+            {/* ➕ Upload new */}
             <button
               onClick={handleUploadNew}
               className="mt-4 flex items-center gap-2 text-sm text-blue-600 hover:underline"
@@ -234,7 +248,7 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* GUEST DEAL MODAL */}
+      {/* DEAL MODAL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
