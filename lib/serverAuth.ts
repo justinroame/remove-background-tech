@@ -1,33 +1,43 @@
+// lib/serverAuth.ts
 import { cookies } from "next/headers";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import type { NextResponse } from "next/server";
 
-/**
- * Returns the currently logged-in user from the database,
- * or null if not authenticated.
- *
- * This is the ONLY source of truth for server-side auth.
- */
-export async function getServerUser() {
+const SESSION_COOKIE = "session_user_id";
+
+export async function getUserFromRequest(req?: Request) {
   const cookieStore = cookies();
+  const userId = cookieStore.get(SESSION_COOKIE)?.value;
 
-  // Adjust this cookie name ONLY if your app uses a different one
-  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return null;
 
-  if (!userId) {
-    return null;
-  }
-
-  const result = await db
+  const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users.id, Number(userId)))
     .limit(1);
 
-  if (!result || result.length === 0) {
-    return null;
-  }
+  return user ?? null;
+}
 
-  return result[0];
+export function attachUserSessionCookie(
+  res: NextResponse,
+  userId: number
+) {
+  res.cookies.set(SESSION_COOKIE, String(userId), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: true,
+    path: "/",
+  });
+}
+
+export function clearSessionCookie(res: NextResponse) {
+  res.cookies.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+  });
 }
