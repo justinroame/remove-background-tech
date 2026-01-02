@@ -1,63 +1,41 @@
 // lib/removeBackground.ts
-
 import "server-only";
+import Replicate from "replicate";
 
-/**
- * Replicate – 851 Labs Background Remover
- * - Uses pinned model version
- * - Uses correct input key: `image`
- * - Handles all known output shapes
- */
-const MODEL =
-  "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN!,
+});
 
-export async function removeBackground(imageUrl: string) {
+export async function removeBackground(file: File) {
   if (!process.env.REPLICATE_API_TOKEN) {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
 
-  try {
-    const { default: Replicate } = await import("replicate");
+  // Convert File → base64 data URL (Replicate supports this)
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN,
-    });
-
-    // ✅ CORRECT: this model requires `image`
-    const output = await replicate.run(MODEL, {
+  const output = await replicate.run(
+    "851-labs/background-remover",
+    {
       input: {
-        image: imageUrl,
+        image: base64, // ← try image first (works for 851-labs)
       },
-    });
+    }
+  );
 
-    console.log("[Replicate raw output]", output);
-
-    let url: string | null = null;
-
-    // Handle all common Replicate output formats
-    if (typeof output === "string") {
-      url = output;
-    } else if (Array.isArray(output) && typeof output[0] === "string") {
-      url = output[0];
-    } else if (typeof output === "object" && output !== null) {
-      url =
-        (output as any).output ||
-        (output as any).image ||
-        (output as any).url ||
+  const url =
+    typeof output === "string"
+      ? output
+      : Array.isArray(output)
+      ? output[0]
+      : (output as any)?.output ||
+        (output as any)?.image ||
         null;
-    }
 
-    if (!url) {
-      throw new Error("Replicate returned no valid output URL");
-    }
-
-    return { clean: url };
-  } catch (err: any) {
-    console.error("[removeBackground] ERROR:", err);
-    throw new Error(
-      err?.response?.data?.detail ||
-        err?.message ||
-        "Background removal failed"
-    );
+  if (!url) {
+    throw new Error("Replicate returned no valid output URL");
   }
+
+  return { clean: url };
 }
