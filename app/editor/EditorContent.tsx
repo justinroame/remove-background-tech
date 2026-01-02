@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@/lib/useUser";
-
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
@@ -16,7 +14,6 @@ type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
   const router = useRouter();
-  const { user, loading } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [cleanImage, setCleanImage] = useState<string | null>(null);
@@ -24,19 +21,12 @@ export default function EditorContent() {
   const [loadingClean, setLoadingClean] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  /* ---------------- INIT ---------------- */
-
   useEffect(() => {
-    const img = sessionStorage.getItem("editor-clean");
-    if (!img) {
-      router.replace("/");
-      return;
-    }
-    setCleanImage(img);
+    setCleanImage(sessionStorage.getItem("editor-clean"));
     window.scrollTo({ top: 0 });
-  }, [router]);
+  }, []);
 
-  /* ---------------- CANVAS EXPORT ---------------- */
+  /* ---------------- CANVAS DRAW ---------------- */
 
   async function drawAndDownload(
     imageUrl: string,
@@ -48,21 +38,21 @@ export default function EditorContent() {
     img.crossOrigin = "anonymous";
     img.src = imageUrl;
 
-    await new Promise<void>((res, rej) => {
-      img.onload = () => res();
-      img.onerror = () => rej(new Error("Image failed to load"));
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Image failed to load"));
     });
 
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas unsupported");
+    const ctx = canvas.getContext("2d")!;
 
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
-    if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (background !== "none") {
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     ctx.drawImage(img, 0, 0);
 
@@ -86,8 +76,8 @@ export default function EditorContent() {
       ctx.restore();
     }
 
-    const blob = await new Promise<Blob>((res) =>
-      canvas.toBlob((b) => res(b!), "image/png")
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/png")
     );
 
     const url = URL.createObjectURL(blob);
@@ -100,17 +90,16 @@ export default function EditorContent() {
 
   /* ---------------- PREVIEW (GUEST OK) ---------------- */
 
-  async function handlePreview() {
+  const handlePreview = async () => {
     if (!cleanImage) return;
 
-    if (!user) {
-      const count = getGuestPreviewDownloadCount();
-      if (count >= MAX_GUEST_PREVIEW_DOWNLOADS) {
-        setShowPaywall(true);
-        return;
-      }
-      incrementGuestPreviewDownloadCount();
+    const count = getGuestPreviewDownloadCount();
+    if (count >= MAX_GUEST_PREVIEW_DOWNLOADS) {
+      setShowPaywall(true);
+      return;
     }
+
+    incrementGuestPreviewDownloadCount();
 
     await drawAndDownload(
       cleanImage,
@@ -118,31 +107,23 @@ export default function EditorContent() {
       bgStyle,
       true
     );
-  }
+  };
 
-  /* ---------------- CLEAN DOWNLOAD ---------------- */
-  /* SECURITY NOTE:
-     Credits are enforced by:
-     1) Middleware (hard block)
-     2) API (/api/credits/consume)
-     This UI only triggers the flow
-  */
+  /* ---------------- CLEAN DOWNLOAD (SERVER ENFORCED) ---------------- */
 
-  async function handleClean() {
-    if (!user) {
-      router.push("/auth/signup");
-      return;
-    }
-
+  const handleClean = async () => {
     if (!cleanImage) return;
 
     setLoadingClean(true);
     try {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1 }),
       });
+
+      if (res.status === 401) {
+        router.push("/auth/signup");
+        return;
+      }
 
       if (res.status === 402) {
         router.push("/pricing");
@@ -154,8 +135,6 @@ export default function EditorContent() {
         return;
       }
 
-      window.dispatchEvent(new Event("credits-updated"));
-
       await drawAndDownload(
         cleanImage,
         "background-removed.png",
@@ -165,17 +144,16 @@ export default function EditorContent() {
     } finally {
       setLoadingClean(false);
     }
-  }
+  };
 
   /* ---------------- UPLOAD NEW IMAGE ---------------- */
 
-  function handleFileChange(file?: File) {
+  const handleFileChange = (file?: File) => {
     if (!file) return;
 
     sessionStorage.clear();
-    sessionStorage.setItem("editor-image", URL.createObjectURL(file));
     router.push("/");
-  }
+  };
 
   const previewBgClass =
     bgStyle === "none"
@@ -183,8 +161,6 @@ export default function EditorContent() {
       : bgStyle === "white"
       ? "bg-white"
       : "bg-black";
-
-  if (!cleanImage || loading) return null;
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
@@ -208,22 +184,26 @@ export default function EditorContent() {
       <div className="flex justify-center px-6 py-8">
         <div className="flex gap-4 max-w-5xl w-full">
           {/* IMAGE */}
-          <div className="relative">
+          <div>
             <div
               className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
             >
-              <img
-                src={cleanImage}
-                className="max-h-[65vh] object-contain"
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
-                  remove-background.tech
-                </span>
-              </div>
+              {cleanImage && (
+                <>
+                  <img
+                    src={cleanImage}
+                    className="max-h-[65vh] object-contain"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
+                      remove-background.tech
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* + Upload */}
+            {/* + upload */}
             <div
               onClick={() => fileInputRef.current?.click()}
               className="mt-3 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
@@ -265,7 +245,7 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* PAYWALL MODAL */}
+      {/* PAYWALL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
