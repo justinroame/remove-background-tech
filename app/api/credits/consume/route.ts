@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@/app/db";
-import { credits } from "@/app/db/schema";
-import { eq, gt, sql, and } from "drizzle-orm";
-import { getUser } from "@/app/lib/getUser";
+import { db } from "../../db";
+import { credits } from "../../db/schema";
+import { and, eq, gt, sql } from "drizzle-orm";
+import { getUser } from "../../lib/getUser";
 
 export const runtime = "nodejs";
 
@@ -11,20 +11,25 @@ export async function POST(req: Request) {
     const user = await getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+      return NextResponse.json(
+        { error: "UNAUTHORIZED" },
+        { status: 401 }
+      );
     }
 
     const body = await req.json().catch(() => ({}));
     const count = Number(body?.count ?? 1);
 
     if (!Number.isFinite(count) || count <= 0) {
-      return NextResponse.json({ error: "INVALID_COUNT" }, { status: 400 });
+      return NextResponse.json(
+        { error: "INVALID_COUNT" },
+        { status: 400 }
+      );
     }
 
     /**
-     * 🔒 HARD CREDIT ENFORCEMENT
-     * Only decrement if credits.amount > 0
-     * If no row is updated → NO_CREDITS
+     * 🔒 HARD SERVER-SIDE CREDIT ENFORCEMENT
+     * This is the ONLY place that matters
      */
     const updated = await db
       .update(credits)
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
       )
       .returning({ amount: credits.amount });
 
-    // 🚫 ZERO credits → block clean download
+    // 🚫 No credits → BLOCK CLEAN DOWNLOAD
     if (!updated || updated.length === 0) {
       return NextResponse.json(
         { error: "NO_CREDITS" },
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Extra safety clamp (never allow negative credits)
+    // Safety clamp (never allow negative credits)
     if (updated[0].amount < 0) {
       await db
         .update(credits)
