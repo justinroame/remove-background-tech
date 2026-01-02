@@ -22,13 +22,11 @@ export default function Home() {
 
   function clearEditorStorage() {
     try {
-      sessionStorage.removeItem("editor-image");
       sessionStorage.removeItem("editor-clean");
     } catch {}
   }
 
   async function handleFile(file: File) {
-    // IMPORTANT: prevent stale image from showing if new request fails
     clearEditorStorage();
 
     if (!user) {
@@ -58,7 +56,7 @@ export default function Home() {
     setLoading(true);
 
     const form = new FormData();
-    form.append("image", compressed);
+    form.append("image", compressed); // ✅ matches API
 
     try {
       const res = await fetch("/api/remove-background", {
@@ -66,21 +64,17 @@ export default function Home() {
         body: form,
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
 
-      if (!res.ok || !data?.processed || !data?.clean) {
-        const msg = data?.detail
-          ? `${data?.error || "Background removal failed"} — ${data.detail}`
-          : data?.error || "Background removal failed";
-        throw new Error(msg);
+      if (!res.ok || !data?.clean) {
+        throw new Error(data?.error || "Background removal failed");
       }
 
-      sessionStorage.setItem("editor-image", data.processed);
+      // ✅ only store what actually exists
       sessionStorage.setItem("editor-clean", data.clean);
 
       router.push("/editor");
     } catch (err: any) {
-      // ensure editor never reuses the last good image
       clearEditorStorage();
       setError(err?.message || "Background removal failed");
     } finally {
@@ -141,7 +135,6 @@ export default function Home() {
               accept="image/*"
               onChange={onFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
-              aria-label="Select image"
             />
             <Button
               className="rounded-full bg-blue-600 px-10 py-5 md:px-12 md:py-6 text-lg font-medium text-white hover:bg-blue-700"
@@ -159,51 +152,7 @@ export default function Home() {
             </Button>
           </div>
 
-          {error && <p className="text-red-600 mt-4 md:mt-6">{error}</p>}
-
-          <div className="space-y-3 md:space-y-4 mt-10 md:mt-16">
-            <p className="text-sm font-medium text-gray-700">No image? Try one of these:</p>
-            <div className="flex gap-3 justify-center">
-              <img
-                src="/woman-in-pink-dress.jpg"
-                alt="Portrait"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
-                onClick={() => handleSampleClick("/woman-in-pink-dress.jpg")}
-                loading="lazy"
-              />
-              <img
-                src="/iphone-product.jpg"
-                alt="Product"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
-                onClick={() => handleSampleClick("/iphone-product.jpg")}
-                loading="lazy"
-              />
-              <img
-                src="/silver-sports-car.jpg"
-                alt="Car"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
-                onClick={() => handleSampleClick("/silver-sports-car.jpg")}
-                loading="lazy"
-              />
-              <img
-                src="/watch-closeup.jpg"
-                alt="Watch"
-                className="size-16 md:size-20 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
-                onClick={() => handleSampleClick("/watch-closeup.jpg")}
-                loading="lazy"
-              />
-            </div>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-gray-200 w-full max-w-2xl text-center text-xs text-gray-600 space-y-2">
-            <p>
-              By uploading an image you agree to our{" "}
-              <Link href="/legal" className="underline hover:text-gray-800">
-                Terms & Privacy
-              </Link>
-              .
-            </p>
-          </div>
+          {error && <p className="text-red-600 mt-4">{error}</p>}
         </div>
       </main>
     </div>
