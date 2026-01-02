@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
-
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
   MAX_GUEST_PREVIEW_DOWNLOADS,
-} from "../lib/guestPreviewLimit";
+} from "@/lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
   const router = useRouter();
   const { user } = useUser();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
@@ -24,11 +24,11 @@ export default function EditorContent() {
   const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
-    try {
-      setCleanImage(sessionStorage.getItem("editor-clean"));
-    } catch {}
+    setCleanImage(sessionStorage.getItem("editor-clean"));
     window.scrollTo({ top: 0 });
   }, []);
+
+  /* ---------------- CANVAS DRAW ---------------- */
 
   async function drawAndDownload(
     imageUrl: string,
@@ -48,8 +48,7 @@ export default function EditorContent() {
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas not supported");
+    const ctx = canvas.getContext("2d")!;
 
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
@@ -62,12 +61,12 @@ export default function EditorContent() {
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-Math.PI / 4);
 
-      const fontSize = Math.floor(canvas.width / 10);
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      const fontSize = Math.floor(canvas.width / 8);
+      ctx.font = `900 ${fontSize}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      ctx.lineWidth = Math.max(6, fontSize / 12);
+      ctx.lineWidth = Math.max(8, fontSize / 10);
       ctx.strokeStyle = "#ffffff";
       ctx.strokeText("remove-background.tech", 0, 0);
 
@@ -78,7 +77,7 @@ export default function EditorContent() {
     }
 
     const blob = await new Promise<Blob>((res) =>
-      canvas.toBlob((b) => res(b as Blob), "image/png")
+      canvas.toBlob((b) => res(b!), "image/png")
     );
 
     const url = URL.createObjectURL(blob);
@@ -89,7 +88,8 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  // 🟡 Preview (watermarked)
+  /* ---------------- PREVIEW (GUEST OK) ---------------- */
+
   const handlePreview = async () => {
     if (!cleanImage) return;
 
@@ -110,7 +110,8 @@ export default function EditorContent() {
     );
   };
 
-  // 🔴 Clean download — SERVER decides credits
+  /* ---------------- CLEAN DOWNLOAD (SERVER ENFORCED) ---------------- */
+
   const handleClean = async () => {
     if (!user) {
       router.push("/auth/signup");
@@ -127,15 +128,13 @@ export default function EditorContent() {
         body: JSON.stringify({ count: 1 }),
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (res.status === 402 || data?.error === "NO_CREDITS") {
+      if (res.status === 402) {
         router.push("/pricing");
         return;
       }
 
       if (!res.ok) {
-        alert(data?.error || "Something went wrong.");
+        alert("Unable to process credits.");
         return;
       }
 
@@ -152,18 +151,23 @@ export default function EditorContent() {
     }
   };
 
+  /* ---------------- UPLOAD NEW IMAGE ---------------- */
+
+  const handleFileChange = (file?: File) => {
+    if (!file) return;
+
+    sessionStorage.clear();
+    const url = URL.createObjectURL(file);
+    sessionStorage.setItem("editor-image", url);
+    router.push("/");
+  };
+
   const previewBgClass =
     bgStyle === "none"
       ? "bg-[url('/checkerboard.png')] bg-repeat"
       : bgStyle === "white"
       ? "bg-white"
       : "bg-black";
-
-  const handleUploadNew = () => {
-    sessionStorage.removeItem("editor-image");
-    sessionStorage.removeItem("editor-clean");
-    router.push("/");
-  };
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
@@ -175,7 +179,7 @@ export default function EditorContent() {
 
         <Button
           onClick={handleClean}
-          disabled={loadingClean || !cleanImage}
+          disabled={loadingClean}
           className="bg-blue-600 text-white hover:bg-blue-700"
         >
           <Download className="mr-2 size-4" />
@@ -185,39 +189,47 @@ export default function EditorContent() {
 
       {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
-        <div className="max-w-3xl w-full flex flex-col items-center gap-4">
+        <div className="relative max-w-5xl w-full flex gap-6">
           {/* IMAGE */}
-          <div
-            className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
-          >
-            {cleanImage ? (
-              <>
-                <img
-                  src={cleanImage}
-                  className="max-h-[65vh] object-contain"
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="rotate-[-45deg] text-black text-6xl font-bold drop-shadow-[0_0_2px_white]">
-                    remove-background.tech
-                  </span>
-                </div>
-              </>
-            ) : (
-              <div className="text-gray-400">No image loaded</div>
-            )}
+          <div className="relative">
+            <div
+              className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
+            >
+              {cleanImage && (
+                <>
+                  <img
+                    src={cleanImage}
+                    className="max-h-[65vh] object-contain"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
+                      remove-background.tech
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ➕ Upload box */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-4 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
+            >
+              <Plus className="size-6 text-gray-500" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) =>
+                  handleFileChange(e.target.files?.[0])
+                }
+              />
+            </div>
           </div>
 
-          {/* ➕ Upload new (BOX, not text) */}
-          <button
-            onClick={handleUploadNew}
-            className="w-16 h-16 border-2 border-dashed border-gray-400 rounded-xl flex items-center justify-center hover:border-blue-500 transition"
-            title="Upload another image"
-          >
-            <Plus className="size-6 text-gray-500" />
-          </button>
-
-          {/* BACKGROUND OPTIONS (tucked under image) */}
-          <div className="flex gap-3 pt-2">
+          {/* BACKGROUND OPTIONS (RIGHT, TIGHT) */}
+          <div className="flex flex-col gap-3 pt-2">
             <button
               onClick={() => setBgStyle("none")}
               className={`h-14 w-14 rounded-lg border-4 bg-[url('/checkerboard.png')] ${
@@ -240,7 +252,7 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* DEAL MODAL */}
+      {/* PAYWALL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
