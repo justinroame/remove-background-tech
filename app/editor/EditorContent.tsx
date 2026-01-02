@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, X, Plus } from "lucide-react";
+import { Download, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
+
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
@@ -15,20 +16,27 @@ type BgStyle = "none" | "white" | "black";
 
 export default function EditorContent() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [cleanImage, setCleanImage] = useState<string | null>(null);
-  const [loadingClean, setLoadingClean] = useState(false);
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
+  const [loadingClean, setLoadingClean] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  useEffect(() => {
-    setCleanImage(sessionStorage.getItem("editor-clean"));
-    window.scrollTo({ top: 0 });
-  }, []);
+  /* ---------------- INIT ---------------- */
 
-  /* ---------------- CANVAS DRAW ---------------- */
+  useEffect(() => {
+    const img = sessionStorage.getItem("editor-clean");
+    if (!img) {
+      router.replace("/");
+      return;
+    }
+    setCleanImage(img);
+    window.scrollTo({ top: 0 });
+  }, [router]);
+
+  /* ---------------- CANVAS EXPORT ---------------- */
 
   async function drawAndDownload(
     imageUrl: string,
@@ -48,7 +56,9 @@ export default function EditorContent() {
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unsupported");
 
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
@@ -90,7 +100,7 @@ export default function EditorContent() {
 
   /* ---------------- PREVIEW (GUEST OK) ---------------- */
 
-  const handlePreview = async () => {
+  async function handlePreview() {
     if (!cleanImage) return;
 
     if (!user) {
@@ -108,11 +118,17 @@ export default function EditorContent() {
       bgStyle,
       true
     );
-  };
+  }
 
-  /* ---------------- CLEAN DOWNLOAD (SERVER IS BOSS) ---------------- */
+  /* ---------------- CLEAN DOWNLOAD ---------------- */
+  /* SECURITY NOTE:
+     Credits are enforced by:
+     1) Middleware (hard block)
+     2) API (/api/credits/consume)
+     This UI only triggers the flow
+  */
 
-  const handleClean = async () => {
+  async function handleClean() {
     if (!user) {
       router.push("/auth/signup");
       return;
@@ -121,7 +137,6 @@ export default function EditorContent() {
     if (!cleanImage) return;
 
     setLoadingClean(true);
-
     try {
       const res = await fetch("/api/credits/consume", {
         method: "POST",
@@ -139,6 +154,8 @@ export default function EditorContent() {
         return;
       }
 
+      window.dispatchEvent(new Event("credits-updated"));
+
       await drawAndDownload(
         cleanImage,
         "background-removed.png",
@@ -148,16 +165,17 @@ export default function EditorContent() {
     } finally {
       setLoadingClean(false);
     }
-  };
+  }
 
   /* ---------------- UPLOAD NEW IMAGE ---------------- */
 
-  const handleFileChange = (file?: File) => {
+  function handleFileChange(file?: File) {
     if (!file) return;
+
     sessionStorage.clear();
     sessionStorage.setItem("editor-image", URL.createObjectURL(file));
     router.push("/");
-  };
+  }
 
   const previewBgClass =
     bgStyle === "none"
@@ -165,6 +183,8 @@ export default function EditorContent() {
       : bgStyle === "white"
       ? "bg-white"
       : "bg-black";
+
+  if (!cleanImage || loading) return null;
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
@@ -176,7 +196,7 @@ export default function EditorContent() {
 
         <Button
           onClick={handleClean}
-          disabled={loadingClean || !cleanImage}
+          disabled={loadingClean}
           className="bg-blue-600 text-white hover:bg-blue-700"
         >
           <Download className="mr-2 size-4" />
@@ -186,28 +206,24 @@ export default function EditorContent() {
 
       {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
-        <div className="relative max-w-5xl w-full flex gap-4">
+        <div className="flex gap-4 max-w-5xl w-full">
           {/* IMAGE */}
           <div className="relative">
             <div
               className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
             >
-              {cleanImage && (
-                <>
-                  <img
-                    src={cleanImage}
-                    className="max-h-[65vh] object-contain"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
-                      remove-background.tech
-                    </span>
-                  </div>
-                </>
-              )}
+              <img
+                src={cleanImage}
+                className="max-h-[65vh] object-contain"
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="rotate-[-45deg] text-black text-6xl font-extrabold drop-shadow-[0_0_3px_white]">
+                  remove-background.tech
+                </span>
+              </div>
             </div>
 
-            {/* ➕ Upload box */}
+            {/* + Upload */}
             <div
               onClick={() => fileInputRef.current?.click()}
               className="mt-3 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
@@ -249,7 +265,7 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* PAYWALL */}
+      {/* PAYWALL MODAL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
