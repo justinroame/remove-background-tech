@@ -16,10 +16,10 @@ export async function removeBackground(file: File) {
   const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
   const output = await replicate.run(
-    "851-labs/background-remover",
+    "851-labs/background-remover", // ✅ CORRECT SLUG
     {
       input: {
-        image: base64, // ← try image first (works for 851-labs)
+        image: base64, // ✅ CORRECT INPUT KEY
       },
     }
   );
@@ -27,11 +27,9 @@ export async function removeBackground(file: File) {
   const url =
     typeof output === "string"
       ? output
-      : Array.isArray(output)
+      : Array.isArray(output) && typeof output[0] === "string"
       ? output[0]
-      : (output as any)?.output ||
-        (output as any)?.image ||
-        null;
+      : null;
 
   if (!url) {
     throw new Error("Replicate returned no valid output URL");
