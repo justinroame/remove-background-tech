@@ -2,10 +2,6 @@
 
 import "server-only";
 
-/**
- * Replicate – 851 Labs Background Remover
- * MUST use a pinned version hash (no implicit latest)
- */
 const MODEL =
   "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc";
 
@@ -22,15 +18,29 @@ export async function removeBackground(imageUrl: string) {
     });
 
     const output = await replicate.run(MODEL, {
-      input: { image: imageUrl },
+      input: {
+        file: imageUrl, // correct key for this model
+      },
     });
+
+    console.log("[Replicate raw output]", output);
 
     let url: string | null = null;
 
+    // 🔑 Handle ALL known Replicate output shapes
     if (typeof output === "string") {
       url = output;
     } else if (Array.isArray(output) && typeof output[0] === "string") {
       url = output[0];
+    } else if (
+      typeof output === "object" &&
+      output !== null
+    ) {
+      url =
+        (output as any).output ||
+        (output as any).image ||
+        (output as any).url ||
+        null;
     }
 
     if (!url) {
@@ -39,11 +49,4 @@ export async function removeBackground(imageUrl: string) {
 
     return { clean: url };
   } catch (err: any) {
-    console.error("[removeBackground] ERROR:", err);
-    throw new Error(
-      err?.response?.data?.detail ||
-        err?.message ||
-        "Background removal failed"
-    );
-  }
-}
+    console.error("[removeBackground] ERROR:", err)
