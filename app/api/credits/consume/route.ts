@@ -1,15 +1,15 @@
-// app/api/credits/consume/route.ts
 import { NextResponse } from "next/server";
-import { and, eq, gt, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { credits } from "@/db/schema";
-import { getCurrentUser } from "@/lib/auth"; // uses your existing auth helper
+import { db } from "@/app/db";
+import { credits } from "@/app/db/schema";
+import { eq, gt, sql, and } from "drizzle-orm";
+import { getUser } from "@/app/lib/getUser";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getUser();
+
     if (!user) {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
@@ -21,32 +21,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "INVALID_COUNT" }, { status: 400 });
     }
 
-    // ✅ HARD ENFORCEMENT:
-    // Only decrement if amount > 0 (prevents negative credits + stops free clean downloads)
+    /**
+     * 🔒 HARD CREDIT ENFORCEMENT
+     * Only decrement if credits.amount > 0
+     * If no row is updated → NO_CREDITS
+     */
     const updated = await db
       .update(credits)
-      .set({ amount: sql`${credits.amount} - ${count}` })
-      .where(and(eq(credits.userId, user.id), gt(credits.amount, 0)))
+      .set({
+        amount: sql`${credits.amount} - ${count}`,
+      })
+      .where(
+        and(
+          eq(credits.userId, user.id),
+          gt(credits.amount, 0)
+        )
+      )
       .returning({ amount: credits.amount });
 
-    // If no row updated, user has 0 credits (or no credits row)
+    // 🚫 ZERO credits → block clean download
     if (!updated || updated.length === 0) {
-      return NextResponse.json({ error: "NO_CREDITS" }, { status: 402 });
+      return NextResponse.json(
+        { error: "NO_CREDITS" },
+        { status: 402 }
+      );
     }
 
-    // Safety clamp (in case count > amount, you still want to block)
-    // If you want strict: do a select first and require amount >= count.
+    // Extra safety clamp (never allow negative credits)
     if (updated[0].amount < 0) {
-      // rollback-style correction (optional safety)
       await db
         .update(credits)
         .set({ amount: 0 })
         .where(eq(credits.userId, user.id));
 
-      return NextResponse.json({ error: "NO_CREDITS" }, { status: 402 });
+      return NextResponse.json(
+        { error: "NO_CREDITS" },
+        { status: 402 }
+      );
     }
 
-    return NextResponse.json({ ok: true, remaining: updated[0].amount });
+    return NextResponse.json({
+      ok: true,
+      remaining: updated[0].amount,
+    });
   } catch (err: any) {
     console.error("consume credits error:", err);
     return NextResponse.json(
