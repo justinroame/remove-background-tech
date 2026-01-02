@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Loader2, X, Plus } from "lucide-react";
+import { Download, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 import {
@@ -110,11 +110,17 @@ export default function EditorContent() {
     );
   };
 
-  /* ---------------- CLEAN DOWNLOAD (SERVER ENFORCED) ---------------- */
+  /* ---------------- CLEAN DOWNLOAD (HARD BLOCK) ---------------- */
 
   const handleClean = async () => {
     if (!user) {
       router.push("/auth/signup");
+      return;
+    }
+
+    // 🔥 ABSOLUTE HARD BLOCK — NO CREDITS
+    if ((user as any)?.credits <= 0) {
+      router.push("/pricing");
       return;
     }
 
@@ -157,8 +163,8 @@ export default function EditorContent() {
     if (!file) return;
 
     sessionStorage.clear();
-    const url = URL.createObjectURL(file);
-    sessionStorage.setItem("editor-image", url);
+    sessionStorage.setItem("editor-image", URL.createObjectURL(file));
+    // let homepage handle processing
     router.push("/");
   };
 
@@ -179,7 +185,11 @@ export default function EditorContent() {
 
         <Button
           onClick={handleClean}
-          disabled={loadingClean}
+          disabled={
+            loadingClean ||
+            !cleanImage ||
+            !!user && (user as any)?.credits <= 0
+          }
           className="bg-blue-600 text-white hover:bg-blue-700"
         >
           <Download className="mr-2 size-4" />
@@ -189,7 +199,7 @@ export default function EditorContent() {
 
       {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
-        <div className="relative max-w-5xl w-full flex gap-6">
+        <div className="relative max-w-5xl w-full flex gap-4">
           {/* IMAGE */}
           <div className="relative">
             <div
@@ -213,7 +223,7 @@ export default function EditorContent() {
             {/* ➕ Upload box */}
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="mt-4 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
+              className="mt-3 h-16 w-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white"
             >
               <Plus className="size-6 text-gray-500" />
               <input
@@ -228,7 +238,7 @@ export default function EditorContent() {
             </div>
           </div>
 
-          {/* BACKGROUND OPTIONS (RIGHT, TIGHT) */}
+          {/* BACKGROUND OPTIONS */}
           <div className="flex flex-col gap-3 pt-2">
             <button
               onClick={() => setBgStyle("none")}
