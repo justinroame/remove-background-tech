@@ -22,6 +22,7 @@ export default function Home() {
 
   function clearEditorStorage() {
     try {
+      sessionStorage.removeItem("editor-image");
       sessionStorage.removeItem("editor-clean");
     } catch {}
   }
@@ -56,7 +57,7 @@ export default function Home() {
     setLoading(true);
 
     const form = new FormData();
-    form.append("image", compressed); // ✅ matches API
+    form.append("image", compressed);
 
     try {
       const res = await fetch("/api/remove-background", {
@@ -70,7 +71,11 @@ export default function Home() {
         throw new Error(data?.error || "Background removal failed");
       }
 
-      // ✅ only store what actually exists
+      // ✅ restore BOTH values for /editor
+      sessionStorage.setItem(
+        "editor-image",
+        URL.createObjectURL(compressed)
+      );
       sessionStorage.setItem("editor-clean", data.clean);
 
       router.push("/editor");
@@ -153,8 +158,23 @@ export default function Home() {
           </div>
 
           {error && <p className="text-red-600 mt-4">{error}</p>}
-        </div>
-      </main>
-    </div>
-  );
-}
+
+          {/* ✅ RESTORED SAMPLE IMAGES */}
+          <div className="space-y-3 mt-10">
+            <p className="text-sm font-medium text-gray-700">
+              No image? Try one of these:
+            </p>
+            <div className="flex gap-3 justify-center">
+              {[
+                "/woman-in-pink-dress.jpg",
+                "/iphone-product.jpg",
+                "/silver-sports-car.jpg",
+                "/watch-closeup.jpg",
+              ].map((src) => (
+                <img
+                  key={src}
+                  src={src}
+                  className="size-16 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300 transition"
+                  onClick={() => handleSampleClick(src)}
+                />
+              ))}
