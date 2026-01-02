@@ -6,12 +6,12 @@ import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 
-// ✅ FIXED: use alias import (Vercel-safe)
+// ✅ CORRECT IMPORT (file now lives in app/lib)
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
   MAX_GUEST_PREVIEW_DOWNLOADS,
-} from "@/lib/guestPreviewLimit";
+} from "../lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
@@ -118,7 +118,6 @@ export default function EditorContent() {
       return;
     }
 
-    // 🔥 HARD BLOCK when credits = 0
     if ((user as any)?.credits <= 0) {
       router.push("/pricing");
       return;
@@ -174,7 +173,6 @@ export default function EditorContent() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      {/* TOP BAR */}
       <div className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-end gap-3">
         <Button variant="outline" onClick={handlePreview}>
           <Download className="mr-2 size-4" /> Preview
@@ -190,10 +188,8 @@ export default function EditorContent() {
         </Button>
       </div>
 
-      {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
         <div className="flex gap-10 max-w-6xl w-full">
-          {/* IMAGE */}
           <div className="flex-1 flex justify-center">
             <div
               className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
@@ -215,7 +211,6 @@ export default function EditorContent() {
               )}
             </div>
 
-            {/* ➕ Upload new */}
             <button
               onClick={handleUploadNew}
               className="mt-4 flex items-center gap-2 text-sm text-blue-600 hover:underline"
@@ -224,7 +219,6 @@ export default function EditorContent() {
             </button>
           </div>
 
-          {/* BACKGROUND OPTIONS */}
           <div className="flex flex-col gap-4 pt-4">
             <button
               onClick={() => setBgStyle("none")}
@@ -248,7 +242,6 @@ export default function EditorContent() {
         </div>
       </div>
 
-      {/* DEAL MODAL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
