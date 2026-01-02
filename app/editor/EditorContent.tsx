@@ -12,7 +12,6 @@ export default function EditorContent() {
   const router = useRouter();
   const { user } = useUser();
 
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [loadingClean, setLoadingClean] = useState(false);
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
@@ -20,7 +19,6 @@ export default function EditorContent() {
 
   useEffect(() => {
     try {
-      setPreviewImage(sessionStorage.getItem("editor-image"));
       setCleanImage(sessionStorage.getItem("editor-clean"));
     } catch {}
     window.scrollTo({ top: 0 });
@@ -44,23 +42,35 @@ export default function EditorContent() {
     const canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-
     const ctx = canvas.getContext("2d")!;
+
+    // Background fill
     if (background === "white") ctx.fillStyle = "#ffffff";
     if (background === "black") ctx.fillStyle = "#000000";
     if (background !== "none") ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(img, 0, 0);
 
+    // WATERMARK
     if (withWatermark) {
       ctx.save();
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = "#000000";
-      ctx.font = `${Math.floor(canvas.width / 12)}px sans-serif`;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-Math.PI / 4);
+
+      const fontSize = Math.floor(canvas.width / 10);
+      ctx.font = `bold ${fontSize}px sans-serif`;
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      // White outline
+      ctx.lineWidth = Math.max(6, fontSize / 12);
+      ctx.strokeStyle = "#ffffff";
+      ctx.strokeText("remove-background.tech", 0, 0);
+
+      // Solid black fill
+      ctx.fillStyle = "#000000";
       ctx.fillText("remove-background.tech", 0, 0);
+
       ctx.restore();
     }
 
@@ -77,9 +87,9 @@ export default function EditorContent() {
   }
 
   const handlePreview = async () => {
-    if (!previewImage) return;
+    if (!cleanImage) return;
     await drawAndDownload(
-      previewImage,
+      cleanImage,
       "preview-watermarked.png",
       bgStyle,
       true
@@ -98,7 +108,6 @@ export default function EditorContent() {
         body: JSON.stringify({ count: 1 }),
       });
 
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 402) setShowPaywall(true);
         return;
@@ -148,14 +157,14 @@ export default function EditorContent() {
             <div
               className={`rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
             >
-              {previewImage && (
+              {cleanImage && (
                 <div className="relative">
                   <img
-                    src={previewImage}
+                    src={cleanImage}
                     className="max-h-[65vh] object-contain"
                   />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="rotate-[-45deg] text-black/40 text-6xl font-semibold">
+                    <span className="rotate-[-45deg] text-black text-6xl font-bold drop-shadow-[0_0_2px_white]">
                       remove-background.tech
                     </span>
                   </div>
