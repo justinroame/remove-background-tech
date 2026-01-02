@@ -6,7 +6,6 @@ import { Download, Loader2, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 
-// ✅ CORRECT IMPORT (file now lives in app/lib)
 import {
   getGuestPreviewDownloadCount,
   incrementGuestPreviewDownloadCount,
@@ -90,7 +89,7 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  // 🟡 Guest preview (watermarked)
+  // 🟡 Preview (watermarked)
   const handlePreview = async () => {
     if (!cleanImage) return;
 
@@ -111,15 +110,10 @@ export default function EditorContent() {
     );
   };
 
-  // 🔴 Clean download (credit enforced)
+  // 🔴 Clean download — SERVER decides credits
   const handleClean = async () => {
     if (!user) {
       router.push("/auth/signup");
-      return;
-    }
-
-    if ((user as any)?.credits <= 0) {
-      router.push("/pricing");
       return;
     }
 
@@ -173,6 +167,7 @@ export default function EditorContent() {
 
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
+      {/* TOP BAR */}
       <div className="sticky top-0 z-20 bg-white border-b px-6 py-4 flex justify-end gap-3">
         <Button variant="outline" onClick={handlePreview}>
           <Download className="mr-2 size-4" /> Preview
@@ -188,53 +183,56 @@ export default function EditorContent() {
         </Button>
       </div>
 
+      {/* MAIN */}
       <div className="flex justify-center px-6 py-8">
-        <div className="flex gap-10 max-w-6xl w-full">
-          <div className="flex-1 flex justify-center">
-            <div
-              className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
-            >
-              {cleanImage ? (
-                <>
-                  <img
-                    src={cleanImage}
-                    className="max-h-[65vh] object-contain"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="rotate-[-45deg] text-black text-6xl font-bold drop-shadow-[0_0_2px_white]">
-                      remove-background.tech
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="text-gray-400">No image loaded</div>
-              )}
-            </div>
-
-            <button
-              onClick={handleUploadNew}
-              className="mt-4 flex items-center gap-2 text-sm text-blue-600 hover:underline"
-            >
-              <Plus className="size-4" /> Upload another image
-            </button>
+        <div className="max-w-3xl w-full flex flex-col items-center gap-4">
+          {/* IMAGE */}
+          <div
+            className={`relative rounded-xl shadow-lg p-4 max-h-[70vh] ${previewBgClass}`}
+          >
+            {cleanImage ? (
+              <>
+                <img
+                  src={cleanImage}
+                  className="max-h-[65vh] object-contain"
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="rotate-[-45deg] text-black text-6xl font-bold drop-shadow-[0_0_2px_white]">
+                    remove-background.tech
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-400">No image loaded</div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-4 pt-4">
+          {/* ➕ Upload new (BOX, not text) */}
+          <button
+            onClick={handleUploadNew}
+            className="w-16 h-16 border-2 border-dashed border-gray-400 rounded-xl flex items-center justify-center hover:border-blue-500 transition"
+            title="Upload another image"
+          >
+            <Plus className="size-6 text-gray-500" />
+          </button>
+
+          {/* BACKGROUND OPTIONS (tucked under image) */}
+          <div className="flex gap-3 pt-2">
             <button
               onClick={() => setBgStyle("none")}
-              className={`h-20 w-20 rounded-xl border-4 bg-[url('/checkerboard.png')] ${
+              className={`h-14 w-14 rounded-lg border-4 bg-[url('/checkerboard.png')] ${
                 bgStyle === "none" ? "border-blue-500" : "border-gray-300"
               }`}
             />
             <button
               onClick={() => setBgStyle("white")}
-              className={`h-20 w-20 rounded-xl border-4 bg-white ${
+              className={`h-14 w-14 rounded-lg border-4 bg-white ${
                 bgStyle === "white" ? "border-blue-500" : "border-gray-300"
               }`}
             />
             <button
               onClick={() => setBgStyle("black")}
-              className={`h-20 w-20 rounded-xl border-4 bg-black ${
+              className={`h-14 w-14 rounded-lg border-4 bg-black ${
                 bgStyle === "black" ? "border-blue-500" : "border-gray-300"
               }`}
             />
@@ -242,6 +240,7 @@ export default function EditorContent() {
         </div>
       </div>
 
+      {/* DEAL MODAL */}
       {showPaywall && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="relative max-w-md w-full rounded-2xl bg-white p-8 shadow-2xl">
