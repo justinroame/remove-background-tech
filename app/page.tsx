@@ -8,11 +8,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/useUser";
-import {
-  getGuestUploadCount,
-  incrementGuestUpload,
-  MAX_GUEST_UPLOADS,
-} from "@/lib/guestLimit";
+import { incrementGuestUpload } from "@/lib/guestLimit";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -30,13 +26,9 @@ export default function Home() {
   async function handleFile(file: File) {
     clearEditorStorage();
 
+    // ✅ Guests are allowed to upload and go to editor
     if (!user) {
-      const count = getGuestUploadCount();
-      if (count >= MAX_GUEST_UPLOADS) {
-        router.push("/auth/signup");
-        return;
-      }
-      incrementGuestUpload();
+      incrementGuestUpload(); // track silently, no redirect
     }
 
     let compressed = file;
@@ -71,12 +63,14 @@ export default function Home() {
         throw new Error(data?.error || "Background removal failed");
       }
 
+      // Store original + clean image for editor
       sessionStorage.setItem(
         "editor-image",
         URL.createObjectURL(compressed)
       );
       sessionStorage.setItem("editor-clean", data.clean);
 
+      // ✅ Always go to editor (guest or logged-in)
       router.push("/editor");
     } catch (err: any) {
       clearEditorStorage();
