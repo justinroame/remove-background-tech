@@ -1,39 +1,23 @@
-// lib/removeBackground.ts
-import "server-only";
 import Replicate from "replicate";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
 });
 
-export async function removeBackground(file: File) {
-  if (!process.env.REPLICATE_API_TOKEN) {
-    throw new Error("REPLICATE_API_TOKEN is not set");
-  }
-
-  // Convert File → base64 data URL (Replicate supports this)
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
-
+export async function removeBackground(base64Image: string) {
   const output = await replicate.run(
-    "851-labs/background-remover", // ✅ CORRECT SLUG
+    "851-labs/background-remover",
     {
       input: {
-        image: base64, // ✅ CORRECT INPUT KEY
+        image: base64Image,
       },
     }
   );
 
-  const url =
-    typeof output === "string"
-      ? output
-      : Array.isArray(output) && typeof output[0] === "string"
-      ? output[0]
-      : null;
-
-  if (!url) {
-    throw new Error("Replicate returned no valid output URL");
+  // Model returns a single URL string
+  if (typeof output !== "string") {
+    throw new Error("Unexpected Replicate output");
   }
 
-  return { clean: url };
+  return { clean: output };
 }
