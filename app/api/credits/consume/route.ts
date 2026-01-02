@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getServerUser } from "@/lib/serverAuth";
+import { getUser } from "@/lib/getUser";
 
 export async function POST(req: Request) {
   try {
-    const user = await getServerUser();
+    const user = await getUser();
 
     if (!user) {
       return NextResponse.json(
@@ -15,8 +15,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const { count } = await req.json();
-    const cost = Number(count || 1);
+    const body = await req.json();
+    const cost = Number(body?.count ?? 1);
 
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, user.id),
