@@ -2,11 +2,9 @@
 
 /**
  * Remove background using Replicate (851 Labs background remover).
- *
- * IMPORTANT:
  * - Server-only
- * - No static import of "replicate"
- * - Uses implicit latest model version (correct for Replicate)
+ * - Dynamic import (prevents build errors)
+ * - Handles string OR array output
  */
 
 import "server-only";
@@ -19,7 +17,6 @@ export async function removeBackground(imageUrl: string) {
   }
 
   try {
-    // Dynamic import prevents Next.js build failure
     const { default: Replicate } = await import("replicate");
 
     const replicate = new Replicate({
@@ -27,21 +24,19 @@ export async function removeBackground(imageUrl: string) {
     });
 
     const output = await replicate.run(MODEL, {
-      input: {
-        image: imageUrl,
-      },
+      input: { image: imageUrl },
     });
 
-    // 851 Labs returns an array of URLs
-    const url =
-      Array.isArray(output) && typeof output[0] === "string"
-        ? output[0]
-        : typeof output === "string"
-        ? output
-        : null;
+    let url: string | null = null;
+
+    if (typeof output === "string") {
+      url = output;
+    } else if (Array.isArray(output) && typeof output[0] === "string") {
+      url = output[0];
+    }
 
     if (!url) {
-      throw new Error("Replicate returned no output URL");
+      throw new Error("Replicate returned no valid output URL");
     }
 
     return { clean: url };

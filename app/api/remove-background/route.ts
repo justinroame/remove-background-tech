@@ -1,3 +1,5 @@
+// app/api/remove-background/route.ts
+
 import { removeBackground } from "@/lib/removeBackground";
 import { uploadImage } from "@/lib/uploadImage";
 
@@ -5,7 +7,14 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const file = formData.get("file") as File | null;
+    // 🔍 DEBUG: remove after confirming key
+    console.log("FormData keys received:", [...formData.keys()]);
+
+    // Accept common field names (safe + flexible)
+    const file =
+      (formData.get("file") as File | null) ||
+      (formData.get("image") as File | null) ||
+      (formData.get("upload") as File | null);
 
     if (!file) {
       return Response.json(
@@ -14,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upload file to storage and get a public URL
+    // Upload image to storage → get public URL
     const imageUrl = await uploadImage(file);
 
     // Remove background via Replicate
