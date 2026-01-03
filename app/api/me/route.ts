@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/serverAuth";
 
 export async function GET() {
-  const user = getUserFromRequest();
+  const user = await getUserFromRequest(req);
+
   return NextResponse.json({ user });
 }
