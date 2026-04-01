@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,6 +10,17 @@ import { useUser } from "@/lib/useUser";
 import { incrementGuestUpload } from "@/lib/guestLimit";
 import { clearEditorTransfer, setEditorTransfer } from "@/lib/editorTransfer";
 
+const MAX_UPLOAD_MB = 20;
+const MAX_DIMENSION = 2048;
+const SERVER_CONVERTIBLE_TYPES = new Set([
+  "image/heic",
+  "image/heif",
+  "image/avif",
+  "image/tiff",
+  "image/bmp",
+  "image/webp",
+]);
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,35 +31,97 @@ export default function Home() {
     clearEditorTransfer();
   }
 
-  async function handleFile(file: File) {
-    clearEditorStorage();
+  async function convertToJpegWithCanvas(file: File): Promise<File> {
+    let width = 0;
+    let height = 0;
 
-    // ✅ Guests are allowed to upload and go to editor
-    if (!user) {
-      incrementGuestUpload(); // track silently, no redirect
-    }
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable for image conversion.");
 
-    let compressed = file;
-    if (file.size > 5 * 1024 * 1024) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+      width = Math.max(1, Math.round(bitmap.width * scale));
+      height = Math.max(1, Math.round(bitmap.height * scale));
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+    } catch {
+      const objectUrl = URL.createObjectURL(file);
       try {
-        compressed = await imageCompression(file, {
-          maxSizeMB: 4,
-          maxWidthOrHeight: 1024,
-          useWebWorker: true,
-        });
-      } catch {
-        setError("Compression failed.");
-        return;
+        const img = new Image();
+        img.src = objectUrl;
+        await img.decode();
+        const scale = Math.min(1, MAX_DIMENSION / Math.max(img.naturalWidth, img.naturalHeight));
+        width = Math.max(1, Math.round(img.naturalWidth * scale));
+        height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
       }
     }
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", 0.92);
+    });
+    if (!blob) throw new Error("Could not convert image.");
+
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "upload"}.jpg`, {
+      type: "image/jpeg",
+    });
+  }
+
+  async function normalizeForUpload(file: File): Promise<File> {
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      throw new Error(`File is too large. Please upload an image under ${MAX_UPLOAD_MB}MB.`);
+    }
+
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Please upload a valid image file.");
+    }
+
+    let normalized: File;
+    try {
+      normalized = await convertToJpegWithCanvas(file);
+    } catch {
+      if (SERVER_CONVERTIBLE_TYPES.has(file.type.toLowerCase())) {
+        normalized = file;
+      } else {
+        throw new Error("We couldn't read that image format. Please convert it to JPG or PNG and try again.");
+      }
+    }
+
+    const isServerConvertibleOriginal =
+      normalized === file && SERVER_CONVERTIBLE_TYPES.has(file.type.toLowerCase());
+
+    if (!isServerConvertibleOriginal && normalized.size > 5 * 1024 * 1024) {
+      normalized = await imageCompression(normalized, {
+        maxSizeMB: 4,
+        maxWidthOrHeight: MAX_DIMENSION,
+        useWebWorker: true,
+      });
+    }
+
+    return normalized;
+  }
+
+  async function handleFile(file: File) {
+    clearEditorStorage();
+    if (!user) incrementGuestUpload();
 
     setError(null);
     setLoading(true);
 
-    const form = new FormData();
-    form.append("image", compressed);
-
     try {
+      const normalized = await normalizeForUpload(file);
+
+      const form = new FormData();
+      form.append("image", normalized);
+
       const res = await fetch("/api/remove-background", {
         method: "POST",
         body: form,
@@ -61,13 +133,7 @@ export default function Home() {
         throw new Error(data?.error || "Background removal failed");
       }
 
-      // Store original + clean image for editor
-      setEditorTransfer(
-        URL.createObjectURL(compressed),
-        data.clean
-      );
-
-      // ✅ Always go to editor (guest or logged-in)
+      setEditorTransfer(URL.createObjectURL(normalized), data.clean);
       router.push("/editor");
     } catch (err: any) {
       clearEditorStorage();
@@ -117,9 +183,7 @@ export default function Home() {
             <span className="text-blue-600">remove the background</span>
           </h2>
 
-          <p className="text-gray-600 mb-6">
-            Upload a photo and download a clean transparent PNG.
-          </p>
+          <p className="text-gray-600 mb-6">Upload a photo and download a clean transparent PNG.</p>
 
           <div
             className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 mb-6 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
@@ -132,10 +196,7 @@ export default function Home() {
               onChange={onFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
-            <Button
-              className="rounded-full bg-blue-600 px-10 py-5 text-lg text-white"
-              disabled={loading}
-            >
+            <Button className="rounded-full bg-blue-600 px-10 py-5 text-lg text-white" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -150,23 +211,18 @@ export default function Home() {
           {error && <p className="text-red-600 mt-4">{error}</p>}
 
           <div className="mt-10">
-            <p className="text-sm font-medium text-gray-700 mb-3">
-              No image? Try one of these:
-            </p>
+            <p className="text-sm font-medium text-gray-700 mb-3">No image? Try one of these:</p>
             <div className="flex gap-3 justify-center">
-              {[
-                "/woman-in-pink-dress.jpg",
-                "/iphone-product.jpg",
-                "/silver-sports-car.jpg",
-                "/watch-closeup.jpg",
-              ].map((src) => (
-                <img
-                  key={src}
-                  src={src}
-                  className="size-16 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300"
-                  onClick={() => handleSampleClick(src)}
-                />
-              ))}
+              {["/woman-in-pink-dress.jpg", "/iphone-product.jpg", "/silver-sports-car.jpg", "/watch-closeup.jpg"].map(
+                (src) => (
+                  <img
+                    key={src}
+                    src={src}
+                    className="size-16 rounded-xl object-cover cursor-pointer hover:ring-4 hover:ring-blue-300"
+                    onClick={() => handleSampleClick(src)}
+                  />
+                )
+              )}
             </div>
           </div>
 
