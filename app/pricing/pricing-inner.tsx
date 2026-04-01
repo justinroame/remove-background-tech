@@ -14,7 +14,7 @@ const CREDIT_OPTIONS: CreditOption[] = [
 ];
 
 export default function PricingInner() {
-  const [selectedCredits, setSelectedCredits] = useState<number>(CREDIT_OPTIONS[1].credits);
+  const [selectedCredits, setSelectedCredits] = useState<number>(5);
   const [loading, setLoading] = useState(false);
 
   const selected = useMemo(
