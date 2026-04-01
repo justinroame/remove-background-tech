@@ -11,7 +11,7 @@ const SESSION_COOKIE = "session_user_id";
  * Primary user fetcher (used by most API routes)
  */
 export async function getUserFromRequest(_req?: Request) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const userId = cookieStore.get(SESSION_COOKIE)?.value;
 
   if (!userId) return null;
@@ -35,16 +35,15 @@ export async function getServerUser(req?: Request) {
 /**
  * Attach login session
  */
-export function attachUserSessionCookie(
-  res: NextResponse,
-  userId: number
-) {
+export function attachUserSessionCookie(res: NextResponse, userId: number) {
   res.cookies.set(SESSION_COOKIE, String(userId), {
     httpOnly: true,
     sameSite: "lax",
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
   });
+
+  return res;
 }
 
 /**
@@ -53,7 +52,11 @@ export function attachUserSessionCookie(
 export function clearSessionCookie(res: NextResponse) {
   res.cookies.set(SESSION_COOKIE, "", {
     httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     expires: new Date(0),
     path: "/",
   });
+
+  return res;
 }

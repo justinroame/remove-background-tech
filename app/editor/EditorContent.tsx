@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
+import {
+  MAX_GUEST_PREVIEW_DOWNLOADS,
+  getGuestPreviewDownloadCount,
+  incrementGuestPreviewDownloadCount,
+} from "@/app/lib/guestPreviewLimit";
 
 type BgStyle = "none" | "white" | "black";
 
@@ -24,7 +29,8 @@ export default function EditorContent() {
   async function drawAndDownload(
     imageUrl: string,
     filename: string,
-    background: BgStyle
+    background: BgStyle,
+    withWatermark = false
   ) {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -42,9 +48,20 @@ export default function EditorContent() {
 
     ctx.drawImage(img, 0, 0);
 
-    const blob = await new Promise<Blob>((r) =>
-      canvas.toBlob((b) => r(b!), "image/png")
-    );
+    if (withWatermark) {
+      const watermarkText = "remove-background.tech";
+      const fontSize = Math.max(20, Math.round(canvas.width / 24));
+      ctx.font = `700 ${fontSize}px Inter, Arial, sans-serif`;
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.strokeStyle = "rgba(0,0,0,0.55)";
+      ctx.lineWidth = Math.max(2, Math.round(fontSize / 14));
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeText(watermarkText, canvas.width / 2, canvas.height / 2);
+      ctx.fillText(watermarkText, canvas.width / 2, canvas.height / 2);
+    }
+
+    const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/png"));
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -54,7 +71,26 @@ export default function EditorContent() {
     URL.revokeObjectURL(url);
   }
 
-  // 🔴 CLEAN DOWNLOAD — SERVER IS THE GATE
+  const handlePreviewDownload = async () => {
+    if (!cleanImage || loading) return;
+
+    if (!user) {
+      const count = getGuestPreviewDownloadCount();
+      if (count >= MAX_GUEST_PREVIEW_DOWNLOADS) {
+        router.push("/pricing");
+        return;
+      }
+      incrementGuestPreviewDownloadCount();
+    }
+
+    setLoading(true);
+    try {
+      await drawAndDownload(cleanImage, "background-removed-preview.png", bgStyle, true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCleanDownload = async () => {
     if (!user) {
       router.push("/auth/signup");
@@ -72,7 +108,6 @@ export default function EditorContent() {
         body: JSON.stringify({ count: 1 }),
       });
 
-      // 🚨 ABSOLUTE BLOCK
       if (res.status === 402) {
         router.push("/pricing");
         return;
@@ -83,25 +118,25 @@ export default function EditorContent() {
         return;
       }
 
-      // ✅ ONLY DOWNLOAD AFTER SUCCESS
-      await drawAndDownload(
-        cleanImage,
-        "background-removed.png",
-        bgStyle
-      );
+      await drawAndDownload(cleanImage, "background-removed.png", bgStyle);
+      window.dispatchEvent(new Event("credits-updated"));
+      window.dispatchEvent(new Event("auth-changed"));
     } finally {
       setLoading(false);
     }
   };
 
+  const previewBgClass =
+    bgStyle === "white" ? "bg-white" : bgStyle === "black" ? "bg-black" : "bg-transparent";
+
   return (
     <div className="min-h-screen bg-[#F4F5F6]">
-      <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-end">
-        <Button
-          onClick={handleCleanDownload}
-          disabled={loading}
-          className="bg-blue-600 text-white"
-        >
+      <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-end gap-3">
+        <Button onClick={handlePreviewDownload} disabled={loading} variant="outline">
+          <Download className="mr-2 size-4" />
+          {loading ? "Processing…" : "Download Preview"}
+        </Button>
+        <Button onClick={handleCleanDownload} disabled={loading} className="bg-blue-600 text-white">
           <Download className="mr-2 size-4" />
           {loading ? "Processing…" : "Download Clean"}
         </Button>
@@ -110,13 +145,8 @@ export default function EditorContent() {
       <div className="flex justify-center px-6 py-8">
         <div className="flex gap-4 max-w-5xl w-full">
           <div>
-            <div className="rounded-xl shadow-lg p-4 bg-white">
-              {cleanImage && (
-                <img
-                  src={cleanImage}
-                  className="max-h-[65vh] object-contain"
-                />
-              )}
+            <div className={`rounded-xl shadow-lg p-4 border ${previewBgClass}`}>
+              {cleanImage && <img src={cleanImage} className="max-h-[65vh] object-contain" alt="Edited image" />}
             </div>
 
             <div
@@ -135,7 +165,7 @@ export default function EditorContent() {
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
-            <button onClick={() => setBgStyle("none")} className="h-14 w-14 border" />
+            <button onClick={() => setBgStyle("none")} className="h-14 w-14 border bg-[url('/checkerboard.png')] bg-cover" />
             <button onClick={() => setBgStyle("white")} className="h-14 w-14 bg-white border" />
             <button onClick={() => setBgStyle("black")} className="h-14 w-14 bg-black border" />
           </div>
