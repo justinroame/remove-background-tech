@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
+import { getEditorClean } from "@/lib/editorTransfer";
 import {
   MAX_GUEST_PREVIEW_DOWNLOADS,
   getGuestPreviewDownloadCount,
@@ -23,7 +24,7 @@ export default function EditorContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setCleanImage(sessionStorage.getItem("editor-clean"));
+    setCleanImage(getEditorClean());
   }, []);
 
   async function drawAndDownload(

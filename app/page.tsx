@@ -9,6 +9,7 @@ import imageCompression from "browser-image-compression";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/useUser";
 import { incrementGuestUpload } from "@/lib/guestLimit";
+import { clearEditorTransfer, setEditorTransfer } from "@/lib/editorTransfer";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -17,10 +18,7 @@ export default function Home() {
   const { user } = useUser();
 
   function clearEditorStorage() {
-    try {
-      sessionStorage.removeItem("editor-image");
-      sessionStorage.removeItem("editor-clean");
-    } catch {}
+    clearEditorTransfer();
   }
 
   async function handleFile(file: File) {
@@ -64,11 +62,10 @@ export default function Home() {
       }
 
       // Store original + clean image for editor
-      sessionStorage.setItem(
-        "editor-image",
-        URL.createObjectURL(compressed)
+      setEditorTransfer(
+        URL.createObjectURL(compressed),
+        data.clean
       );
-      sessionStorage.setItem("editor-clean", data.clean);
 
       // ✅ Always go to editor (guest or logged-in)
       router.push("/editor");
