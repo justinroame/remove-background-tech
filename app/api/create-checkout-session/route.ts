@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/pricing?success=1`,
+      success_url: `${origin}/pricing?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       metadata: { userId: String(user.id), credits },
     });

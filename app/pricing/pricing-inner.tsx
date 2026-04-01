@@ -1,8 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-type CreditOption = { credits: number; label: string; priceLabel: string };
+type CreditOption = {
+  credits: number;
+  label: string;
+  priceLabel: string;
+};
 
 const CREDIT_OPTIONS: CreditOption[] = [
   { credits: 5, label: "5 credits", priceLabel: "$3" },
@@ -17,6 +22,37 @@ export default function PricingInner() {
   const [selectedCredits, setSelectedCredits] = useState<number>(5);
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const sessionId = searchParams.get("session_id");
+    if (success !== "1" || !sessionId) return;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/stripe/finalize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          alert(data?.error || "Payment succeeded, but credit sync failed. Contact support.");
+          return;
+        }
+
+        window.dispatchEvent(new Event("credits-updated"));
+        window.dispatchEvent(new Event("auth-changed"));
+        router.replace("/editor");
+      } catch {
+        alert("Payment succeeded, but we could not sync credits automatically.");
+      }
+    })();
+  }, [router, searchParams]);
+
   const selected = useMemo(
     () => CREDIT_OPTIONS.find((o) => o.credits === selectedCredits) ?? CREDIT_OPTIONS[0],
     [selectedCredits]
@@ -28,7 +64,10 @@ export default function PricingInner() {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credits: selectedCredits, mode: "payment" }),
+        body: JSON.stringify({
+          credits: selectedCredits,
+          mode: "payment",
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -36,6 +75,7 @@ export default function PricingInner() {
         alert(data?.error || "Unable to create checkout session");
         return;
       }
+
       window.location.href = data.url;
     } finally {
       setLoading(false);
@@ -50,7 +90,9 @@ export default function PricingInner() {
           <p className="mt-2 text-slate-600">Choose a credit pack and checkout instantly. No subscription.</p>
 
           <div className="mt-8 space-y-3">
-            <label htmlFor="credit-pack" className="block text-sm font-medium text-slate-700">Credit package</label>
+            <label htmlFor="credit-pack" className="block text-sm font-medium text-slate-700">
+              Credit package
+            </label>
             <select
               id="credit-pack"
               value={selectedCredits}
