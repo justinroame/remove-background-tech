@@ -6,6 +6,7 @@ import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/useUser";
 import { getEditorClean } from "@/lib/editorTransfer";
+import { processEditorImage } from "@/lib/clientImageUpload";
 import {
   MAX_GUEST_PREVIEW_DOWNLOADS,
   getGuestPreviewDownloadCount,
@@ -22,6 +23,7 @@ export default function EditorContent() {
   const [cleanImage, setCleanImage] = useState<string | null>(null);
   const [bgStyle, setBgStyle] = useState<BgStyle>("white");
   const [loading, setLoading] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
 
   useEffect(() => {
     setCleanImage(getEditorClean());
@@ -127,6 +129,23 @@ export default function EditorContent() {
     }
   };
 
+  const handleReplaceImage = async (file: File) => {
+    if (loading) return;
+
+    setReplaceError(null);
+    setLoading(true);
+
+    try {
+      const { cleanImage: nextCleanImage } = await processEditorImage(file);
+      setCleanImage(nextCleanImage);
+    } catch (err: any) {
+      setReplaceError(err?.message || "Background removal failed");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setLoading(false);
+    }
+  };
+
   const previewBgClass =
     bgStyle === "white" ? "bg-white" : bgStyle === "black" ? "bg-black" : "bg-transparent";
 
@@ -160,9 +179,13 @@ export default function EditorContent() {
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={() => router.push("/")}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleReplaceImage(file);
+                }}
               />
             </div>
+            {replaceError && <p className="mt-3 text-sm text-red-600">{replaceError}</p>}
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
