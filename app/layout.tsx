@@ -9,11 +9,25 @@ import { Analytics } from "@vercel/analytics/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Remove Background from Image – Free AI Background Remover",
+  title: "Remove Background from Image | Transparent PNG for Product Photos, Logos, and More",
   description:
-    "Instant free AI background remover. Upload an image and download a transparent PNG in seconds.",
+    "Remove backgrounds from images online and download a clean transparent PNG in seconds. Great for product photos, logos, ecommerce listings, and quick edits.",
   metadataBase: new URL("https://remove-background.tech"),
   robots: "index, follow",
+  openGraph: {
+    title: "Remove Background from Image | Transparent PNG in Seconds",
+    description:
+      "Remove backgrounds from images online for product photos, logos, transparent PNGs, and fast ecommerce image cleanup.",
+    url: "https://remove-background.tech",
+    siteName: "Remove Background Tech",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Remove Background from Image | Transparent PNG in Seconds",
+    description:
+      "Fast online background removal for product photos, logos, and transparent PNGs.",
+  },
 };
 
 export default function RootLayout({

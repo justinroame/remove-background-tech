@@ -183,7 +183,7 @@ export default function Home() {
             <span className="text-blue-600">remove the background</span>
           </h2>
 
-          <p className="text-gray-600 mb-6">Upload a photo and download a clean transparent PNG.</p>
+          <p className="text-gray-600 mb-6">Upload a photo and download a clean transparent PNG for product photos, logos, and ecommerce images.</p>
 
           <div
             className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 mb-6 w-full max-w-lg bg-white hover:border-blue-500 transition cursor-pointer"
