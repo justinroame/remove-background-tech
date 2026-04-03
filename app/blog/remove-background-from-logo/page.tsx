@@ -42,6 +42,12 @@ export default function Page() {
         This works especially well when you have a flat logo on a plain background and just need a quick clean version for web or marketing use.
       </p>
 
+      <h2 className="text-2xl font-bold mt-12 mb-4">Related guides</h2>
+      <ul className="list-disc pl-6 space-y-2">
+        <li><Link href="/blog/remove-background-without-photoshop" className="underline">How to remove backgrounds without Photoshop</Link></li>
+        <li><Link href="/blog/remove-background-tech-vs-pixlr-background-remover" className="underline">Remove-Background.Tech vs Pixlr Background Remover</Link></li>
+      </ul>
+
       <div className="text-center my-16">
         <Link href="/" className="inline-block bg-black text-white px-10 py-5 rounded-xl text-xl font-bold">
           Make Logo Transparent Free

@@ -45,10 +45,18 @@ export default function Page() {
         <li>Simple product mockups</li>
       </ul>
 
+      <h2 className="text-2xl font-bold mt-12 mb-4">When to pair this with white backgrounds</h2>
+      <p className="mb-4">
+        A transparent cutout gives you more flexibility. You can reuse the same product on white backgrounds for cleaner catalog images, on brand-colored backgrounds
+        for ads, or inside listing graphics for store promos.
+      </p>
+
       <h2 className="text-2xl font-bold mt-12 mb-4">Related reading</h2>
       <ul className="list-disc pl-6 space-y-2">
         <li><Link href="/blog/white-background-product-photos" className="underline">How to make white background product photos</Link></li>
         <li><Link href="/blog/remove-background-for-amazon-listings" className="underline">How to remove backgrounds for Amazon listings</Link></li>
+        <li><Link href="/blog/remove-background-tech-vs-photoroom" className="underline">Remove-Background.Tech vs Photoroom</Link></li>
+        <li><Link href="/pricing" className="underline">Pricing</Link></li>
       </ul>
 
       <div className="text-center my-16">

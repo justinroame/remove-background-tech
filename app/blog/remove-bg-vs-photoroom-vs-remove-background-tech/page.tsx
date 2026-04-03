@@ -81,6 +81,14 @@ export default function Page() {
         <li>Fast one-off edits where you care more about speed than extra editing tools</li>
       </ul>
 
+      <h2 className="text-2xl font-bold mt-12 mb-4">Go deeper</h2>
+      <ul className="list-disc pl-6 space-y-2">
+        <li><Link href="/blog/remove-background-tech-vs-remove-bg" className="underline">Read the direct Remove-Background.Tech vs remove.bg comparison</Link></li>
+        <li><Link href="/blog/remove-background-tech-vs-photoroom" className="underline">Read the direct Remove-Background.Tech vs Photoroom comparison</Link></li>
+        <li><Link href="/blog/remove-background-for-amazon-listings" className="underline">See the Amazon listing workflow</Link></li>
+        <li><Link href="/pricing" className="underline">Review pricing</Link></li>
+      </ul>
+
       <div className="text-center my-16">
         <Link href="/" className="inline-block bg-black text-white px-10 py-5 rounded-xl text-xl font-bold">
           Remove Background Free Now

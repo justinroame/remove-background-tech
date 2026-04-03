@@ -53,6 +53,8 @@ export default function Page() {
         <h2>Related guides</h2>
         <ul>
           <li><Link href="/blog/remove-background-product-photos-etsy-shopify" className="underline">Removing backgrounds from product photos</Link></li>
+          <li><Link href="/blog/remove-background-for-amazon-listings" className="underline">Removing backgrounds for Amazon listings</Link></li>
+          <li><Link href="/blog/white-background-product-photos" className="underline">Making white background product photos</Link></li>
           <li><Link href="/blog/remove-background-from-logo" className="underline">Making a logo background transparent</Link></li>
           <li><Link href="/blog/remove-background-without-photoshop" className="underline">Removing backgrounds without Photoshop</Link></li>
         </ul>
