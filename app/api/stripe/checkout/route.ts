@@ -1,11 +1,7 @@
 // app/api/stripe/checkout/route.ts
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/serverAuth";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-10-29.clover",
-});
+import { getStripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +13,8 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

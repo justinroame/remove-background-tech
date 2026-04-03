@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { getUserFromRequest } from "@/lib/serverAuth";
 import { PAYG_PRICES } from "@/lib/prices";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-10-29.clover",
-});
+import { getStripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +14,8 @@ export async function POST(req: Request) {
     if (!priceId) return NextResponse.json({ error: "Invalid credit selection." }, { status: 400 });
 
     const origin = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin;
+
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
